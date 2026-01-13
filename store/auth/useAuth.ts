@@ -48,8 +48,14 @@ interface AuthActions {
 // Helper to determine user type
 function deriveUserType(user: Models.User<Models.Preferences> | null): 'agent' | 'agency' | 'user' | null {
   if (!user) return null;
-  // Logic to determine type based on user labels or prefs can go here.
-  // For now, default to 'user'
+  
+  // Check labels for roles
+  if (user.labels && Array.isArray(user.labels)) {
+    if (user.labels.includes('agency')) return 'agency';
+    if (user.labels.includes('agent')) return 'agent';
+  }
+  
+  // Default to user
   return 'user';
 }
 
