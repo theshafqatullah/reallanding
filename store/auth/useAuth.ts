@@ -58,13 +58,15 @@ export function useAuth() {
         setLoading(true);
         setError(null);
         
-        // Create session - this stores the session in the SDK (cookie or localStorage)
-        const session = await account.createEmailPasswordSession({ email, password });
+        // Create session - this stores the session in the SDK
+        await account.createEmailPasswordSession({ email, password });
         
-        // Get user info using the active session
-        const user = await account.get();
+        // Reload page to properly initialize with new session
+        // This ensures the session is properly loaded from storage
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
         
-        hydrateFromSession(user, session);
         return { success: true };
       } catch (err) {
         const errorMessage = formatAuthError(err);
@@ -73,7 +75,7 @@ export function useAuth() {
         return { success: false, error: errorMessage };
       }
     },
-    [setLoading, setError, hydrateFromSession]
+    [setLoading, setError]
   );
 
   // =====================
@@ -94,9 +96,12 @@ export function useAuth() {
         });
 
         // Auto sign in after signup
-        const session = await account.createEmailPasswordSession({ email, password });
-        const user = await account.get();
-        hydrateFromSession(user, session);
+        await account.createEmailPasswordSession({ email, password });
+        
+        // Reload page to properly initialize with new session
+        if (typeof window !== 'undefined') {
+          window.location.reload();
+        }
         
         return { success: true };
       } catch (err) {
@@ -106,7 +111,7 @@ export function useAuth() {
         return { success: false, error: errorMessage };
       }
     },
-    [setLoading, setError, hydrateFromSession]
+    [setLoading, setError]
   );
 
   // =====================
