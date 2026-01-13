@@ -218,17 +218,24 @@ export function useAuth() {
       setLoading(true);
       setError(null);
       
+      console.log('[AUTH] Initializing auth state...');
+      
       // Try to get current user from Appwrite
       const currentUser = await account.get();
       const currentSession = await account.getSession('current');
       
+      console.log('[AUTH] Found existing session:', currentSession.$id);
+      
       // Only hydrate if we got valid data
       if (currentUser && currentSession) {
         hydrateFromSession(currentUser, currentSession);
+        console.log('[AUTH] Auth state initialized successfully');
       } else {
+        console.log('[AUTH] No valid session found, resetting auth');
         resetAuth();
       }
     } catch (error) {
+      console.log('[AUTH] No active session, resetting auth state');
       // No active session in Appwrite - reset auth state
       resetAuth();
     }
@@ -238,12 +245,15 @@ export function useAuth() {
   // Initialize on Mount - Only if not already authenticated
   // =====================
   useEffect(() => {
+    console.log('[AUTH] useEffect running, user:', user ? 'exists' : 'null');
     // Only initialize if we don't already have a user from persisted state
     // This prevents overriding the Zustand persisted state unnecessarily
     if (!user) {
+      console.log('[AUTH] No persisted user, calling initializeAuth');
       initializeAuth();
     } else {
       // We have persisted state, just set loading to false
+      console.log('[AUTH] Using persisted user:', user.$id);
       setLoading(false);
     }
   }, []); // Empty deps - only run once on mount
@@ -257,18 +267,23 @@ export function useAuth() {
         setLoading(true);
         setError(null);
         
-        // Create session
-        await account.createEmailPasswordSession({ email, password });
+        console.log('[AUTH] Starting sign in...');
         
-        // Get user and session
-        const [currentUser, currentSession] = await Promise.all([
-          account.get(),
-          account.getSession('current')
-        ]);
+        // Create session - this returns the session object
+        const session = await account.createEmailPasswordSession({ email, password });
+        console.log('[AUTH] Session created:', session.$id);
         
-        hydrateFromSession(currentUser, currentSession);
+        // Get user data - the session should now be stored by Appwrite SDK
+        const currentUser = await account.get();
+        console.log('[AUTH] User fetched:', currentUser.$id);
+        
+        // Hydrate state with user and session
+        hydrateFromSession(currentUser, session);
+        console.log('[AUTH] State hydrated successfully');
+        
         return { success: true };
       } catch (err) {
+        console.error('[AUTH] Sign in error:', err);
         const errorMessage = formatAuthError(err);
         setError(errorMessage);
         setLoading(false);
@@ -295,16 +310,14 @@ export function useAuth() {
           name: metadata?.name,
         });
 
-        // Auto sign in after signup
-        await account.createEmailPasswordSession({ email, password });
+        // Auto sign in after signup - this returns the session
+        const session = await account.createEmailPasswordSession({ email, password });
         
-        // Get user and session
-        const [currentUser, currentSession] = await Promise.all([
-          account.get(),
-          account.getSession('current')
-        ]);
+        // Get user data
+        const currentUser = await account.get();
         
-        hydrateFromSession(currentUser, currentSession);
+        // Hydrate state with user and session
+        hydrateFromSession(currentUser, session);
         return { success: true };
       } catch (err) {
         const errorMessage = formatAuthError(err);
