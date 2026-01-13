@@ -40,7 +40,7 @@ export default function Home() {
               Welcome back, {user.name || 'User'}!
             </h1>
             <p className="text-lg text-gray-600">
-              You're successfully signed in to your account
+              You&apos;re successfully signed in to your account
             </p>
           </div>
 
@@ -121,9 +121,9 @@ export default function Home() {
                   Roles & Labels
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {user.labels.map((label, index) => (
+                  {user.labels.map((label) => (
                     <span 
-                      key={index}
+                      key={label}
                       className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full"
                     >
                       {label}
@@ -150,7 +150,7 @@ export default function Home() {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button onClick={handleSignOut} variant="outline" size="md" className="rounded-full">
+            <Button onClick={() => handleSignOut()} variant="outline" size="md" className="rounded-full">
               Sign Out
             </Button>
             <Button asChild size="md" className="rounded-full">
