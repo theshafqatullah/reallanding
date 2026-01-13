@@ -2,24 +2,51 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/store/auth";
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { signIn, signInWithGoogle, signInWithFacebook, loading, clearAuthError } = useAuth();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle sign in logic here
-    console.log("Signing in with:", email, password);
+    clearAuthError();
+    
+    const result = await signIn(email, password);
+    if (result.success) {
+      toast.success("Welcome back!", {
+        description: "You have been signed in successfully."
+      });
+      router.push("/");
+    } else {
+      toast.error("Sign in failed", {
+        description: result.error || "Please check your credentials and try again."
+      });
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // Handle social login logic here
-    console.log("Social login with:", provider);
+  const handleGoogleLogin = () => {
+    toast.info("Redirecting to Google...", {
+      description: "Please complete the sign in process."
+    });
+    signInWithGoogle();
+  };
+
+  const handleFacebookLogin = () => {
+    toast.info("Redirecting to Facebook...", {
+      description: "Please complete the sign in process."
+    });
+    signInWithFacebook();
   };
 
   return (
@@ -57,10 +84,9 @@ export default function SignInPage() {
               Forgot password?
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             value={password}
@@ -77,8 +103,8 @@ export default function SignInPage() {
           </Label>
         </div>
 
-        <Button type="submit" size="md" className="w-full rounded-full">
-          Sign in
+        <Button type="submit" size="md" className="w-full rounded-full" disabled={loading}>
+          {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 
@@ -98,7 +124,8 @@ export default function SignInPage() {
             variant="outline"
             size="md"
             className="rounded-full"
-            onClick={() => handleSocialLogin("google")}
+            onClick={handleGoogleLogin}
+            disabled={loading}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -126,7 +153,8 @@ export default function SignInPage() {
             variant="outline"
             size="md"
             className="rounded-full"
-            onClick={() => handleSocialLogin("facebook")}
+            onClick={handleFacebookLogin}
+            disabled={loading}
           >
             <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
               <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />

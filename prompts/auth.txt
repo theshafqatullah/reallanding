@@ -1,0 +1,185 @@
+You are an expert Next.js (App Router) + TypeScript engineer.
+
+Your task is to build a complete `useAuth` hook for a Next.js project.
+
+====================
+TECH STACK
+====================
+- Framework: Next.js (App Router)
+- Language: TypeScript
+- Backend Auth Service: Appwrite
+- State Management: Zustand
+- Auth runs on the client (`"use client"`)
+
+You MUST use:
+- Appwrite for all authentication-related operations
+- Zustand to store and manage global auth state
+
+You MUST consult the Appwrite MCP server for:
+- Auth methods
+- Session handling
+- User object shape
+- Labels / roles system
+- Password reset & refresh flows
+
+====================
+CORE REQUIREMENTS
+====================
+
+1. Create a `useAuth` hook that:
+   - Centralizes all auth logic
+   - Syncs Appwrite auth state with Zustand store
+   - Works correctly with Next.js App Router
+
+2. Create a Zustand store for auth state that includes:
+   - user
+   - session
+   - loading
+   - error
+   - isAuthenticated
+   - derived role flags (agent, agency, user)
+
+====================
+FUNCTIONS TO IMPLEMENT
+====================
+
+The `useAuth` hook MUST expose the following functions:
+
+- signIn(email: string, password: string)
+- signUp(email: string, password: string, metadata?: Record<string, any>)
+- signOut()
+- forgotPassword(email: string)
+- resetPassword(token: string, newPassword: string)
+- refreshUser()
+- getSession()
+- updateUser(data: Partial<User>)
+- clearAuthError()
+- Other Related Functions to auth or auth State Management
+
+All functions must:
+- Use Appwrite SDK
+- Update Zustand state correctly
+- Handle loading & error states
+
+====================
+AUTH STATE SHAPE
+====================
+
+Define and export the following types:
+
+- BaseUser (from Appwrite user schema)
+- NormalUser
+- Agent
+- Agency
+
+User role logic:
+- If user.labels includes "agent" → export `agent`
+- If user.labels includes "agency" → export `agency`
+- If user has none of the above → export `user`
+
+Example:
+- userType: "agent" | "agency" | "user"
+
+The hook should expose:
+- user
+- agent (only if label exists, otherwise null)
+- agency (only if label exists, otherwise null)
+- userType
+
+====================
+LABEL-BASED ROLE DERIVATION
+====================
+
+Rules:
+- labels are provided by Appwrite
+- labels are strings
+- user.labels can contain multiple labels
+- Priority:
+  1. agency
+  2. agent
+  3. user
+
+====================
+FILES & STRUCTURE
+====================
+
+Implement the following structure:
+
+/auth
+  ├── useAuth.ts
+  ├── store.ts
+  ├── types.ts
+  ├── utils.ts
+
+====================
+Zustand STORE
+====================
+
+Zustand store must include:
+- setUser
+- setSession
+- setLoading
+- setError
+- resetAuth
+- hydrateFromSession
+
+State must persist safely (do NOT persist sensitive tokens).
+
+====================
+Appwrite INTEGRATION
+====================
+
+- Use Appwrite MCP server documentation to ensure correctness
+- Correctly handle:
+  - initial session hydration
+  - token refresh
+  - expired sessions
+- Subscribe to Appwrite auth state changes if supported
+
+====================
+EXPORTS
+====================
+
+The `useAuth` hook MUST export:
+
+- user
+- agent
+- agency
+- userType
+- isAuthenticated
+- loading
+- error
+- all auth functions listed above
+
+====================
+QUALITY REQUIREMENTS
+====================
+
+- Fully typed with TypeScript
+- Clean, readable, production-ready code
+- No TODOs
+- No mock logic
+- No placeholder implementations
+- Follow Next.js App Router best practices
+- Use `"use client"` where required
+
+====================
+FINAL GOAL
+====================
+
+After implementation, any component should be able to do:
+
+const {
+  user,
+  agent,
+  agency,
+  userType,
+  signIn,
+  signUp,
+  signOut,
+  refreshUser
+} = useAuth();
+
+and get a fully working, role-aware auth system powered by Appwrite and Zustand.
+
+Build everything end-to-end.
