@@ -67,9 +67,6 @@ export function formatAuthError(error: unknown): string {
     const appwriteError = error as { type?: string; code?: number; message?: string };
     
     // Handle common Appwrite errors with user-friendly messages
-    if (appwriteError.type === "general_unauthorized_scope") {
-      return "Authentication failed. Please ensure your platform is configured in Appwrite Console (Overview → Platforms → Add Web App with hostname 'localhost').";
-    }
     if (appwriteError.type === "user_invalid_credentials") {
       return "Invalid email or password. Please try again.";
     }
