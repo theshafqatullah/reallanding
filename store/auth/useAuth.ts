@@ -218,16 +218,35 @@ export function useAuth() {
       setLoading(true);
       setError(null);
       
-      // Try to get current user
+      // Try to get current user from Appwrite
       const currentUser = await account.get();
       const currentSession = await account.getSession('current');
       
-      hydrateFromSession(currentUser, currentSession);
+      // Only hydrate if we got valid data
+      if (currentUser && currentSession) {
+        hydrateFromSession(currentUser, currentSession);
+      } else {
+        resetAuth();
+      }
     } catch (error) {
-      // No active session - reset auth state
+      // No active session in Appwrite - reset auth state
       resetAuth();
     }
   }, [setLoading, setError, hydrateFromSession, resetAuth]);
+
+  // =====================
+  // Initialize on Mount - Only if not already authenticated
+  // =====================
+  useEffect(() => {
+    // Only initialize if we don't already have a user from persisted state
+    // This prevents overriding the Zustand persisted state unnecessarily
+    if (!user) {
+      initializeAuth();
+    } else {
+      // We have persisted state, just set loading to false
+      setLoading(false);
+    }
+  }, []); // Empty deps - only run once on mount
 
   // =====================
   // Sign In
@@ -579,6 +598,8 @@ export function useAuth() {
   // =====================
   // Update User Preferences
   // =====================
+  // Update User Preferences
+  // =====================
   const updatePreferences = useCallback(
     async (prefs: Record<string, unknown>) => {
       try {
@@ -596,13 +617,6 @@ export function useAuth() {
     },
     [setLoading, setError]
   );
-
-  // =====================
-  // Initialize on Mount
-  // =====================
-  useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
 
   // =====================
   // Return Hook Values
