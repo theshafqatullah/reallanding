@@ -1,37 +1,7 @@
 // =====================
 // Auth Module Exports
 // =====================
+// All auth logic is now consolidated in useAuth.ts
 
-// Hook
+// Main Hook - contains all authentication logic
 export { useAuth } from "./useAuth";
-
-// Store
-export { useAuthStore } from "./store";
-
-// Types
-export type {
-  BaseUser,
-  NormalUser,
-  Agent,
-  Agency,
-  AppUser,
-  Session,
-  UserType,
-  AuthState,
-  AuthActions,
-  AuthStore,
-  SignUpMetadata,
-  UpdateUserData,
-} from "./types";
-
-// Utils
-export {
-  deriveUserType,
-  isAgent,
-  isAgency,
-  isNormalUser,
-  getAgentData,
-  getAgencyData,
-  formatAuthError,
-  generateUserId,
-} from "./utils";
