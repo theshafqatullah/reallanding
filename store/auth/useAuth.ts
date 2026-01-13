@@ -57,8 +57,13 @@ export function useAuth() {
       try {
         setLoading(true);
         setError(null);
+        
+        // Create session - this stores the session in the SDK (cookie or localStorage)
         const session = await account.createEmailPasswordSession({ email, password });
+        
+        // Get user info using the active session
         const user = await account.get();
+        
         hydrateFromSession(user, session);
         return { success: true };
       } catch (err) {
