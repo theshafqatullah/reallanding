@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default function Home() {
-  const { user, isAuthenticated, loading, signOut, userType, agent, agency } = useAuth();
+  const { user, isAuthenticated, loading, signOut, userType } = useAuth();
 
   if (loading) {
     return (

@@ -86,11 +86,9 @@ function formatAuthError(error: unknown): string {
 }
 
 /**
- * Derive user type from labels array
+ * Derive user type - simplified to always return 'user'
  */
-function deriveUserType(labels: string[]): "agent" | "agency" | "user" {
-  if (labels.includes("agent")) return "agent";
-  if (labels.includes("agency")) return "agency";
+function deriveUserType(): "user" {
   return "user";
 }
 
@@ -151,7 +149,7 @@ const useAuthStore = create<AuthStore>()(
       setUser: (user) =>
         set({
           user,
-          userType: user ? deriveUserType(user.labels || []) : null,
+          userType: user ? deriveUserType() : null,
           isAuthenticated: !!user,
         }),
 
@@ -178,7 +176,7 @@ const useAuthStore = create<AuthStore>()(
           loading: false,
           error: null,
           isAuthenticated: true,
-          userType: deriveUserType(user.labels || []),
+          userType: deriveUserType(),
         }),
     }),
     {
@@ -211,12 +209,6 @@ export function useAuth() {
     resetAuth,
     hydrateFromSession,
   } = useAuthStore();
-
-  // =====================
-  // Derived Role Data
-  // =====================
-  const agent = user?.labels?.includes("agent") ? user : null;
-  const agency = user?.labels?.includes("agency") ? user : null;
 
   // =====================
   // Initialize Auth State
@@ -623,10 +615,6 @@ export function useAuth() {
     error,
     isAuthenticated,
     userType,
-
-    // Derived Role Data
-    agent,
-    agency,
 
     // Auth Functions
     signIn,
