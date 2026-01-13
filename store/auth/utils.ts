@@ -59,10 +59,30 @@ export function getAgencyData(user: BaseUser | null): BaseUser | null {
 }
 
 /**
- * Formats Appwrite error message
+ * Formats Appwrite error message with better details
  */
 export function formatAuthError(error: unknown): string {
   if (error instanceof Error) {
+    // Check for Appwrite-specific error properties
+    const appwriteError = error as { type?: string; code?: number; message?: string };
+    
+    // Handle common Appwrite errors with user-friendly messages
+    if (appwriteError.type === "general_unauthorized_scope") {
+      return "Authentication failed. Please ensure your platform is configured in Appwrite Console (Overview → Platforms → Add Web App with hostname 'localhost').";
+    }
+    if (appwriteError.type === "user_invalid_credentials") {
+      return "Invalid email or password. Please try again.";
+    }
+    if (appwriteError.type === "user_already_exists") {
+      return "An account with this email already exists.";
+    }
+    if (appwriteError.type === "user_blocked") {
+      return "This account has been blocked. Please contact support.";
+    }
+    if (appwriteError.type === "general_rate_limit_exceeded") {
+      return "Too many attempts. Please try again later.";
+    }
+    
     return error.message;
   }
   if (typeof error === "string") {

@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { Header, Footer } from "@/components/shared";
 
 export default function MainLayout({
   children,
@@ -6,10 +9,10 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Add Header/Navbar here later */}
-      <main>{children}</main>
-      {/* Add Footer here later */}
+    <div className="min-h-screen bg-white flex flex-col">
+      <Header />
+      <main className="flex-1">{children}</main>
+      <Footer />
     </div>
   );
 }
