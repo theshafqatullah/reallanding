@@ -1,11 +1,197 @@
+/**
+ * Consolidated Authentication Hook with Zustand Persistence
+ * 
+ * This file contains all authentication logic following Appwrite Web SDK best practices:
+ * - Client-side authentication using Appwrite Client SDK
+ * - Session persistence using Zustand middleware (localStorage)
+ * - All utility functions (formatAuthError, deriveUserType) included
+ * - Proper error handling with user-friendly messages
+ * - SSR-safe implementation with window checks
+ * 
+ * Appwrite SDK automatically stores sessions - the Zustand persist middleware
+ * provides additional app-level state persistence across page reloads.
+ * 
+ * @see https://appwrite.io/docs/products/auth/quick-start
+ * @see https://appwrite.io/docs/references/cloud/client-web/account
+ */
+
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { ID, OAuthProvider } from "appwrite";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { ID, OAuthProvider, type AppwriteException } from "appwrite";
 import { account } from "@/services/appwrite";
-import { useAuthStore } from "./store";
-import { formatAuthError, getAgentData, getAgencyData } from "./utils";
-import type { SignUpMetadata, UpdateUserData } from "./types";
+import type { Models } from "appwrite";
+
+// =====================
+// Utility Functions
+// =====================
+
+/**
+ * Format Appwrite errors into user-friendly messages
+ */
+function formatAuthError(error: unknown): string {
+  // Type guard for Appwrite exceptions
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error &&
+    "type" in error &&
+    "message" in error
+  ) {
+    const appwriteError = error as AppwriteException;
+    
+    // Map common error codes to friendly messages
+    switch (appwriteError.code) {
+      case 401:
+        if (appwriteError.type === "user_invalid_credentials") {
+          return "Invalid email or password";
+        }
+        if (appwriteError.type === "user_session_not_found") {
+          return "Session expired. Please sign in again";
+        }
+        return "Authentication failed. Please try again";
+      
+      case 409:
+        if (appwriteError.type === "user_already_exists") {
+          return "An account with this email already exists";
+        }
+        return "Conflict error. Please try again";
+      
+      case 429:
+        return "Too many requests. Please try again later";
+      
+      case 400:
+        if (appwriteError.message.includes("password")) {
+          return "Password must be at least 8 characters";
+        }
+        if (appwriteError.message.includes("email")) {
+          return "Please enter a valid email address";
+        }
+        return appwriteError.message || "Invalid request";
+      
+      default:
+        return appwriteError.message || "An error occurred. Please try again";
+    }
+  }
+
+  // Handle standard Error objects
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  // Fallback for unknown errors
+  return "An unexpected error occurred. Please try again";
+}
+
+/**
+ * Derive user type from labels array
+ */
+function deriveUserType(labels: string[]): "agent" | "agency" | "user" {
+  if (labels.includes("agent")) return "agent";
+  if (labels.includes("agency")) return "agency";
+  return "user";
+}
+
+// =====================
+// Types
+// =====================
+type BaseUser = Models.User<Models.Preferences>;
+type Session = Models.Session;
+type UserType = "agent" | "agency" | "user";
+
+interface SignUpMetadata {
+  name?: string;
+}
+
+interface UpdateUserData {
+  name?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+  prefs?: Record<string, unknown>;
+}
+
+interface AuthState {
+  user: BaseUser | null;
+  session: Session | null;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+  userType: UserType | null;
+}
+
+interface AuthActions {
+  setUser: (user: BaseUser | null) => void;
+  setSession: (session: Session | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  resetAuth: () => void;
+  hydrateFromSession: (user: BaseUser, session: Session) => void;
+}
+
+type AuthStore = AuthState & AuthActions;
+
+// =====================
+// Zustand Store with Persistence
+// =====================
+const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      // Initial State
+      user: null,
+      session: null,
+      loading: true,
+      error: null,
+      isAuthenticated: false,
+      userType: null,
+
+      // Actions
+      setUser: (user) =>
+        set({
+          user,
+          userType: user ? deriveUserType(user.labels || []) : null,
+          isAuthenticated: !!user,
+        }),
+
+      setSession: (session) => set({ session }),
+
+      setLoading: (loading) => set({ loading }),
+
+      setError: (error) => set({ error }),
+
+      resetAuth: () =>
+        set({
+          user: null,
+          session: null,
+          loading: false,
+          error: null,
+          isAuthenticated: false,
+          userType: null,
+        }),
+
+      hydrateFromSession: (user, session) =>
+        set({
+          user,
+          session,
+          loading: false,
+          error: null,
+          isAuthenticated: true,
+          userType: deriveUserType(user.labels || []),
+        }),
+    }),
+    {
+      name: "reallanding-auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        session: state.session,
+        isAuthenticated: state.isAuthenticated,
+        userType: state.userType,
+      }),
+    }
+  )
+);
 
 // =====================
 // useAuth Hook
@@ -29,8 +215,8 @@ export function useAuth() {
   // =====================
   // Derived Role Data
   // =====================
-  const agent = getAgentData(user);
-  const agency = getAgencyData(user);
+  const agent = user?.labels?.includes("agent") ? user : null;
+  const agency = user?.labels?.includes("agency") ? user : null;
 
   // =====================
   // Initialize Auth State
@@ -39,12 +225,14 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
+      
+      // Try to get current user
       const currentUser = await account.get();
-      const currentSession = await account.getSession({ sessionId: "current" });
+      const currentSession = await account.getSession('current');
+      
       hydrateFromSession(currentUser, currentSession);
     } catch (error) {
-      // No active session or error - reset auth state
-      console.log("No active session found:", error);
+      // No active session - reset auth state
       resetAuth();
     }
   }, [setLoading, setError, hydrateFromSession, resetAuth]);
@@ -58,15 +246,16 @@ export function useAuth() {
         setLoading(true);
         setError(null);
         
-        // Create session - this stores the session in the SDK
+        // Create session
         await account.createEmailPasswordSession({ email, password });
         
-        // Reload page to properly initialize with new session
-        // This ensures the session is properly loaded from storage
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
+        // Get user and session
+        const [currentUser, currentSession] = await Promise.all([
+          account.get(),
+          account.getSession('current')
+        ]);
         
+        hydrateFromSession(currentUser, currentSession);
         return { success: true };
       } catch (err) {
         const errorMessage = formatAuthError(err);
@@ -75,7 +264,7 @@ export function useAuth() {
         return { success: false, error: errorMessage };
       }
     },
-    [setLoading, setError]
+    [setLoading, setError, hydrateFromSession]
   );
 
   // =====================
@@ -98,11 +287,13 @@ export function useAuth() {
         // Auto sign in after signup
         await account.createEmailPasswordSession({ email, password });
         
-        // Reload page to properly initialize with new session
-        if (typeof window !== 'undefined') {
-          window.location.reload();
-        }
+        // Get user and session
+        const [currentUser, currentSession] = await Promise.all([
+          account.get(),
+          account.getSession('current')
+        ]);
         
+        hydrateFromSession(currentUser, currentSession);
         return { success: true };
       } catch (err) {
         const errorMessage = formatAuthError(err);
@@ -111,7 +302,7 @@ export function useAuth() {
         return { success: false, error: errorMessage };
       }
     },
-    [setLoading, setError]
+    [setLoading, setError, hydrateFromSession]
   );
 
   // =====================
@@ -121,7 +312,7 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
-      await account.deleteSession({ sessionId: "current" });
+      await account.deleteSession('current');
       resetAuth();
       return { success: true };
     } catch (err) {
@@ -139,7 +330,7 @@ export function useAuth() {
       try {
         setLoading(true);
         setError(null);
-        const url = redirectUrl || `${window.location.origin}/reset-password`;
+        const url = redirectUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`;
         await account.createRecovery({ email, url });
         setLoading(false);
         return { success: true };
@@ -201,7 +392,7 @@ export function useAuth() {
   // =====================
   const getSession = useCallback(async () => {
     try {
-      const currentSession = await account.getSession({ sessionId: "current" });
+      const currentSession = await account.getSession('current');
       setSession(currentSession);
       return { success: true, session: currentSession };
     } catch (err) {
@@ -281,8 +472,8 @@ export function useAuth() {
   // =====================
   const signInWithOAuth = useCallback(
     (provider: OAuthProvider, successUrl?: string, failureUrl?: string) => {
-      const success = successUrl || `${window.location.origin}/`;
-      const failure = failureUrl || `${window.location.origin}/signin`;
+      const success = successUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/`;
+      const failure = failureUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/signin`;
       account.createOAuth2Session({
         provider,
         success,
@@ -327,8 +518,8 @@ export function useAuth() {
       try {
         setLoading(true);
         setError(null);
-        const url = redirectUrl || `${window.location.origin}/verify-email`;
-        await account.createEmailVerification({ url });
+        const url = redirectUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-email`;
+        await account.createVerification({ url });
         setLoading(false);
         return { success: true };
       } catch (err) {
