@@ -3,7 +3,7 @@
 
 import { create } from "zustand";
 import { account } from "@/services/appwrite";
-import { ID } from "appwrite";
+import { ID, OAuthProvider } from "appwrite";
 import type { Models } from "appwrite";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -21,9 +21,17 @@ interface AuthState {
 interface AuthActions {
   // Actions
   login: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  
   register: (email: string, password: string, name?: string) => Promise<void>;
+  signUp: (email: string, password: string, name?: string) => Promise<{ success: boolean; error?: string }>;
+  
   logout: () => Promise<void>;
   signOut: () => Promise<void>; // Alias
+
+  signInWithGoogle: (successUrl?: string, failureUrl?: string) => void;
+  signInWithFacebook: (successUrl?: string, failureUrl?: string) => void;
+
   init: () => Promise<void>;
   
   forgotPassword: (email: string, redirectUrl?: string) => Promise<{ success: boolean; error?: string }>;
@@ -141,6 +149,15 @@ const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     }
   },
 
+  signIn: async (email, password) => {
+    try {
+      await get().login(email, password);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Sign in failed" };
+    }
+  },
+
   register: async (email, password, name) => {
     try {
       set({ loading: true, error: null });
@@ -165,6 +182,15 @@ const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     }
   },
 
+  signUp: async (email, password, name) => {
+    try {
+      await get().register(email, password, name);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message || "Sign up failed" };
+    }
+  },
+
   logout: async () => {
     try {
       set({ loading: true });
@@ -185,6 +211,26 @@ const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   
   signOut: async () => {
      return get().logout();
+  },
+
+  signInWithGoogle: (successUrl?: string, failureUrl?: string) => {
+    const success = successUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/`;
+    const failure = failureUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/signin`;
+    account.createOAuth2Session({
+      provider: OAuthProvider.Google,
+      success,
+      failure,
+    });
+  },
+
+  signInWithFacebook: (successUrl?: string, failureUrl?: string) => {
+    const success = successUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/`;
+    const failure = failureUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/signin`;
+    account.createOAuth2Session({
+      provider: OAuthProvider.Facebook,
+      success,
+      failure,
+    });
   },
 
   forgotPassword: async (email: string, redirectUrl?: string) => {
@@ -237,3 +283,6 @@ export const useAuth = () => {
   }, []);
 
   return store;
+};
+
+export { useAuthStore };
