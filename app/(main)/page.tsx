@@ -114,25 +114,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Labels/Roles */}
-            {user.labels && user.labels.length > 0 && (
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Roles & Labels
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {user.labels.map((label) => (
-                    <span 
-                      key={label}
-                      className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full"
-                    >
-                      {label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Preferences */}
             {user.prefs && Object.keys(user.prefs).length > 0 && (
               <div className="mt-6">
