@@ -1,692 +1,239 @@
-/**
- * Consolidated Authentication Hook with Zustand Persistence
- * 
- * This file contains all authentication logic following Appwrite Web SDK best practices:
- * - Client-side authentication using Appwrite Client SDK
- * - Session persistence using Zustand middleware (localStorage)
- * - All utility functions (formatAuthError, deriveUserType) included
- * - Proper error handling with user-friendly messages
- * - SSR-safe implementation with window checks
- * 
- * Appwrite SDK automatically stores sessions - the Zustand persist middleware
- * provides additional app-level state persistence across page reloads.
- * 
- * @see https://appwrite.io/docs/products/auth/quick-start
- * @see https://appwrite.io/docs/references/cloud/client-web/account
- */
-
+// store/auth/useAuth.ts
 "use client";
 
-import { useCallback, useEffect } from "react";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { ID, OAuthProvider, type AppwriteException } from "appwrite";
 import { account } from "@/services/appwrite";
+import { ID } from "appwrite";
 import type { Models } from "appwrite";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-// =====================
-// Utility Functions
-// =====================
-
-/**
- * Format Appwrite errors into user-friendly messages
- */
-function formatAuthError(error: unknown): string {
-  // Type guard for Appwrite exceptions
-  if (
-    error &&
-    typeof error === "object" &&
-    "code" in error &&
-    "type" in error &&
-    "message" in error
-  ) {
-    const appwriteError = error as AppwriteException;
-    
-    // Map common error codes to friendly messages
-    switch (appwriteError.code) {
-      case 401:
-        if (appwriteError.type === "user_invalid_credentials") {
-          return "Invalid email or password";
-        }
-        if (appwriteError.type === "user_session_not_found") {
-          return "Session expired. Please sign in again";
-        }
-        return "Authentication failed. Please try again";
-      
-      case 409:
-        if (appwriteError.type === "user_already_exists") {
-          return "An account with this email already exists";
-        }
-        return "Conflict error. Please try again";
-      
-      case 429:
-        return "Too many requests. Please try again later";
-      
-      case 400:
-        if (appwriteError.message.includes("password")) {
-          return "Password must be at least 8 characters";
-        }
-        if (appwriteError.message.includes("email")) {
-          return "Please enter a valid email address";
-        }
-        return appwriteError.message || "Invalid request";
-      
-      default:
-        return appwriteError.message || "An error occurred. Please try again";
-    }
-  }
-
-  // Handle standard Error objects
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  // Fallback for unknown errors
-  return "An unexpected error occurred. Please try again";
-}
-
-/**
- * Derive user type - simplified to always return 'user'
- */
-function deriveUserType(): "user" {
-  return "user";
-}
-
-// =====================
-// Types
-// =====================
-type BaseUser = Models.User<Models.Preferences>;
-type Session = Models.Session;
-type UserType = "agent" | "agency" | "user";
-
-interface SignUpMetadata {
-  name?: string;
-}
-
-interface UpdateUserData {
-  name?: string;
-  email?: string;
-  phone?: string;
-  password?: string;
-  prefs?: Record<string, unknown>;
-}
-
+// Define the shape of our Auth Store
 interface AuthState {
-  user: BaseUser | null;
-  session: Session | null;
+  user: Models.User<Models.Preferences> | null;
+  session: Models.Session | null;
+  userType: 'agent' | 'agency' | 'user' | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  userType: UserType | null;
 }
 
 interface AuthActions {
-  setUser: (user: BaseUser | null) => void;
-  setSession: (session: Session | null) => void;
+  // Actions
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name?: string) => Promise<void>;
+  logout: () => Promise<void>;
+  signOut: () => Promise<void>; // Alias
+  init: () => Promise<void>;
+  
+  forgotPassword: (email: string, redirectUrl?: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (userId: string, secret: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  clearAuthError: () => void;
+
+  // Setters
+  setUser: (user: Models.User<Models.Preferences> | null) => void;
+  setSession: (session: Models.Session | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  resetAuth: () => void;
-  hydrateFromSession: (user: BaseUser, session: Session) => void;
 }
 
-type AuthStore = AuthState & AuthActions;
+// Helper to determine user type
+function deriveUserType(user: Models.User<Models.Preferences> | null): 'agent' | 'agency' | 'user' | null {
+  if (!user) return null;
+  // Logic to determine type based on user labels or prefs can go here.
+  // For now, default to 'user'
+  return 'user';
+}
 
-// =====================
-// Zustand Store with Persistence
-// =====================
-const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      // Initial State
-      user: null,
-      session: null,
-      loading: true,
-      error: null,
-      isAuthenticated: false,
-      userType: null,
+// Create the Zustand store
+// Using vanilla store for the logic, hooks will consume it
+const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
+  user: null,
+  session: null,
+  userType: null,
+  loading: true,
+  error: null,
+  isAuthenticated: false,
 
-      // Actions
-      setUser: (user) =>
-        set({
-          user,
-          userType: user ? deriveUserType() : null,
-          isAuthenticated: !!user,
-        }),
+  setUser: (user) => set({ user, isAuthenticated: !!user, userType: deriveUserType(user) }),
+  setSession: (session) => set({ session }),
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error }),
+  clearAuthError: () => set({ error: null }),
 
-      setSession: (session) => set({ session }),
-
-      setLoading: (loading) => set({ loading }),
-
-      setError: (error) => set({ error }),
-
-      resetAuth: () =>
-        set({
-          user: null,
-          session: null,
-          loading: false,
-          error: null,
-          isAuthenticated: false,
-          userType: null,
-        }),
-
-      hydrateFromSession: (user, session) =>
-        set({
-          user,
-          session,
-          loading: false,
-          error: null,
-          isAuthenticated: true,
-          userType: deriveUserType(),
-        }),
-    }),
-    {
-      name: "reallanding-auth-storage",
-      partialize: (state) => ({
-        user: state.user,
-        session: state.session,
-        isAuthenticated: state.isAuthenticated,
-        userType: state.userType,
-      }),
-    }
-  )
-);
-
-// =====================
-// useAuth Hook
-// =====================
-export function useAuth() {
-  const {
-    user,
-    session,
-    loading,
-    error,
-    isAuthenticated,
-    userType,
-    setUser,
-    setSession,
-    setLoading,
-    setError,
-    resetAuth,
-    hydrateFromSession,
-  } = useAuthStore();
-
-  // =====================
-  // Initialize Auth State
-  // =====================
-  const initializeAuth = useCallback(async () => {
+  init: async () => {
     try {
-      // Don't set global loading here to avoid flashing, state handles it
+      // Don't set loading=true here to avoid flash if we solve it quickly
+      // or if we are already loaded. 
       
-      console.log('[AUTH] Checking session status...');
+      // 1. Check for active session
+      // This will throw if no session exists (guest)
+      const user = await account.get();
       
-      // Try to get current user from Appwrite
-      // This will throw 401 if user is guest - this is EXPECTED for unauthenticated users
-      const currentUser = await account.get();
-      const currentSession = await account.getSession('current');
-      
-      // Only hydrate if we got valid data
-      if (currentUser && currentSession) {
-        console.log('[AUTH] Session found, hydrating...');
-        hydrateFromSession(currentUser, currentSession);
-      } else {
-        resetAuth();
+      // 2. If successful, get the session details (optional)
+      let session: Models.Session | null = null;
+      try {
+        session = await account.getSession('current');
+      } catch (e) {
+        console.warn('[AUTH] Could not fetch session details', e);
       }
+
+      set({ 
+        user, 
+        session, 
+        userType: deriveUserType(user),
+        isAuthenticated: true,
+        loading: false, 
+        error: null 
+      });
+      console.log('[AUTH] Initialized user:', user.$id);
     } catch (error: any) {
-      // Check for 401 Unauthorized or missing scopes - this effectively means "Guest"
-      if (error?.code === 401 || error?.type === 'general_unauthorized_scope' || error?.message?.includes('missing scopes')) {
-        console.log('[AUTH] User is guest (no session)');
-      } else {
-        console.warn('[AUTH] Session check failed:', error);
-      }
+      // Expected error for guests
+      set({ 
+        user: null, 
+        session: null, 
+        userType: null,
+        isAuthenticated: false,
+        loading: false,
+        error: null 
+      });
       
-      // Always reset auth on error ensuring clean state
-      resetAuth();
-    }
-  }, [hydrateFromSession, resetAuth]);
-
-  // =====================
-  // Initialize on Mount - Only if not already authenticated
-  // =====================
-  useEffect(() => {
-    console.log('[AUTH] useEffect running, user:', user ? 'exists' : 'null');
-    // Only initialize if we don't already have a user from persisted state
-    // This prevents overriding the Zustand persisted state unnecessarily
-    if (!user) {
-      console.log('[AUTH] No persisted user, calling initializeAuth');
-      initializeAuth();
-    } else {
-      // We have persisted state, just set loading to false
-      console.log('[AUTH] Using persisted user:', user.$id);
-      setLoading(false);
-    }
-  }, []); // Empty deps - only run once on mount
-
-  // =====================
-  // Sign In
-  // =====================
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('[AUTH] Starting sign in...');
-        
-        // Create session - this returns the session object and stores it in the SDK
-        const session = await account.createEmailPasswordSession({ email, password });
-        console.log('[AUTH] Session created:', session.$id);
-        
-        // Small delay to ensure SDK has stored the session properly
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Get user data - should now work with the stored session
-        const currentUser = await account.get();
-        console.log('[AUTH] User fetched:', currentUser.$id, 'Email:', currentUser.email);
-        
-        // Hydrate state with user and session
-        hydrateFromSession(currentUser, session);
-        console.log('[AUTH] State hydrated successfully');
-        
-        return { success: true };
-      } catch (err) {
-        console.error('[AUTH] Sign in error:', err);
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
+      // Only log if it's NOT a 401 (which is normal for guests)
+      if (error?.code !== 401 && error?.type !== 'general_unauthorized_scope' && !error?.message?.includes('missing scopes')) {
+        console.error('[AUTH] Init error:', error);
+      } else {
+        console.log('[AUTH] User is guest (no session)');
       }
-    },
-    [setLoading, setError, hydrateFromSession]
-  );
+    }
+  },
 
-  // =====================
-  // Sign Up
-  // =====================
-  const signUp = useCallback(
-    async (email: string, password: string, metadata?: SignUpMetadata) => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('[AUTH] Starting sign up...');
-        
-        // Create account
-        await account.create({
+  login: async (email, password) => {
+    try {
+      set({ loading: true, error: null });
+      
+      // 1. Create the session
+      const session = await account.createEmailPasswordSession({
+          email,
+          password
+      });
+      console.log('[AUTH] Session created:', session.$id);
+      
+      // 2. Fetch the user details immediately to confirm session validity
+      const user = await account.get();
+      
+      set({ 
+        user, 
+        session, 
+        userType: deriveUserType(user),
+        isAuthenticated: true,
+        loading: false,
+        error: null
+      });
+      console.log('[AUTH] Login success user:', user.$id);
+    } catch (error: any) {
+      console.error('[AUTH] Login failed:', error);
+      set({ 
+        loading: false, 
+        error: error.message || 'Login failed',
+        isAuthenticated: false
+      });
+      throw error;
+    }
+  },
+
+  register: async (email, password, name) => {
+    try {
+      set({ loading: true, error: null });
+      
+      // 1. Create the account
+      await account.create({
           userId: ID.unique(),
           email,
           password,
-          name: metadata?.name,
-        });
-        console.log('[AUTH] Account created');
-
-        // Auto sign in after signup - this returns the session
-        const session = await account.createEmailPasswordSession({ email, password });
-        console.log('[AUTH] Session created:', session.$id);
-        
-        // Small delay to ensure SDK has stored the session properly
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Get user data
-        const currentUser = await account.get();
-        console.log('[AUTH] User fetched:', currentUser.$id, 'Email:', currentUser.email);
-        
-        // Hydrate state with user and session
-        hydrateFromSession(currentUser, session);
-        console.log('[AUTH] State hydrated successfully');
-        
-        return { success: true };
-      } catch (err) {
-        console.error('[AUTH] Sign up error:', err);
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError, hydrateFromSession]
-  );
-
-  // =====================
-  // Sign Out
-  // =====================
-  const signOut = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await account.deleteSession('current');
-      resetAuth();
-      return { success: true };
-    } catch (err) {
-      // Even if delete fails, reset auth locally
-      resetAuth();
-      return { success: true };
+          name
+      });
+      
+      // 2. Automatically log them in
+      await get().login(email, password);
+    } catch (error: any) {
+      console.error('[AUTH] Registration failed:', error);
+      set({ 
+        loading: false, 
+        error: error.message || 'Registration failed' 
+      });
+      throw error;
     }
-  }, [setLoading, setError, resetAuth]);
+  },
 
-  // =====================
-  // Forgot Password
-  // =====================
-  const forgotPassword = useCallback(
-    async (email: string, redirectUrl?: string) => {
-      try {
-        setLoading(true);
-        setError(null);
-        const url = redirectUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`;
-        await account.createRecovery({ email, url });
-        setLoading(false);
-        return { success: true };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError]
-  );
+  logout: async () => {
+    try {
+      set({ loading: true });
+      await account.deleteSession('current');
+    } catch (error) {
+      console.warn('[AUTH] Logout warning:', error);
+    } finally {
+      set({ 
+        user: null, 
+        session: null, 
+        userType: null,
+        isAuthenticated: false,
+        loading: false,
+        error: null
+      });
+    }
+  },
+  
+  signOut: async () => {
+     return get().logout();
+  },
 
-  // =====================
-  // Reset Password
-  // =====================
-  const resetPassword = useCallback(
-    async (userId: string, secret: string, newPassword: string) => {
+  forgotPassword: async (email: string, redirectUrl?: string) => {
+    try {
+      set({ loading: true, error: null });
+      const url = redirectUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`;
+      await account.createRecovery({ email, url });
+      set({ loading: false });
+      return { success: true };
+    } catch (err: any) {
+      const errorMessage = err.message || "Failed to send reset email";
+      set({ loading: false, error: errorMessage });
+      return { success: false, error: errorMessage };
+    }
+  },
+
+  resetPassword: async (userId: string, secret: string, password: string) => {
       try {
-        setLoading(true);
-        setError(null);
+        set({ loading: true, error: null });
         await account.updateRecovery({
           userId,
           secret,
-          password: newPassword,
+          password,
         });
-        setLoading(false);
+        set({ loading: false });
+        // Optionally login immediately? No, let them login manually usually.
         return { success: true };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
+      } catch (err: any) {
+        const errorMessage = err.message || "Failed to reset password";
+        set({ loading: false, error: errorMessage });
         return { success: false, error: errorMessage };
       }
-    },
-    [setLoading, setError]
-  );
+  }
 
-  // =====================
-  // Refresh User
-  // =====================
-  const refreshUser = useCallback(async () => {
-    try {
-      setLoading(true);
-      const currentUser = await account.get();
-      setUser(currentUser);
-      setLoading(false);
-      return { success: true, user: currentUser };
-    } catch (err) {
-      const errorMessage = formatAuthError(err);
-      setError(errorMessage);
-      setLoading(false);
-      return { success: false, error: errorMessage };
-    }
-  }, [setLoading, setUser, setError]);
+}));
 
-  // =====================
-  // Get Session
-  // =====================
-  const getSession = useCallback(async () => {
-    try {
-      const currentSession = await account.getSession('current');
-      setSession(currentSession);
-      return { success: true, session: currentSession };
-    } catch (err) {
-      const errorMessage = formatAuthError(err);
-      return { success: false, error: errorMessage };
-    }
-  }, [setSession]);
+// Init flag to prevent double initialization in Strict Mode
+let isInitialized = false;
 
-  // =====================
-  // Update User
-  // =====================
-  const updateUser = useCallback(
-    async (data: UpdateUserData) => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Update name if provided
-        if (data.name) {
-          await account.updateName({ name: data.name });
-        }
-
-        // Update email if provided (requires password)
-        if (data.email && data.password) {
-          await account.updateEmail({ email: data.email, password: data.password });
-        }
-
-        // Update phone if provided (requires password)
-        if (data.phone && data.password) {
-          await account.updatePhone({ phone: data.phone, password: data.password });
-        }
-
-        // Update preferences if provided
-        if (data.prefs) {
-          await account.updatePrefs({ prefs: data.prefs });
-        }
-
-        // Refresh user data
-        const updatedUser = await account.get();
-        setUser(updatedUser);
-        setLoading(false);
-        
-        return { success: true, user: updatedUser };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError, setUser]
-  );
-
-  // =====================
-  // Update Password
-  // =====================
-  const updatePassword = useCallback(
-    async (newPassword: string, oldPassword: string) => {
-      try {
-        setLoading(true);
-        setError(null);
-        await account.updatePassword({ password: newPassword, oldPassword });
-        setLoading(false);
-        return { success: true };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError]
-  );
-
-  // =====================
-  // OAuth Sign In
-  // =====================
-  const signInWithOAuth = useCallback(
-    (provider: OAuthProvider, successUrl?: string, failureUrl?: string) => {
-      const success = successUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/`;
-      const failure = failureUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/signin`;
-      account.createOAuth2Session({
-        provider,
-        success,
-        failure,
-      });
-    },
-    []
-  );
-
-  // =====================
-  // Sign In with Google
-  // =====================
-  const signInWithGoogle = useCallback(
-    (successUrl?: string, failureUrl?: string) => {
-      signInWithOAuth(OAuthProvider.Google, successUrl, failureUrl);
-    },
-    [signInWithOAuth]
-  );
-
-  // =====================
-  // Sign In with Facebook
-  // =====================
-  const signInWithFacebook = useCallback(
-    (successUrl?: string, failureUrl?: string) => {
-      signInWithOAuth(OAuthProvider.Facebook, successUrl, failureUrl);
-    },
-    [signInWithOAuth]
-  );
-
-  // =====================
-  // Clear Auth Error
-  // =====================
-  const clearAuthError = useCallback(() => {
-    setError(null);
-  }, [setError]);
-
-  // =====================
-  // Send Email Verification
-  // =====================
-  const sendEmailVerification = useCallback(
-    async (redirectUrl?: string) => {
-      try {
-        setLoading(true);
-        setError(null);
-        const url = redirectUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/verify-email`;
-        await account.createVerification({ url });
-        setLoading(false);
-        return { success: true };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError]
-  );
-
-  // =====================
-  // Verify Email
-  // =====================
-  const verifyEmail = useCallback(
-    async (userId: string, secret: string) => {
-      try {
-        setLoading(true);
-        setError(null);
-        await account.updateEmailVerification({ userId, secret });
-        await refreshUser();
-        return { success: true };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError, refreshUser]
-  );
-
-  // =====================
-  // Delete All Sessions (Logout Everywhere)
-  // =====================
-  const signOutAll = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      await account.deleteSessions();
-      resetAuth();
-      return { success: true };
-    } catch (err) {
-      const errorMessage = formatAuthError(err);
-      setError(errorMessage);
-      setLoading(false);
-      return { success: false, error: errorMessage };
-    }
-  }, [setLoading, setError, resetAuth]);
-
-  // =====================
-  // Get User Preferences
-  // =====================
-  const getPreferences = useCallback(async () => {
-    try {
-      const prefs = await account.getPrefs();
-      return { success: true, prefs };
-    } catch (err) {
-      const errorMessage = formatAuthError(err);
-      return { success: false, error: errorMessage };
+// Export Hook
+export const useAuth = () => {
+  const store = useAuthStore();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!isInitialized) {
+        store.init();
+        isInitialized = true;
     }
   }, []);
 
-  // =====================
-  // Update User Preferences
-  // =====================
-  // Update User Preferences
-  // =====================
-  const updatePreferences = useCallback(
-    async (prefs: Record<string, unknown>) => {
-      try {
-        setLoading(true);
-        setError(null);
-        const result = await account.updatePrefs({ prefs });
-        setLoading(false);
-        return { success: true, prefs: result };
-      } catch (err) {
-        const errorMessage = formatAuthError(err);
-        setError(errorMessage);
-        setLoading(false);
-        return { success: false, error: errorMessage };
-      }
-    },
-    [setLoading, setError]
-  );
-
-  // =====================
-  // Return Hook Values
-  // =====================
-  return {
-    // State
-    user,
-    session,
-    loading,
-    error,
-    isAuthenticated,
-    userType,
-
-    // Auth Functions
-    signIn,
-    signUp,
-    signOut,
-    signOutAll,
-    forgotPassword,
-    resetPassword,
-    refreshUser,
-    getSession,
-    updateUser,
-    updatePassword,
-    clearAuthError,
-
-    // OAuth Functions
-    signInWithOAuth,
-    signInWithGoogle,
-    signInWithFacebook,
-
-    // Email Verification
-    sendEmailVerification,
-    verifyEmail,
-
-    // Preferences
-    getPreferences,
-    updatePreferences,
-
-    // Re-initialize
-    initializeAuth,
-  };
-}
+  return store;
