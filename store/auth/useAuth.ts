@@ -215,31 +215,34 @@ export function useAuth() {
   // =====================
   const initializeAuth = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
+      // Don't set global loading here to avoid flashing, state handles it
       
-      console.log('[AUTH] Initializing auth state...');
+      console.log('[AUTH] Checking session status...');
       
       // Try to get current user from Appwrite
+      // This will throw 401 if user is guest - this is EXPECTED for unauthenticated users
       const currentUser = await account.get();
       const currentSession = await account.getSession('current');
       
-      console.log('[AUTH] Found existing session:', currentSession.$id);
-      
       // Only hydrate if we got valid data
       if (currentUser && currentSession) {
+        console.log('[AUTH] Session found, hydrating...');
         hydrateFromSession(currentUser, currentSession);
-        console.log('[AUTH] Auth state initialized successfully');
       } else {
-        console.log('[AUTH] No valid session found, resetting auth');
         resetAuth();
       }
-    } catch (error) {
-      console.log('[AUTH] No active session, resetting auth state');
-      // No active session in Appwrite - reset auth state
+    } catch (error: any) {
+      // Check for 401 Unauthorized or missing scopes - this effectively means "Guest"
+      if (error?.code === 401 || error?.type === 'general_unauthorized_scope' || error?.message?.includes('missing scopes')) {
+        console.log('[AUTH] User is guest (no session)');
+      } else {
+        console.warn('[AUTH] Session check failed:', error);
+      }
+      
+      // Always reset auth on error ensuring clean state
       resetAuth();
     }
-  }, [setLoading, setError, hydrateFromSession, resetAuth]);
+  }, [hydrateFromSession, resetAuth]);
 
   // =====================
   // Initialize on Mount - Only if not already authenticated
@@ -269,13 +272,16 @@ export function useAuth() {
         
         console.log('[AUTH] Starting sign in...');
         
-        // Create session - this returns the session object
+        // Create session - this returns the session object and stores it in the SDK
         const session = await account.createEmailPasswordSession({ email, password });
         console.log('[AUTH] Session created:', session.$id);
         
-        // Get user data - the session should now be stored by Appwrite SDK
+        // Small delay to ensure SDK has stored the session properly
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Get user data - should now work with the stored session
         const currentUser = await account.get();
-        console.log('[AUTH] User fetched:', currentUser.$id);
+        console.log('[AUTH] User fetched:', currentUser.$id, 'Email:', currentUser.email);
         
         // Hydrate state with user and session
         hydrateFromSession(currentUser, session);
@@ -302,6 +308,8 @@ export function useAuth() {
         setLoading(true);
         setError(null);
         
+        console.log('[AUTH] Starting sign up...');
+        
         // Create account
         await account.create({
           userId: ID.unique(),
@@ -309,17 +317,26 @@ export function useAuth() {
           password,
           name: metadata?.name,
         });
+        console.log('[AUTH] Account created');
 
         // Auto sign in after signup - this returns the session
         const session = await account.createEmailPasswordSession({ email, password });
+        console.log('[AUTH] Session created:', session.$id);
+        
+        // Small delay to ensure SDK has stored the session properly
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         // Get user data
         const currentUser = await account.get();
+        console.log('[AUTH] User fetched:', currentUser.$id, 'Email:', currentUser.email);
         
         // Hydrate state with user and session
         hydrateFromSession(currentUser, session);
+        console.log('[AUTH] State hydrated successfully');
+        
         return { success: true };
       } catch (err) {
+        console.error('[AUTH] Sign up error:', err);
         const errorMessage = formatAuthError(err);
         setError(errorMessage);
         setLoading(false);
