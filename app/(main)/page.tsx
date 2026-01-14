@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/store/auth";
@@ -8,9 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default function Home() {
-  const { user, isAuthenticated, loading, signOut, userType } = useAuth();
+  const { user, isAuthenticated, loading, signOut } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Show loading state until component is mounted and auth is resolved
+  if (!mounted || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -83,21 +89,6 @@ export default function Home() {
                 <p className="text-gray-900 text-base">
                   {formatDate(user.$createdAt)}
                 </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Account Type
-                </label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                  userType === 'agency' 
-                    ? 'bg-purple-100 text-purple-800'
-                    : userType === 'agent'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {userType === 'agency' ? 'Agency' : userType === 'agent' ? 'Agent' : 'User'}
-                </span>
               </div>
               
               <div>

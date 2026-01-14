@@ -9,23 +9,24 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/store/auth";
 
 export default function ForgotPasswordPage() {
-  const { forgotPassword, loading, clearAuthError } = useAuth();
+  const { requestPasswordRecovery, loading, clearError } = useAuth();
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearAuthError();
+    clearError();
     
-    const result = await forgotPassword(email);
-    if (result.success) {
+    try {
+      await requestPasswordRecovery(email);
       setEmailSent(true);
       toast.success("Reset email sent!", {
         description: `A password reset link has been sent to ${email}.`
       });
-    } else {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Please check your email address and try again.";
       toast.error("Failed to send reset email", {
-        description: result.error || "Please check your email address and try again."
+        description: errorMessage
       });
     }
   };

@@ -12,7 +12,7 @@ import { useAuth } from "@/store/auth";
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { resetPassword, loading, clearAuthError } = useAuth();
+  const { confirmPasswordRecovery, loading, clearError } = useAuth();
   
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearAuthError();
+    clearError();
     setValidationError("");
 
     if (password !== confirmPassword) {
@@ -58,15 +58,17 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    const result = await resetPassword(userId, secret, password);
-    if (result.success) {
+    try {
+      await confirmPasswordRecovery({ userId, secret, password }, "/signin");
+      
       setResetSuccess(true);
       toast.success("Password reset successfully!", {
         description: "You can now sign in with your new password."
       });
-    } else {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Please try again or request a new reset link.";
       toast.error("Password reset failed", {
-        description: result.error || "Please try again or request a new reset link."
+        description: errorMessage
       });
     }
   };

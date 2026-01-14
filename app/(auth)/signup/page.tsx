@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { OAuthProvider } from "appwrite";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -13,7 +14,7 @@ import { useAuth } from "@/store/auth";
 
 export default function SignUpPage() {
   const router = useRouter();
-  const { signUp, signInWithGoogle, signInWithFacebook, loading, clearAuthError } = useAuth();
+  const { signUp, signInWithGoogle, signInWithOAuth, loading, clearError } = useAuth();
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,17 +22,18 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearAuthError();
+    clearError();
     
-    const result = await signUp(email, password, { name });
-    if (result.success) {
+    try {
+      await signUp({ email, password, name });
       toast.success("Account created successfully!", {
         description: "Welcome! You are now signed in."
       });
       router.push("/");
-    } else {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Please try again with different credentials.";
       toast.error("Sign up failed", {
-        description: result.error || "Please try again with different credentials."
+        description: errorMessage
       });
     }
   };
@@ -47,7 +49,7 @@ export default function SignUpPage() {
     toast.info("Redirecting to Facebook...", {
       description: "Please complete the sign up process."
     });
-    signInWithFacebook();
+    signInWithOAuth(OAuthProvider.Facebook);
   };
 
   return (

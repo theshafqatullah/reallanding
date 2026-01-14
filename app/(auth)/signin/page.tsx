@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { OAuthProvider } from "appwrite";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -13,24 +14,25 @@ import { useAuth } from "@/store/auth";
 
 export default function SignInPage() {
   const router = useRouter();
-  const { signIn, signInWithGoogle, signInWithFacebook, loading, clearAuthError } = useAuth();
+  const { signIn, signInWithGoogle, signInWithOAuth, loading, clearError } = useAuth();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    clearAuthError();
+    clearError();
     
-    const result = await signIn(email, password);
-    if (result.success) {
+    try {
+      await signIn({ email, password });
       toast.success("Welcome back!", {
         description: "You have been signed in successfully."
       });
       router.push("/");
-    } else {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Please check your credentials and try again.";
       toast.error("Sign in failed", {
-        description: result.error || "Please check your credentials and try again."
+        description: errorMessage
       });
     }
   };
@@ -46,7 +48,7 @@ export default function SignInPage() {
     toast.info("Redirecting to Facebook...", {
       description: "Please complete the sign in process."
     });
-    signInWithFacebook();
+    signInWithOAuth(OAuthProvider.Facebook);
   };
 
   return (

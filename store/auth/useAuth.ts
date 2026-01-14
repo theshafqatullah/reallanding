@@ -1,226 +1,342 @@
-// store/auth/useAuth.ts
 "use client";
 
-import { create } from "zustand";
-import { account } from "@/services/appwrite";
-import { ID, OAuthProvider } from "appwrite";
-import type { Models } from "appwrite";
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { OAuthProvider } from "appwrite";
+import {
+  useAuthStore,
+  useUser,
+  useSession,
+  useIsAuthenticated,
+  useAuthLoading,
+  useAuthError,
+  useUserType,
+  useAuthStatus,
+  useAuthActions,
+  SignUpCredentials,
+  SignInCredentials,
+  PasswordRecoveryParams,
+  ResetPasswordParams,
+} from "./index";
 
-// Define the shape of our Auth Store
-interface AuthState {
-  user: Models.User<Models.Preferences> | null;
-  session: Models.Session | null;
-  loading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
+// ============================================================================
+// Main useAuth Hook
+// ============================================================================
+
+export interface UseAuthOptions {
+  /**
+   * If true, redirects unauthenticated users to signin page
+   */
+  requireAuth?: boolean;
+  /**
+   * If true, redirects authenticated users away (useful for auth pages)
+   */
+  redirectIfAuthenticated?: boolean;
+  /**
+   * Custom redirect URL for unauthenticated users
+   */
+  redirectTo?: string;
+  /**
+   * Custom redirect URL for authenticated users
+   */
+  redirectAuthenticatedTo?: string;
 }
 
-interface AuthActions {
-  // Core Actions
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, name?: string) => Promise<{ success: boolean; error?: string }>;
-  signOut: () => Promise<void>;
-  
-  // Initialization
-  checkAuth: () => Promise<void>;
-  
-  // OAuth
-  signInWithGoogle: (successUrl?: string, failureUrl?: string) => void;
-  signInWithFacebook: (successUrl?: string, failureUrl?: string) => void;
+export function useAuth(options: UseAuthOptions = {}) {
+  const {
+    requireAuth = false,
+    redirectIfAuthenticated = false,
+    redirectTo = "/signin",
+    redirectAuthenticatedTo = "/",
+  } = options;
 
-  // Password Management
-  forgotPassword: (email: string, redirectUrl?: string) => Promise<{ success: boolean; error?: string }>;
-  resetPassword: (userId: string, secret: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  
-  // State helpers
-  clearAuthError: () => void;
-}
-
-// Create the Zustand store
-const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
-  user: null,
-  session: null,
-  loading: true,
-  error: null,
-  isAuthenticated: false,
-
-  clearAuthError: () => set({ error: null }),
-
-  checkAuth: async () => {
-    try {
-      // Don't modify loading state drastically to avoid flashing
-      // but ensure we are verifying the session
-      
-      const user = await account.get();
-      
-      // Optional: Fetch session details for metadata
-      let session: Models.Session | null = null;
-      try {
-        session = await account.getSession('current');
-      } catch (e) {
-        // Ignore session fetch error if user is already retrieved
-      }
-
-      set({ 
-        user, 
-        session, 
-        isAuthenticated: true,
-        loading: false, 
-        error: null 
-      });
-    } catch (error: any) {
-      // If 401, it means we are just a guest.
-      set({ 
-        user: null, 
-        session: null, 
-        isAuthenticated: false,
-        loading: false, 
-        error: null 
-      });
-    }
-  },
-
-  signIn: async (email, password) => {
-    try {
-      set({ loading: true, error: null });
-      
-      await account.createEmailPasswordSession({
-          email,
-          password
-      });
-      
-      // Verify immediately
-      await get().checkAuth();
-      return { success: true };
-    } catch (error: any) {
-      const msg = error?.message || 'Sign in failed';
-      set({ 
-        loading: false, 
-        error: msg,
-        isAuthenticated: false
-      });
-      return { success: false, error: msg };
-    }
-  },
-
-  signUp: async (email, password, name) => {
-    try {
-      set({ loading: true, error: null });
-      
-      await account.create({
-          userId: ID.unique(),
-          email,
-          password,
-          name
-      });
-      
-      // Auto login
-      return await get().signIn(email, password);
-    } catch (error: any) {
-      const msg = error?.message || 'Registration failed';
-      set({ 
-        loading: false, 
-        error: msg 
-      });
-      return { success: false, error: msg };
-    }
-  },
-
-  signOut: async () => {
-    try {
-      set({ loading: true });
-      await account.deleteSession('current');
-    } catch (error) {
-      console.warn('[AUTH] Logout warning:', error);
-    } finally {
-      set({ 
-        user: null, 
-        session: null, 
-        isAuthenticated: false,
-        loading: false,
-        error: null
-      });
-    }
-  },
-
-  signInWithGoogle: (successUrl?: string, failureUrl?: string) => {
-    const success = successUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/`;
-    const failure = failureUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/signin`;
-    account.createOAuth2Session({
-      provider: OAuthProvider.Google,
-      success,
-      failure,
-    });
-  },
-
-  signInWithFacebook: (successUrl?: string, failureUrl?: string) => {
-    const success = successUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/`;
-    const failure = failureUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/signin`;
-    account.createOAuth2Session({
-      provider: OAuthProvider.Facebook,
-      success,
-      failure,
-    });
-  },
-
-  forgotPassword: async (email: string, redirectUrl?: string) => {
-    try {
-      set({ loading: true, error: null });
-      const url = redirectUrl || `${typeof window !== 'undefined' ? window.location.origin : ''}/reset-password`;
-      await account.createRecovery({ email, url });
-      set({ loading: false });
-      return { success: true };
-    } catch (err: any) {
-      set({ loading: false, error: err.message });
-      return { success: false, error: err.message };
-    }
-  },
-
-  resetPassword: async (userId: string, secret: string, password: string) => {
-      try {
-        set({ loading: true, error: null });
-        await account.updateRecovery({
-          userId,
-          secret,
-          password,
-        });
-        set({ loading: false });
-        return { success: true };
-      } catch (err: any) {
-        set({ loading: false, error: err.message });
-        return { success: false, error: err.message };
-      }
-  }
-
-}));
-
-// Init flag
-let isInitialized = false;
-
-// Hook
-export const useAuth = () => {
-  const store = useAuthStore();
   const router = useRouter();
-  
+
+  // State
+  const user = useUser();
+  const session = useSession();
+  const isAuthenticated = useIsAuthenticated();
+  const loading = useAuthLoading();
+  const error = useAuthError();
+  const userType = useUserType();
+
+  // Actions from store
+  const {
+    signUp: storeSignUp,
+    signIn: storeSignIn,
+    signOut: storeSignOut,
+    signOutAllSessions,
+    signInWithGoogle: storeSignInWithGoogle,
+    signInWithGithub: storeSignInWithGithub,
+    signInWithOAuth: storeSignInWithOAuth,
+    getCurrentUser,
+    getCurrentSession,
+    refreshSession,
+    listSessions,
+    deleteSession,
+    requestPasswordRecovery: storeRequestPasswordRecovery,
+    confirmPasswordRecovery: storeConfirmPasswordRecovery,
+    sendVerificationEmail,
+    confirmEmailVerification,
+    updateName,
+    updateEmail,
+    updatePassword,
+    updatePreferences,
+    getPreferences,
+    initialize,
+    clearError,
+    reset,
+  } = useAuthActions();
+
+  // Initialize auth state on mount
   useEffect(() => {
-    if (!isInitialized) {
-        store.checkAuth();
-        isInitialized = true;
+    initialize();
+  }, [initialize]);
+
+  // Handle auth redirects
+  useEffect(() => {
+    if (loading) return;
+
+    if (requireAuth && !isAuthenticated) {
+      router.push(redirectTo);
     }
-  }, []);
+
+    if (redirectIfAuthenticated && isAuthenticated) {
+      router.push(redirectAuthenticatedTo);
+    }
+  }, [
+    loading,
+    isAuthenticated,
+    requireAuth,
+    redirectIfAuthenticated,
+    redirectTo,
+    redirectAuthenticatedTo,
+    router,
+  ]);
+
+  // =========================================================================
+  // Enhanced Actions with Navigation
+  // =========================================================================
+
+  const signUp = useCallback(
+    async (credentials: SignUpCredentials, redirectAfter?: string) => {
+      const user = await storeSignUp(credentials);
+      if (redirectAfter) {
+        router.push(redirectAfter);
+      }
+      return user;
+    },
+    [storeSignUp, router]
+  );
+
+  const signIn = useCallback(
+    async (credentials: SignInCredentials, redirectAfter?: string) => {
+      const session = await storeSignIn(credentials);
+      if (redirectAfter) {
+        router.push(redirectAfter);
+      }
+      return session;
+    },
+    [storeSignIn, router]
+  );
+
+  const signOut = useCallback(
+    async (redirectAfter?: string) => {
+      await storeSignOut();
+      if (redirectAfter) {
+        router.push(redirectAfter);
+      } else {
+        router.push("/signin");
+      }
+    },
+    [storeSignOut, router]
+  );
+
+  const signInWithGoogle = useCallback(
+    (successUrl?: string, failureUrl?: string) => {
+      storeSignInWithGoogle(
+        successUrl || redirectAuthenticatedTo,
+        failureUrl || redirectTo
+      );
+    },
+    [storeSignInWithGoogle, redirectAuthenticatedTo, redirectTo]
+  );
+
+  const signInWithGithub = useCallback(
+    (successUrl?: string, failureUrl?: string) => {
+      storeSignInWithGithub(
+        successUrl || redirectAuthenticatedTo,
+        failureUrl || redirectTo
+      );
+    },
+    [storeSignInWithGithub, redirectAuthenticatedTo, redirectTo]
+  );
+
+  const signInWithOAuth = useCallback(
+    (provider: OAuthProvider, successUrl?: string, failureUrl?: string) => {
+      storeSignInWithOAuth(
+        provider,
+        successUrl || redirectAuthenticatedTo,
+        failureUrl || redirectTo
+      );
+    },
+    [storeSignInWithOAuth, redirectAuthenticatedTo, redirectTo]
+  );
+
+  const requestPasswordRecovery = useCallback(
+    async (email: string, redirectUrl?: string) => {
+      const url =
+        redirectUrl ||
+        (typeof window !== "undefined"
+          ? `${window.location.origin}/reset-password`
+          : "/reset-password");
+
+      return storeRequestPasswordRecovery({ email, redirectUrl: url });
+    },
+    [storeRequestPasswordRecovery]
+  );
+
+  const confirmPasswordRecovery = useCallback(
+    async (params: ResetPasswordParams, redirectAfter?: string) => {
+      const token = await storeConfirmPasswordRecovery(params);
+      if (redirectAfter) {
+        router.push(redirectAfter);
+      }
+      return token;
+    },
+    [storeConfirmPasswordRecovery, router]
+  );
+
+  // =========================================================================
+  // Computed Properties
+  // =========================================================================
+
+  const isAgency = userType === "agency";
+  const isAgent = userType === "agent";
+  const isRegularUser = userType === "user";
+  const isVerified = user?.emailVerification ?? false;
 
   return {
-    ...store,
-    // Add compatibility aliases if the UI depends on them
-    login: store.signIn,
-    register: store.signUp,
-    logout: store.signOut,
-    init: store.checkAuth,
-    // Add userType for safe compatibility
-    userType: null as 'agent' | 'agency' | 'user' | null
+    // State
+    user,
+    session,
+    isAuthenticated,
+    loading,
+    error,
+    userType,
+
+    // Computed
+    isAgency,
+    isAgent,
+    isRegularUser,
+    isVerified,
+
+    // Core Auth Actions
+    signUp,
+    signIn,
+    signOut,
+    signOutAllSessions,
+
+    // OAuth Actions
+    signInWithGoogle,
+    signInWithGithub,
+    signInWithOAuth,
+
+    // Session Management
+    getCurrentUser,
+    getCurrentSession,
+    refreshSession,
+    listSessions,
+    deleteSession,
+
+    // Password Recovery
+    requestPasswordRecovery,
+    confirmPasswordRecovery,
+
+    // Email Verification
+    sendVerificationEmail,
+    confirmEmailVerification,
+
+    // Profile Updates
+    updateName,
+    updateEmail,
+    updatePassword,
+    updatePreferences,
+    getPreferences,
+
+    // Utility
+    initialize,
+    clearError,
+    reset,
   };
+}
+
+// ============================================================================
+// Specialized Hooks
+// ============================================================================
+
+/**
+ * Hook for protected pages - redirects to signin if not authenticated
+ */
+export function useRequireAuth(redirectTo = "/signin") {
+  return useAuth({ requireAuth: true, redirectTo });
+}
+
+/**
+ * Hook for auth pages - redirects away if already authenticated
+ */
+export function useRedirectIfAuthenticated(redirectTo = "/") {
+  return useAuth({ redirectIfAuthenticated: true, redirectAuthenticatedTo: redirectTo });
+}
+
+/**
+ * Hook for checking specific user roles
+ */
+export function useAuthRole() {
+  const userType = useUserType();
+  const isAuthenticated = useIsAuthenticated();
+  const loading = useAuthLoading();
+
+  return {
+    userType,
+    isAuthenticated,
+    loading,
+    isAgency: userType === "agency",
+    isAgent: userType === "agent",
+    isRegularUser: userType === "user",
+    hasRole: (role: string) => userType === role,
+    hasAnyRole: (roles: string[]) => userType !== null && roles.includes(userType),
+  };
+}
+
+/**
+ * Hook for auth status only (lightweight)
+ */
+export function useAuthStatusOnly() {
+  return useAuthStatus();
+}
+
+// ============================================================================
+// Re-exports for convenience
+// ============================================================================
+
+export {
+  useAuthStore,
+  useUser,
+  useSession,
+  useIsAuthenticated,
+  useAuthLoading,
+  useAuthError,
+  useUserType,
+  useAuthStatus,
+  useAuthActions,
 };
 
-export { useAuthStore };
+export type {
+  SignUpCredentials,
+  SignInCredentials,
+  PasswordRecoveryParams,
+  ResetPasswordParams,
+};
+
+export default useAuth;

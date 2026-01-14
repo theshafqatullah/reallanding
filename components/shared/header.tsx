@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth } from "@/store/auth";
 import { avatars } from "@/services/appwrite";
+import { useAuth } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -19,11 +19,18 @@ import { LogOutIcon, UserIcon, SettingsIcon, MenuIcon, ChevronDownIcon, HomeIcon
 type MegaMenuType = "properties" | "agents" | "services" | null;
 
 export function Header() {
-  const { user, isAuthenticated, loading, signOut, userType } = useAuth();
   const [activeMenu, setActiveMenu] = useState<MegaMenuType>(null);
+  const [mounted, setMounted] = useState(false);
+  
+  // Use the new auth hook
+  const { user, isAuthenticated, loading, signOut } = useAuth();
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
-    await signOut();
+    await signOut("/");
   };
 
   const handleMenuEnter = (menu: MegaMenuType) => {
@@ -103,7 +110,7 @@ export function Header() {
 
         {/* Auth Section */}
         <div className="flex items-center space-x-4" onMouseEnter={handleMenuLeave}>
-          {loading ? (
+          {!mounted || loading ? (
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           ) : isAuthenticated && user ? (
             <DropdownMenu>
@@ -128,17 +135,6 @@ export function Header() {
                   <p className="text-xs leading-none text-muted-foreground">
                     {user.email}
                   </p>
-                  {userType && (
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      userType === 'agency' 
-                        ? 'bg-purple-100 text-purple-800'
-                        : userType === 'agent'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}>
-                      {userType.charAt(0).toUpperCase() + userType.slice(1)}
-                    </span>
-                  )}
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
@@ -209,7 +205,7 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/privacy">Privacy</Link>
               </DropdownMenuItem>
-              {!isAuthenticated && (
+              {mounted && !isAuthenticated && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
