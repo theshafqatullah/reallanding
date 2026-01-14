@@ -86,7 +86,7 @@ export function Header() {
           </button>
 
           <Link 
-            href="/blog" 
+            href="/blogs" 
             className="text-foreground/60 hover:text-foreground transition-colors"
             onMouseEnter={handleMenuLeave}
           >
@@ -109,7 +109,7 @@ export function Header() {
         </nav>
 
         {/* Auth Section */}
-        <div className="flex items-center space-x-4" onMouseEnter={handleMenuLeave}>
+        <div className="flex items-center space-x-4" onMouseEnter={handleMenuLeave} suppressHydrationWarning>
           {!mounted || loading ? (
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           ) : isAuthenticated && user ? (
@@ -169,7 +169,7 @@ export function Header() {
         </div>
 
         {/* Mobile Menu */}
-        <div className="md:hidden">
+        <div className="md:hidden" suppressHydrationWarning>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -190,7 +190,7 @@ export function Header() {
                 <Link href="/services">Services</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/blog">Blog</Link>
+                <Link href="/blogs">Blog</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/about">About</Link>

@@ -108,11 +108,32 @@ let isInitialized = false;
 // ============================================================================
 
 const handleAuthError = (error: unknown): string => {
+  // Log the full error for debugging
+  console.error("Full auth error:", error);
+  
   if (error instanceof AppwriteException) {
+    // Log the actual error for debugging
+    console.error("Appwrite error details:", {
+      code: error.code,
+      type: error.type,
+      message: error.message
+    });
+    
     // Handle specific Appwrite error codes
     switch (error.code) {
       case 401:
-        return "Invalid credentials. Please check your email and password.";
+        // Check if this is a session-related error or invalid credentials
+        if (error.type === "user_session_already_exists") {
+          return "You are already logged in. Please log out first.";
+        }
+        if (error.type === "user_invalid_credentials") {
+          return "Invalid credentials. Please check your email and password.";
+        }
+        // Check message for scope errors
+        if (error.message?.includes("missing scope")) {
+          return "Session error. Please try again.";
+        }
+        return error.message || "Authentication failed. Please try again.";
       case 404:
         return "Account not found. Please sign up first.";
       case 409:
@@ -123,6 +144,27 @@ const handleAuthError = (error: unknown): string => {
         return "Server error. Please try again later.";
       default:
         return error.message || "An authentication error occurred.";
+    }
+  }
+  
+  // Handle errors that may have Appwrite-like structure but aren't AppwriteException instances
+  if (error && typeof error === "object") {
+    const err = error as { code?: number; type?: string; message?: string };
+    console.error("Non-AppwriteException error with details:", {
+      code: err.code,
+      type: err.type,
+      message: err.message
+    });
+    
+    if (err.message) {
+      // Check for common error patterns
+      if (err.message.includes("missing scope") || err.message.includes("role: guests")) {
+        return "Session error. Please refresh and try again.";
+      }
+      if (err.message.includes("Invalid credentials")) {
+        return "Invalid credentials. Please check your email and password.";
+      }
+      return err.message;
     }
   }
   
@@ -264,28 +306,52 @@ export const useAuthStore = create<AuthStoreState>()(
 
           try {
             // Create user account
-            const user = await account.create({
+            console.log("Creating user account...");
+            await account.create({
               userId: ID.unique(),
               email: credentials.email,
               password: credentials.password,
               name: credentials.name,
             });
+            console.log("User account created successfully");
 
             // Automatically sign in after registration
+            console.log("Creating session...");
             const session = await account.createEmailPasswordSession({
               email: credentials.email,
               password: credentials.password,
             });
+            console.log("Session created:", session.$id);
 
-            // Get full user object after session creation
-            const fullUser = await account.get();
+            // Try to get user with retries to handle cookie timing
+            let fullUser = null;
+            let retries = 3;
+            while (retries > 0 && !fullUser) {
+              try {
+                console.log(`Getting full user (attempt ${4 - retries})...`);
+                fullUser = await account.get();
+                console.log("Full user retrieved:", fullUser.$id);
+              } catch (getUserError) {
+                console.log("Failed to get user, retrying...", getUserError);
+                retries--;
+                if (retries > 0) {
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                } else {
+                  throw getUserError;
+                }
+              }
+            }
 
             setUser(fullUser as User);
             setSession(session);
             setLoading(false);
 
+            // Mark as initialized to prevent initialize() from overwriting state
+            isInitialized = true;
+
             return fullUser as User;
           } catch (error) {
+            console.error("SignUp error:", error);
             const errorMessage = handleAuthError(error);
             setError(errorMessage);
             setLoading(false);
@@ -300,16 +366,38 @@ export const useAuthStore = create<AuthStoreState>()(
           clearError();
 
           try {
+            console.log("Creating email password session...");
             const session = await account.createEmailPasswordSession({
               email: credentials.email,
               password: credentials.password,
             });
+            console.log("Session created:", session.$id, "userId:", session.userId);
 
-            const user = await account.get();
+            // Try to get user with retries to handle cookie timing
+            let user = null;
+            let retries = 3;
+            while (retries > 0 && !user) {
+              try {
+                console.log(`Getting user account (attempt ${4 - retries})...`);
+                user = await account.get();
+                console.log("User retrieved:", user.$id);
+              } catch (getUserError) {
+                console.log("Failed to get user, retrying...", getUserError);
+                retries--;
+                if (retries > 0) {
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                } else {
+                  throw getUserError;
+                }
+              }
+            }
 
             setUser(user as User);
             setSession(session);
             setLoading(false);
+
+            // Mark as initialized to prevent initialize() from overwriting state
+            isInitialized = true;
 
             return session;
           } catch (error) {

@@ -6,14 +6,353 @@ import Link from "next/link";
 import { useAuth } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  SearchIcon,
+  MapPinIcon,
+  HomeIcon,
+  BuildingIcon,
+  TrendingUpIcon,
+  ShieldCheckIcon,
+  UsersIcon,
+  StarIcon,
+  BedDoubleIcon,
+  BathIcon,
+  RulerIcon,
+  HeartIcon,
+  ArrowRightIcon,
+  CheckCircleIcon,
+  PhoneIcon,
+  MailIcon,
+  PlayCircleIcon,
+  CalendarIcon,
+  ClockIcon,
+  AwardIcon,
+  ThumbsUpIcon,
+  DollarSignIcon,
+  KeyIcon,
+  SmartphoneIcon,
+  CalculatorIcon,
+  TrendingDownIcon,
+  EyeIcon,
+  MessageSquareIcon,
+} from "lucide-react";
+
+// Mock featured properties data
+const featuredProperties = [
+  {
+    id: 1,
+    title: "Modern Luxury Villa",
+    location: "Beverly Hills, CA",
+    price: 2850000,
+    beds: 5,
+    baths: 4,
+    sqft: 4500,
+    image: "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop",
+    type: "For Sale",
+    featured: true,
+  },
+  {
+    id: 2,
+    title: "Downtown Penthouse",
+    location: "Manhattan, NY",
+    price: 8500,
+    beds: 3,
+    baths: 2,
+    sqft: 2200,
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop",
+    type: "For Rent",
+    featured: true,
+  },
+  {
+    id: 3,
+    title: "Cozy Family Home",
+    location: "Austin, TX",
+    price: 675000,
+    beds: 4,
+    baths: 3,
+    sqft: 2800,
+    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop",
+    type: "For Sale",
+    featured: false,
+  },
+  {
+    id: 4,
+    title: "Beachfront Condo",
+    location: "Miami, FL",
+    price: 1250000,
+    beds: 2,
+    baths: 2,
+    sqft: 1800,
+    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&h=600&fit=crop",
+    type: "For Sale",
+    featured: true,
+  },
+  {
+    id: 5,
+    title: "Mountain Retreat",
+    location: "Aspen, CO",
+    price: 3200000,
+    beds: 6,
+    baths: 5,
+    sqft: 5200,
+    image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800&h=600&fit=crop",
+    type: "For Sale",
+    featured: false,
+  },
+  {
+    id: 6,
+    title: "Urban Studio Loft",
+    location: "San Francisco, CA",
+    price: 3200,
+    beds: 1,
+    baths: 1,
+    sqft: 850,
+    image: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=600&fit=crop",
+    type: "For Rent",
+    featured: false,
+  },
+];
+
+const propertyCategories = [
+  { name: "Houses", icon: HomeIcon, count: 1234 },
+  { name: "Apartments", icon: BuildingIcon, count: 856 },
+  { name: "Condos", icon: BuildingIcon, count: 432 },
+  { name: "Townhouses", icon: HomeIcon, count: 289 },
+];
+
+const testimonials = [
+  {
+    name: "Sarah Johnson",
+    role: "First-time Buyer",
+    content: "Real Landing made finding my dream home so easy! The search tools are intuitive and the agents were incredibly helpful throughout the process.",
+    avatar: "SJ",
+    rating: 5,
+  },
+  {
+    name: "Michael Chen",
+    role: "Property Investor",
+    content: "I've used many real estate platforms, but Real Landing stands out with its comprehensive listings and market insights. Highly recommended!",
+    avatar: "MC",
+    rating: 5,
+  },
+  {
+    name: "Emily Rodriguez",
+    role: "Home Seller",
+    content: "Sold my property within 2 weeks! The exposure and professional support from Real Landing exceeded my expectations.",
+    avatar: "ER",
+    rating: 5,
+  },
+];
+
+const stats = [
+  { label: "Properties Listed", value: "50K+", icon: HomeIcon },
+  { label: "Happy Customers", value: "25K+", icon: UsersIcon },
+  { label: "Cities Covered", value: "200+", icon: MapPinIcon },
+  { label: "Expert Agents", value: "1K+", icon: ShieldCheckIcon },
+];
+
+// Popular cities data
+const popularCities = [
+  {
+    name: "New York",
+    properties: 2456,
+    image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&h=400&fit=crop",
+    avgPrice: "$850K",
+  },
+  {
+    name: "Los Angeles",
+    properties: 1832,
+    image: "https://images.unsplash.com/photo-1580655653885-65763b2597d0?w=600&h=400&fit=crop",
+    avgPrice: "$920K",
+  },
+  {
+    name: "Miami",
+    properties: 1245,
+    image: "https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=600&h=400&fit=crop",
+    avgPrice: "$680K",
+  },
+  {
+    name: "Chicago",
+    properties: 987,
+    image: "https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=600&h=400&fit=crop",
+    avgPrice: "$425K",
+  },
+  {
+    name: "San Francisco",
+    properties: 1567,
+    image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&h=400&fit=crop",
+    avgPrice: "$1.2M",
+  },
+  {
+    name: "Austin",
+    properties: 876,
+    image: "https://images.unsplash.com/photo-1531218150217-54595bc2b934?w=600&h=400&fit=crop",
+    avgPrice: "$520K",
+  },
+];
+
+// Featured agents data
+const featuredAgents = [
+  {
+    name: "Jennifer Martinez",
+    title: "Senior Real Estate Agent",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop",
+    deals: 156,
+    rating: 4.9,
+    specialization: "Luxury Homes",
+  },
+  {
+    name: "David Thompson",
+    title: "Commercial Property Specialist",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop",
+    deals: 203,
+    rating: 4.8,
+    specialization: "Commercial",
+  },
+  {
+    name: "Sarah Williams",
+    title: "Residential Expert",
+    image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=300&fit=crop",
+    deals: 189,
+    rating: 5.0,
+    specialization: "Family Homes",
+  },
+  {
+    name: "Michael Chen",
+    title: "Investment Advisor",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop",
+    deals: 134,
+    rating: 4.9,
+    specialization: "Investment",
+  },
+];
+
+// Blog posts data
+const blogPosts = [
+  {
+    title: "10 Tips for First-Time Home Buyers in 2026",
+    excerpt: "Navigate the real estate market with confidence using these expert tips for buying your first home.",
+    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
+    category: "Buying Tips",
+    date: "Jan 10, 2026",
+    readTime: "5 min read",
+  },
+  {
+    title: "Real Estate Market Trends to Watch This Year",
+    excerpt: "Stay ahead of the curve with insights into the latest market trends and predictions for property values.",
+    image: "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=600&h=400&fit=crop",
+    category: "Market Insights",
+    date: "Jan 8, 2026",
+    readTime: "7 min read",
+  },
+  {
+    title: "How to Stage Your Home for a Quick Sale",
+    excerpt: "Professional staging tips that can help you sell your property faster and at a better price.",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop",
+    category: "Selling Tips",
+    date: "Jan 5, 2026",
+    readTime: "4 min read",
+  },
+];
+
+// Why choose us features
+const whyChooseUs = [
+  {
+    icon: ShieldCheckIcon,
+    title: "Verified Listings",
+    description: "All properties are verified by our team to ensure accuracy and legitimacy.",
+  },
+  {
+    icon: DollarSignIcon,
+    title: "Best Price Guarantee",
+    description: "We help you find the best deals with transparent pricing and no hidden fees.",
+  },
+  {
+    icon: UsersIcon,
+    title: "Expert Support",
+    description: "Our dedicated team of real estate experts is available 24/7 to assist you.",
+  },
+  {
+    icon: KeyIcon,
+    title: "Easy Process",
+    description: "Streamlined buying, selling, and renting process from start to finish.",
+  },
+  {
+    icon: TrendingUpIcon,
+    title: "Market Insights",
+    description: "Get access to real-time market data and property value trends.",
+  },
+  {
+    icon: AwardIcon,
+    title: "Award Winning",
+    description: "Recognized as the leading property platform for three consecutive years.",
+  },
+];
+
+// Recently sold properties
+const recentlySold = [
+  {
+    title: "Colonial Style Home",
+    location: "Boston, MA",
+    soldPrice: 725000,
+    originalPrice: 699000,
+    daysOnMarket: 12,
+    image: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=600&h=400&fit=crop",
+  },
+  {
+    title: "Modern Townhouse",
+    location: "Seattle, WA",
+    soldPrice: 890000,
+    originalPrice: 875000,
+    daysOnMarket: 8,
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=400&fit=crop",
+  },
+  {
+    title: "Waterfront Property",
+    location: "Tampa, FL",
+    soldPrice: 1250000,
+    originalPrice: 1300000,
+    daysOnMarket: 21,
+    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop",
+  },
+];
+
+// Partner logos
+const partners = [
+  "Zillow Partner",
+  "Realtor.com Certified",
+  "Better Business Bureau A+",
+  "National Association of Realtors",
+  "Forbes Real Estate Council",
+  "Inc. 5000",
+];
 
 export default function Home() {
-  const { user, isAuthenticated, loading, signOut } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [propertyType, setPropertyType] = useState("all");
+  const [listingType, setListingType] = useState("buy");
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const formatPrice = (price: number, type: string) => {
+    if (type === "For Rent") {
+      return `$${price.toLocaleString()}/mo`;
+    }
+    return `$${price.toLocaleString()}`;
+  };
 
   // Show loading state until component is mounted and auth is resolved
   if (!mounted || loading) {
@@ -24,150 +363,741 @@ export default function Home() {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-primary/90 via-primary to-primary/80 text-primary-foreground">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }} />
+        </div>
 
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  if (isAuthenticated && user) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, {user.name || 'User'}!
+        <div className="container mx-auto max-w-7xl px-4 py-20 md:py-32 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            <Badge variant="secondary" className="mb-6 bg-white/20 text-primary-foreground border-white/30 hover:bg-white/30">
+              🏠 #1 Property Listing Platform
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              Find Your Perfect
+              <span className="text-secondary"> Home</span>
             </h1>
-            <p className="text-lg text-gray-600">
-              You&apos;re successfully signed in to your account
+            <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto">
+              Discover thousands of properties for sale and rent. Your dream home is just a search away.
             </p>
-          </div>
 
-          {/* User Details Card */}
-          <Card className="p-6 mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Account Details</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <p className="text-gray-900 text-base">
-                  {user.name || 'Not provided'}
-                </p>
+            {/* Search Box */}
+            <div className="bg-white rounded-2xl shadow-2xl p-4 md:p-6 max-w-4xl mx-auto">
+              {/* Tabs */}
+              <div className="flex gap-2 mb-4">
+                <Button
+                  variant={listingType === "buy" ? "default" : "ghost"}
+                  onClick={() => setListingType("buy")}
+                  className="rounded-full"
+                >
+                  Buy
+                </Button>
+                <Button
+                  variant={listingType === "rent" ? "default" : "ghost"}
+                  onClick={() => setListingType("rent")}
+                  className="rounded-full"
+                >
+                  Rent
+                </Button>
+                <Button
+                  variant={listingType === "sell" ? "default" : "ghost"}
+                  onClick={() => setListingType("sell")}
+                  className="rounded-full"
+                >
+                  Sell
+                </Button>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <p className="text-gray-900 text-base">
-                  {user.email}
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  User ID
-                </label>
-                <p className="text-gray-900 text-base font-mono text-sm">
-                  {user.$id}
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Registration Date
-                </label>
-                <p className="text-gray-900 text-base">
-                  {formatDate(user.$createdAt)}
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Verification
-                </label>
-                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                  user.emailVerification 
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {user.emailVerification ? 'Verified' : 'Not Verified'}
-                </span>
+
+              {/* Search Inputs */}
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 relative">
+                  <MapPinIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Enter city, neighborhood, or ZIP code"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-12 h-14 text-gray-900 text-lg rounded-xl border-gray-200"
+                  />
+                </div>
+                <Select value={propertyType} onValueChange={setPropertyType}>
+                  <SelectTrigger className="w-full md:w-48 h-14 text-gray-900 rounded-xl border-gray-200">
+                    <SelectValue placeholder="Property Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="house">House</SelectItem>
+                    <SelectItem value="apartment">Apartment</SelectItem>
+                    <SelectItem value="condo">Condo</SelectItem>
+                    <SelectItem value="townhouse">Townhouse</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="lg" className="h-14 px-8 rounded-xl text-lg">
+                  <SearchIcon className="mr-2 h-5 w-5" />
+                  Search
+                </Button>
               </div>
             </div>
 
-            {/* Preferences */}
-            {user.prefs && Object.keys(user.prefs).length > 0 && (
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferences
-                </label>
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <pre className="text-sm text-gray-600 whitespace-pre-wrap">
-                    {JSON.stringify(user.prefs, null, 2)}
-                  </pre>
-                </div>
+            {/* Quick Stats */}
+            <div className="flex flex-wrap justify-center gap-8 mt-10 text-primary-foreground/80">
+              <div className="flex items-center gap-2">
+                <CheckCircleIcon className="h-5 w-5 text-secondary" />
+                <span>50,000+ Listings</span>
               </div>
-            )}
-          </Card>
-
-          {/* Actions */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button onClick={() => handleSignOut()} variant="outline" size="md" className="rounded-full">
-              Sign Out
-            </Button>
-            <Button asChild size="md" className="rounded-full">
-              <Link href="/profile">
-                Edit Profile
-              </Link>
-            </Button>
+              <div className="flex items-center gap-2">
+                <CheckCircleIcon className="h-5 w-5 text-secondary" />
+                <span>Verified Agents</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircleIcon className="h-5 w-5 text-secondary" />
+                <span>Free to Use</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
-  // Not authenticated - show landing page
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            Welcome to Real Landing
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Get started by signing in to your account or creating a new one.
-          </p>
+      </section>
+
+      {/* Property Categories */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Browse by Property Type
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Find the perfect property that fits your lifestyle and needs
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {propertyCategories.map((category) => (
+              <Link href="/properties" key={category.name}>
+                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
+                  <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-primary transition-colors">
+                    <category.icon className="h-8 w-8 text-primary group-hover:text-primary-foreground transition-colors" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground">{category.count.toLocaleString()} Properties</p>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <Button asChild className="rounded-full">
-            <Link href="/signin">
-              Sign In
+      </section>
+
+      {/* Featured Properties */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Featured Properties
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Handpicked properties by our experts for you
+              </p>
+            </div>
+            <Link href="/properties">
+              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
+                View All Properties
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-full">
-            <Link href="/signup">
-              Sign Up
-            </Link>
-          </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredProperties.map((property) => (
+              <Card key={property.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
+                <div className="relative">
+                  <Image
+                    src={property.image}
+                    alt={property.title}
+                    width={800}
+                    height={600}
+                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute top-4 left-4 flex gap-2">
+                    <Badge className={property.type === "For Sale" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}>
+                      {property.type}
+                    </Badge>
+                    {property.featured && (
+                      <Badge variant="secondary" className="bg-chart-4 text-foreground">
+                        Featured
+                      </Badge>
+                    )}
+                  </div>
+                  <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+                    <HeartIcon className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors" />
+                  </button>
+                </div>
+
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors">
+                      {property.title}
+                    </h3>
+                  </div>
+                  <div className="flex items-center text-muted-foreground mb-4">
+                    <MapPinIcon className="h-4 w-4 mr-1" />
+                    <span className="text-sm">{property.location}</span>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                    <div className="flex items-center gap-1">
+                      <BedDoubleIcon className="h-4 w-4" />
+                      <span>{property.beds} Beds</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <BathIcon className="h-4 w-4" />
+                      <span>{property.baths} Baths</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <RulerIcon className="h-4 w-4" />
+                      <span>{property.sqft.toLocaleString()} sqft</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <span className="text-2xl font-bold text-primary">
+                      {formatPrice(property.price, property.type)}
+                    </span>
+                    <Button size="sm" variant="outline" className="rounded-full">
+                      View Details
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <stat.icon className="h-8 w-8 text-primary" />
+                </div>
+                <div className="text-4xl md:text-5xl font-bold mb-2 text-foreground">{stat.value}</div>
+                <div className="text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              How It Works
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Find your perfect home in just 3 simple steps
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                <SearchIcon className="h-10 w-10 text-primary" />
+                <span className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">1</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Search Properties</h3>
+              <p className="text-muted-foreground">
+                Browse thousands of listings with our powerful search filters. Find homes that match your criteria.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                <UsersIcon className="h-10 w-10 text-accent-foreground" />
+                <span className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">2</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Connect with Agents</h3>
+              <p className="text-muted-foreground">
+                Get in touch with verified real estate agents who can guide you through the process.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6 relative">
+                <HomeIcon className="h-10 w-10 text-primary" />
+                <span className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold">3</span>
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-3">Close the Deal</h3>
+              <p className="text-muted-foreground">
+                Complete your purchase or rental with confidence. We&apos;re with you every step of the way.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              What Our Customers Say
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Join thousands of satisfied homeowners and renters
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <Card key={index} className="p-8">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <StarIcon key={i} className="h-5 w-5 fill-chart-4 text-chart-4" />
+                  ))}
+                </div>
+                <p className="text-muted-foreground mb-6 italic">&ldquo;{testimonial.content}&rdquo;</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                    {testimonial.avatar}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-foreground">{testimonial.name}</div>
+                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Cities */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Explore Popular Cities
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Discover properties in the most sought-after locations
+              </p>
+            </div>
+            <Link href="/properties">
+              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
+                View All Cities
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {popularCities.map((city) => (
+              <Link href="/properties" key={city.name}>
+                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer">
+                  <div className="relative h-48">
+                    <Image
+                      src={city.image}
+                      alt={city.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-2xl font-bold mb-1">{city.name}</h3>
+                      <p className="text-white/80 text-sm">{city.properties.toLocaleString()} Properties</p>
+                    </div>
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-white/90 text-foreground hover:bg-white">
+                        Avg. {city.avgPrice}
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Why Choose Real Landing
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              We provide the best experience in finding your perfect property
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {whyChooseUs.map((feature, index) => (
+              <div key={index} className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center">
+                    <feature.icon className="h-7 w-7 text-primary" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Agents */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Meet Our Expert Agents
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Work with the best professionals in the industry
+              </p>
+            </div>
+            <Link href="/agents">
+              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
+                View All Agents
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredAgents.map((agent) => (
+              <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
+                <div className="relative h-64">
+                  <Image
+                    src={agent.image}
+                    alt={agent.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-lg text-foreground">{agent.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">{agent.title}</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1">
+                      <StarIcon className="h-4 w-4 fill-chart-4 text-chart-4" />
+                      <span className="font-medium">{agent.rating}</span>
+                    </div>
+                    <Badge variant="secondary">{agent.deals} Deals</Badge>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Recently Sold */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Recently Sold Properties
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                See what&apos;s selling in your area
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {recentlySold.map((property, index) => (
+              <Card key={index} className="overflow-hidden">
+                <div className="relative">
+                  <Image
+                    src={property.image}
+                    alt={property.title}
+                    width={600}
+                    height={400}
+                    className="w-full h-48 object-cover"
+                  />
+                  <Badge className="absolute top-4 left-4 bg-chart-1 text-white">
+                    SOLD
+                  </Badge>
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-lg text-foreground mb-1">{property.title}</h3>
+                  <div className="flex items-center text-muted-foreground mb-4">
+                    <MapPinIcon className="h-4 w-4 mr-1" />
+                    <span className="text-sm">{property.location}</span>
+                  </div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <span className="text-2xl font-bold text-primary">${property.soldPrice.toLocaleString()}</span>
+                      {property.soldPrice > property.originalPrice && (
+                        <div className="flex items-center text-sm text-chart-1">
+                          <TrendingUpIcon className="h-3 w-3 mr-1" />
+                          Above asking
+                        </div>
+                      )}
+                      {property.soldPrice < property.originalPrice && (
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <TrendingDownIcon className="h-3 w-3 mr-1" />
+                          Below asking
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm text-muted-foreground">Sold in</div>
+                      <div className="font-semibold text-foreground">{property.daysOnMarket} days</div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mortgage Calculator CTA */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col lg:flex-row items-center gap-12 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-primary/5 via-secondary to-primary/5 border border-border">
+            <div className="flex-1 text-center lg:text-left">
+              <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mb-6 mx-auto lg:mx-0">
+                <CalculatorIcon className="h-8 w-8 text-primary" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                Calculate Your Mortgage
+              </h2>
+              <p className="text-lg text-muted-foreground mb-6 max-w-xl">
+                Use our free mortgage calculator to estimate your monthly payments and see how much house you can afford.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Button size="lg" className="rounded-full px-8">
+                  <CalculatorIcon className="mr-2 h-5 w-5" />
+                  Calculate Now
+                </Button>
+                <Button size="lg" variant="outline" className="rounded-full px-8">
+                  Get Pre-Approved
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 w-full max-w-md">
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-4 text-foreground">Quick Estimate</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-1 block">Home Price</label>
+                    <Input type="text" placeholder="$500,000" className="rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground mb-1 block">Down Payment</label>
+                    <Input type="text" placeholder="$100,000 (20%)" className="rounded-lg" />
+                  </div>
+                  <div className="pt-4 border-t border-border">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Est. Monthly Payment</span>
+                      <span className="text-2xl font-bold text-primary">$2,847</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Blog Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Latest from Our Blog
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Tips, insights, and news from the real estate world
+              </p>
+            </div>
+            <Link href="/blogs">
+              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
+                Read All Articles
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {blogPosts.map((post, index) => (
+              <Card key={index} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
+                <div className="relative h-48">
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <Badge className="absolute top-4 left-4 bg-white/90 text-foreground hover:bg-white">
+                    {post.category}
+                  </Badge>
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                    <div className="flex items-center gap-1">
+                      <CalendarIcon className="h-4 w-4" />
+                      {post.date}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ClockIcon className="h-4 w-4" />
+                      {post.readTime}
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+                    {post.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2">{post.excerpt}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mobile App CTA */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col lg:flex-row items-center gap-12 p-8 md:p-12 rounded-3xl bg-primary text-primary-foreground">
+            <div className="flex-1 text-center lg:text-left">
+              <Badge variant="secondary" className="mb-6 bg-white/20 text-primary-foreground border-white/30">
+                Coming Soon
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                Get Our Mobile App
+              </h2>
+              <p className="text-lg text-primary-foreground/80 mb-6 max-w-xl">
+                Search properties, schedule viewings, and connect with agents on the go. Download our app for the best mobile experience.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Button size="lg" variant="secondary" className="rounded-full px-8">
+                  <SmartphoneIcon className="mr-2 h-5 w-5" />
+                  App Store
+                </Button>
+                <Button size="lg" variant="outline" className="rounded-full px-8 border-white/30 text-primary-foreground hover:bg-white/10">
+                  <PlayCircleIcon className="mr-2 h-5 w-5" />
+                  Google Play
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 flex justify-center">
+              <div className="relative w-64 h-[500px] bg-white/10 rounded-[3rem] border-4 border-white/20 flex items-center justify-center">
+                <div className="text-center p-8">
+                  <SmartphoneIcon className="h-16 w-16 mx-auto mb-4 text-primary-foreground/60" />
+                  <p className="text-primary-foreground/60 text-sm">App Preview</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Badges / Partners */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-10">
+            <p className="text-muted-foreground text-lg">Trusted by industry leaders and recognized by</p>
+          </div>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
+            {partners.map((partner, index) => (
+              <div key={index} className="text-muted-foreground/50 font-semibold text-lg hover:text-muted-foreground transition-colors">
+                {partner}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8 p-12 rounded-3xl bg-secondary border border-border">
+            <div className="text-center lg:text-left">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+                Ready to Find Your Dream Home?
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-xl">
+                Start your property search today or list your property with us. We make real estate simple.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button size="lg" className="rounded-full px-8">
+                <SearchIcon className="mr-2 h-5 w-5" />
+                Browse Properties
+              </Button>
+              {!isAuthenticated && (
+                <Button size="lg" variant="outline" className="rounded-full px-8">
+                  <Link href="/signup" className="flex items-center">
+                    Get Started Free
+                    <ArrowRightIcon className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Section */}
+      <section className="py-16 bg-background border-t border-border">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div>
+              <h3 className="text-2xl font-bold mb-2 text-foreground">Stay Updated</h3>
+              <p className="text-muted-foreground">Get the latest property listings and market insights delivered to your inbox.</p>
+            </div>
+            <div className="flex gap-3 w-full md:w-auto">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                className="rounded-full px-6 w-full md:w-80"
+              />
+              <Button className="rounded-full px-6">Subscribe</Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Info Bar */}
+      <section className="py-6 bg-background border-t border-border">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <PhoneIcon className="h-4 w-4 text-primary" />
+              <span>1-800-REAL-LAND</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MailIcon className="h-4 w-4 text-primary" />
+              <span>contact@reallanding.com</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPinIcon className="h-4 w-4 text-primary" />
+              <span>123 Property Lane, Real Estate City, RE 12345</span>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
