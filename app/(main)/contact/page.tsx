@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,6 +100,7 @@ const faqs = [
 ];
 
 export default function ContactPage() {
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -110,6 +111,11 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Prevent hydration mismatch with Radix UI Select
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,34 +295,40 @@ export default function ContactPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="subject">Subject</Label>
-                      <Select
-                        value={formData.subject}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, subject: value })
-                        }
-                      >
-                        <SelectTrigger className="rounded-xl">
-                          <SelectValue placeholder="Select a subject" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="buying">
-                            Buying Property
-                          </SelectItem>
-                          <SelectItem value="selling">
-                            Selling Property
-                          </SelectItem>
-                          <SelectItem value="renting">
-                            Renting Property
-                          </SelectItem>
-                          <SelectItem value="investment">
-                            Investment Opportunities
-                          </SelectItem>
-                          <SelectItem value="agent">
-                            Become an Agent
-                          </SelectItem>
-                          <SelectItem value="other">Other Inquiry</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {mounted ? (
+                        <Select
+                          value={formData.subject}
+                          onValueChange={(value) =>
+                            setFormData({ ...formData, subject: value })
+                          }
+                        >
+                          <SelectTrigger className="rounded-xl">
+                            <SelectValue placeholder="Select a subject" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="buying">
+                              Buying Property
+                            </SelectItem>
+                            <SelectItem value="selling">
+                              Selling Property
+                            </SelectItem>
+                            <SelectItem value="renting">
+                              Renting Property
+                            </SelectItem>
+                            <SelectItem value="investment">
+                              Investment Opportunities
+                            </SelectItem>
+                            <SelectItem value="agent">
+                              Become an Agent
+                            </SelectItem>
+                            <SelectItem value="other">Other Inquiry</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex h-10 w-full items-center justify-between rounded-xl border border-input bg-background px-3 py-2 text-sm text-muted-foreground">
+                          Select a subject
+                        </div>
+                      )}
                     </div>
 
                     <div className="space-y-2">
