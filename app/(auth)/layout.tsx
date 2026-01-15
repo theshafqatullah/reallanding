@@ -7,10 +7,10 @@ import { Toaster } from "@/components/ui/sonner";
 
 function LoadingFallback() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">
         <Spinner className="w-8 h-8 mx-auto mb-4" />
-        <p className="text-sm text-gray-600">Loading...</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </div>
   );
@@ -23,7 +23,7 @@ export default function AuthLayout({
 }) {
   return (
     <GuestGuard redirectTo="/" fallback={<LoadingFallback />}>
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           {children}
         </div>

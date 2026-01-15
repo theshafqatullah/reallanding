@@ -18,7 +18,10 @@ export default function ForgotPasswordPage() {
     clearError();
     
     try {
-      await requestPasswordRecovery(email);
+      const redirectUrl = typeof window !== "undefined" 
+        ? `${window.location.origin}/reset-password` 
+        : "/reset-password";
+      await requestPasswordRecovery({ email, redirectUrl });
       setEmailSent(true);
       toast.success("Reset email sent!", {
         description: `A password reset link has been sent to ${email}.`
@@ -34,10 +37,10 @@ export default function ForgotPasswordPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">
+        <h2 className="text-3xl font-bold text-foreground">
           {emailSent ? "Check your email" : "Forgot Password"}
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           {emailSent 
             ? "We've sent a password reset link to your email address."
             : "Enter your email to receive a reset link."
@@ -73,7 +76,7 @@ export default function ForgotPasswordPage() {
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Didn't receive the email? Check your spam folder or{" "}
             <button 
               onClick={() => setEmailSent(false)}
@@ -85,7 +88,7 @@ export default function ForgotPasswordPage() {
         </div>
       )}
 
-      <p className="mt-8 text-center text-sm text-gray-600">
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         Remember your password?{" "}
         <Link
           href="/signin"

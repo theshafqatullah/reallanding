@@ -18,18 +18,22 @@ export default function SignInPage() {
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setIsSubmitting(true);
     
     try {
       await signIn({ email, password });
       toast.success("Welcome back!", {
         description: "You have been signed in successfully."
       });
-      router.push("/");
+      // Use router.replace to preserve React state
+      router.replace("/");
     } catch (err: unknown) {
+      setIsSubmitting(false);
       const errorMessage = err instanceof Error ? err.message : "Please check your credentials and try again.";
       toast.error("Sign in failed", {
         description: errorMessage
@@ -54,8 +58,8 @@ export default function SignInPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Sign In</h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <h2 className="text-3xl font-bold text-foreground">Sign In</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           Welcome back! Please enter your details.
         </p>
       </div>
@@ -105,18 +109,18 @@ export default function SignInPage() {
           </Label>
         </div>
 
-        <Button type="submit" size="md" className="w-full rounded-full" disabled={loading}>
-          {loading ? "Signing in..." : "Sign in"}
+        <Button type="submit" size="md" className="w-full rounded-full" disabled={loading || isSubmitting}>
+          {loading || isSubmitting ? "Signing in..." : "Sign in"}
         </Button>
       </form>
 
       <div className="mt-8">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+            <span className="px-2 bg-background text-muted-foreground">Or continue with</span>
           </div>
         </div>
 
@@ -166,7 +170,7 @@ export default function SignInPage() {
         </div>
       </div>
 
-      <p className="mt-8 text-center text-sm text-gray-600">
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"

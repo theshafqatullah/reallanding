@@ -30,7 +30,7 @@ export function Header() {
   }, []);
 
   const handleSignOut = async () => {
-    await signOut("/");
+    await signOut();
   };
 
   const handleMenuEnter = (menu: MegaMenuType) => {
@@ -109,11 +109,11 @@ export function Header() {
         </nav>
 
         {/* Auth Section */}
-        <div className="flex items-center space-x-4" onMouseEnter={handleMenuLeave} suppressHydrationWarning>
+        <div className="flex items-center space-x-4" onMouseEnter={handleMenuLeave}>
           {!mounted || loading ? (
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           ) : isAuthenticated && user ? (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full cursor-pointer">
                   <Avatar className="h-10 w-10">
@@ -169,13 +169,14 @@ export function Header() {
         </div>
 
         {/* Mobile Menu */}
-        <div className="md:hidden" suppressHydrationWarning>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <MenuIcon className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
+        {mounted && (
+          <div className="md:hidden">
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MenuIcon className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="end">
               <DropdownMenuItem asChild>
                 <Link href="/">Home</Link>
@@ -205,7 +206,7 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/privacy">Privacy</Link>
               </DropdownMenuItem>
-              {mounted && !isAuthenticated && (
+              {!isAuthenticated && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -219,6 +220,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        )}
       </div>
 
       {/* Mega Menu - Properties */}

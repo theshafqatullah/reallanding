@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await confirmPasswordRecovery({ userId, secret, password }, "/signin");
+      await confirmPasswordRecovery({ userId, secret, password });
       
       setResetSuccess(true);
       toast.success("Password reset successfully!", {
@@ -76,10 +76,10 @@ export default function ResetPasswordPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">
+        <h2 className="text-3xl font-bold text-foreground">
           {resetSuccess ? "Password Reset Successfully" : "Reset Password"}
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           {resetSuccess 
             ? "Your password has been reset successfully."
             : "Enter your new password below."
@@ -143,7 +143,7 @@ export default function ResetPasswordPage() {
         </div>
       )}
 
-      <p className="mt-8 text-center text-sm text-gray-600">
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         Back to{" "}
         <Link
           href="/signin"

@@ -103,9 +103,9 @@ export enum FinancingStatus {
 
 export enum Timeline {
     IMMEDIATE = "Immediate",
-    _1_3_MONTHS = "1-3 Months",
-    _3_6_MONTHS = "3-6 Months",
-    _6_MONTHS = "6+ Months",
+    ONE_TO_THREE_MONTHS = "1-3 Months",
+    THREE_TO_SIX_MONTHS = "3-6 Months",
+    SIX_PLUS_MONTHS = "6+ Months",
     JUST_BROWSING = "Just Browsing"
 }
 
@@ -1093,6 +1093,7 @@ export type ContactInquiries = Models.Row & {
 }
 
 export type Users = Models.Row & {
+    username: string;
     total_sales: number;
     active_listings: number;
     total_listings: number;

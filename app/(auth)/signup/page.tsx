@@ -19,18 +19,22 @@ export default function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
+    setIsSubmitting(true);
     
     try {
       await signUp({ email, password, name });
       toast.success("Account created successfully!", {
         description: "Welcome! You are now signed in."
       });
-      router.push("/");
+      // Use router.replace to preserve React state
+      router.replace("/");
     } catch (err: unknown) {
+      setIsSubmitting(false);
       const errorMessage = err instanceof Error ? err.message : "Please try again with different credentials.";
       toast.error("Sign up failed", {
         description: errorMessage
@@ -55,8 +59,8 @@ export default function SignUpPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <h2 className="text-3xl font-bold text-foreground">Create Account</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           Get started with your free account today.
         </p>
       </div>
@@ -120,18 +124,18 @@ export default function SignUpPage() {
           </Label>
         </div>
 
-        <Button type="submit" size="md" className="w-full rounded-full" disabled={loading}>
-          {loading ? "Creating account..." : "Sign up"}
+        <Button type="submit" size="md" className="w-full rounded-full" disabled={loading || isSubmitting}>
+          {loading || isSubmitting ? "Creating account..." : "Sign up"}
         </Button>
       </form>
 
       <div className="mt-8">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
+            <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
+            <span className="px-2 bg-background text-muted-foreground">Or continue with</span>
           </div>
         </div>
 
@@ -181,7 +185,7 @@ export default function SignUpPage() {
         </div>
       </div>
 
-      <p className="mt-8 text-center text-sm text-gray-600">
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link
           href="/signin"
