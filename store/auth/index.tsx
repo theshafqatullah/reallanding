@@ -279,9 +279,13 @@ export const useAuthStore = create<AuthStore>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-      onRehydrateStorage: () => (state) => {
-        // Mark as hydrated after rehydration
-        state?.setHydrated();
+      onRehydrateStorage: () => {
+        return (state) => {
+          // Use the state's setHydrated action if available
+          if (state) {
+            state.setHydrated();
+          }
+        };
       },
     }
   )
@@ -294,7 +298,15 @@ export const useAuthStore = create<AuthStore>()(
 export function useAuthHydration() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
   const isHydrated = useAuthStore((s) => s.isHydrated);
+  const setHydrated = useAuthStore((s) => s.setHydrated);
   const [hasChecked, setHasChecked] = useState(false);
+
+  useEffect(() => {
+    // Fallback: if not hydrated after mount, force it (SSR case)
+    if (!isHydrated) {
+      setHydrated();
+    }
+  }, [isHydrated, setHydrated]);
 
   useEffect(() => {
     if (isHydrated && !hasChecked) {
@@ -316,9 +328,19 @@ export function useAuthHydration() {
  */
 export const useAuth = () => {
   const store = useAuthStore();
+  const setHydrated = useAuthStore((s) => s.setHydrated);
+  const [mounted, setMounted] = useState(false);
 
-  // Combined loading state: loading if not hydrated OR actively loading
-  const isReady = store.isHydrated && !store.isLoading;
+  useEffect(() => {
+    setMounted(true);
+    // Ensure hydration flag is set on client
+    if (!store.isHydrated) {
+      setHydrated();
+    }
+  }, [store.isHydrated, setHydrated]);
+
+  // Combined loading state: loading if not mounted, not hydrated, OR actively loading
+  const isReady = mounted && store.isHydrated && !store.isLoading;
 
   return {
     // State
