@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { account } from "@/services/appwrite";
+import { usersService } from "@/services/users";
 import { ID, AppwriteException, Models, OAuthProvider } from "appwrite";
 import { ReactNode, useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -137,13 +138,35 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signUp: async ({ name, email, password }: SignUpCredentials) => {
     set({ isLoading: true, error: null });
     try {
-      await account.create({
+      // Create the auth account
+      const newAccount = await account.create({
         userId: ID.unique(),
         email,
         password,
         name,
       });
+
+      // Sign in to get the session
       await get().signIn({ email, password });
+
+      // Create the user document in the users collection
+      const nameParts = (name || "").split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      try {
+        await usersService.create({
+          user_id: newAccount.$id,
+          email,
+          first_name: firstName,
+          last_name: lastName,
+          username: email.split("@")[0],
+        });
+      } catch (profileError) {
+        // Log but don't fail signup if profile creation fails
+        // User can create profile later from profile page
+        console.error("Failed to create user profile:", profileError);
+      }
     } catch (error) {
       const message =
         error instanceof AppwriteException
