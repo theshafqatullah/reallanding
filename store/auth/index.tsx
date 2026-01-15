@@ -75,7 +75,11 @@ export const useAuthStore = create<AuthStore>()(
       /**
        * Set hydrated status
        */
-      setHydrated: () => set({ isHydrated: true }),
+      setHydrated: () => {
+        set({ isHydrated: true });
+        // Always verify auth with server after hydration
+        get().checkAuth();
+      },
 
       /**
        * Check authentication status
@@ -91,6 +95,7 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
           });
         } catch {
+          // Clear any stale persisted auth state
           set({
             user: null,
             isAuthenticated: false,
@@ -274,10 +279,12 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: "auth-storage",
+      version: 2, // Increment to clear stale auth data from previous versions
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
+        // Only persist user data, not isAuthenticated
+        // isAuthenticated will be verified with server on each hydration
         user: state.user,
-        isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => {
         return (state) => {
@@ -286,6 +293,16 @@ export const useAuthStore = create<AuthStore>()(
             state.setHydrated();
           }
         };
+      },
+      migrate: (persistedState, version) => {
+        // If upgrading from old version, clear auth state
+        if (version < 2) {
+          return {
+            user: null,
+            isAuthenticated: false,
+          };
+        }
+        return persistedState as AuthState;
       },
     }
   )
@@ -296,25 +313,20 @@ export const useAuthStore = create<AuthStore>()(
 // ============================================================================
 
 export function useAuthHydration() {
-  const checkAuth = useAuthStore((s) => s.checkAuth);
   const isHydrated = useAuthStore((s) => s.isHydrated);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const setHydrated = useAuthStore((s) => s.setHydrated);
-  const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
     // Fallback: if not hydrated after mount, force it (SSR case)
+    // setHydrated now automatically triggers checkAuth
     if (!isHydrated) {
       setHydrated();
     }
   }, [isHydrated, setHydrated]);
 
-  useEffect(() => {
-    if (isHydrated && !hasChecked) {
-      checkAuth().finally(() => setHasChecked(true));
-    }
-  }, [isHydrated, hasChecked, checkAuth]);
-
-  return hasChecked;
+  // Return true when hydrated and not loading (auth check complete)
+  return isHydrated && !isLoading;
 }
 
 // ============================================================================
