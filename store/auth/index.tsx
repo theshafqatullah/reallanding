@@ -4,7 +4,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { account } from "@/services/appwrite";
 import { ID, AppwriteException, Models, OAuthProvider } from "appwrite";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // ============================================================================
@@ -39,6 +39,7 @@ export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
   error: string | null;
 }
 
@@ -52,6 +53,7 @@ export interface AuthActions {
   requestPasswordRecovery: (params: PasswordRecoveryParams) => Promise<void>;
   confirmPasswordRecovery: (params: ResetPasswordParams) => Promise<void>;
   clearError: () => void;
+  setHydrated: () => void;
 }
 
 export type AuthStore = AuthState & AuthActions;
@@ -67,10 +69,16 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      isHydrated: false,
       error: null,
 
       /**
-       * Check authentication status on app load
+       * Set hydrated status
+       */
+      setHydrated: () => set({ isHydrated: true }),
+
+      /**
+       * Check authentication status
        * Verifies if there's an active session with Appwrite
        */
       checkAuth: async () => {
@@ -97,8 +105,33 @@ export const useAuthStore = create<AuthStore>()(
       signIn: async ({ email, password }: SignInCredentials) => {
         set({ isLoading: true, error: null });
         try {
+          // Create session
           await account.createEmailPasswordSession({ email, password });
-          const user = await account.get();
+          
+          // Wait for cookie to be set, then retry getting user
+          let user = null;
+          let retries = 3;
+          
+          while (retries > 0) {
+            try {
+              await new Promise(resolve => setTimeout(resolve, 150));
+              user = await account.get();
+              break;
+            } catch {
+              retries--;
+              if (retries === 0) {
+                // Session created, set auth state even without user details
+                set({
+                  user: null,
+                  isAuthenticated: true,
+                  isLoading: false,
+                  error: null,
+                });
+                return;
+              }
+            }
+          }
+          
           set({
             user: user as User,
             isAuthenticated: true,
@@ -164,6 +197,10 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             error: null,
           });
+          // Force page reload to clear any cached state
+          if (typeof window !== "undefined") {
+            window.location.href = "/";
+          }
         }
       },
 
@@ -243,12 +280,30 @@ export const useAuthStore = create<AuthStore>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // After rehydrating from localStorage, verify with server
-        state?.checkAuth();
+        // Mark as hydrated after rehydration
+        state?.setHydrated();
       },
     }
   )
 );
+
+// ============================================================================
+// Hydration Hook - Use in root layout to trigger auth check
+// ============================================================================
+
+export function useAuthHydration() {
+  const checkAuth = useAuthStore((s) => s.checkAuth);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const [hasChecked, setHasChecked] = useState(false);
+
+  useEffect(() => {
+    if (isHydrated && !hasChecked) {
+      checkAuth().finally(() => setHasChecked(true));
+    }
+  }, [isHydrated, hasChecked, checkAuth]);
+
+  return hasChecked;
+}
 
 // ============================================================================
 // Hook
@@ -262,12 +317,16 @@ export const useAuthStore = create<AuthStore>()(
 export const useAuth = () => {
   const store = useAuthStore();
 
+  // Combined loading state: loading if not hydrated OR actively loading
+  const isReady = store.isHydrated && !store.isLoading;
+
   return {
     // State
     user: store.user,
     isAuthenticated: store.isAuthenticated,
-    isLoading: store.isLoading,
-    loading: store.isLoading,
+    isLoading: !isReady,
+    loading: !isReady,
+    isHydrated: store.isHydrated,
     error: store.error,
 
     // Actions
@@ -289,7 +348,11 @@ export const useAuth = () => {
 
 export const useUser = () => useAuthStore((s) => s.user);
 export const useIsAuthenticated = () => useAuthStore((s) => s.isAuthenticated);
-export const useAuthLoading = () => useAuthStore((s) => s.isLoading);
+export const useAuthLoading = () => {
+  const isHydrated = useAuthStore((s) => s.isHydrated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  return !isHydrated || isLoading;
+};
 export const useAuthError = () => useAuthStore((s) => s.error);
 
 // ============================================================================
@@ -307,15 +370,21 @@ interface GuardProps {
  */
 export function AuthGuard({ children, fallback = null, redirectTo = "/signin" }: GuardProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isHydrated } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isHydrated && !isLoading && !isAuthenticated) {
       router.replace(redirectTo);
     }
-  }, [isLoading, isAuthenticated, redirectTo, router]);
+  }, [isHydrated, isLoading, isAuthenticated, redirectTo, router]);
 
-  if (isLoading || !isAuthenticated) {
+  // Show fallback while loading or not hydrated
+  if (!isHydrated || isLoading) {
+    return <>{fallback}</>;
+  }
+
+  // Not authenticated - will redirect
+  if (!isAuthenticated) {
     return <>{fallback}</>;
   }
 
@@ -327,15 +396,21 @@ export function AuthGuard({ children, fallback = null, redirectTo = "/signin" }:
  */
 export function GuestGuard({ children, fallback = null, redirectTo = "/" }: GuardProps) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isHydrated } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (isHydrated && !isLoading && isAuthenticated) {
       router.replace(redirectTo);
     }
-  }, [isLoading, isAuthenticated, redirectTo, router]);
+  }, [isHydrated, isLoading, isAuthenticated, redirectTo, router]);
 
-  if (isLoading || isAuthenticated) {
+  // Show fallback while loading or not hydrated
+  if (!isHydrated || isLoading) {
+    return <>{fallback}</>;
+  }
+
+  // Authenticated - will redirect
+  if (isAuthenticated) {
     return <>{fallback}</>;
   }
 

@@ -4,6 +4,7 @@ import React from "react";
 import { GuestGuard } from "@/store/auth";
 import { Spinner } from "@/components/ui/spinner";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthHydrator } from "@/components/auth/auth-hydrator";
 
 function LoadingFallback() {
   return (
@@ -22,13 +23,15 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <GuestGuard redirectTo="/" fallback={<LoadingFallback />}>
-      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          {children}
+    <AuthHydrator>
+      <GuestGuard redirectTo="/" fallback={<LoadingFallback />}>
+        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+          <div className="w-full max-w-md space-y-8">
+            {children}
+          </div>
         </div>
-      </div>
-      <Toaster richColors position="top-right" />
-    </GuestGuard>
+        <Toaster richColors position="top-right" />
+      </GuestGuard>
+    </AuthHydrator>
   );
 }

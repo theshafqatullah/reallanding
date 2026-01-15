@@ -31,8 +31,8 @@ export default function SignUpPage() {
       toast.success("Account created successfully!", {
         description: "Welcome! You are now signed in."
       });
-      // Use router.replace to preserve React state
-      router.replace("/");
+      // Use window.location for full page reload to ensure cookies are properly set
+      window.location.href = "/";
     } catch (err: unknown) {
       setIsSubmitting(false);
       const errorMessage = err instanceof Error ? err.message : "Please try again with different credentials.";

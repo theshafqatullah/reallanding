@@ -30,8 +30,8 @@ export default function SignInPage() {
       toast.success("Welcome back!", {
         description: "You have been signed in successfully."
       });
-      // Use router.replace to preserve React state
-      router.replace("/");
+      // Use window.location for full page reload to ensure cookies are properly set
+      window.location.href = "/";
     } catch (err: unknown) {
       setIsSubmitting(false);
       const errorMessage = err instanceof Error ? err.message : "Please check your credentials and try again.";
