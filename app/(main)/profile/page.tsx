@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/store/auth/useAuth";
+import { useAuth } from "@/store/auth";
 import { databases, storage } from "@/services/appwrite";
 import { Query, ID } from "appwrite";
 import { type Users, AvailabilityStatus, UserType } from "@/types/appwrite";

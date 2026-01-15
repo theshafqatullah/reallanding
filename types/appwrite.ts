@@ -39,7 +39,7 @@ export enum Status {
     NO_ANSWER = "No Answer"
 }
 
-export enum Status {
+export enum Status2 {
     PENDING = "Pending",
     CONFIRMED = "Confirmed",
     COMPLETED = "Completed",
@@ -61,21 +61,21 @@ export enum Source {
     SOCIAL_MEDIA = "Social Media"
 }
 
-export enum Status {
+export enum Status3 {
     PENDING = "Pending",
     CONTACTED = "Contacted",
     COMPLETED = "Completed",
     CANCELLED = "Cancelled"
 }
 
-export enum Priority {
+export enum Priority2 {
     LOW = "Low",
     MEDIUM = "Medium",
     HIGH = "High",
     URGENT = "Urgent"
 }
 
-export enum Status {
+export enum Status4 {
     HOT_LEAD = "Hot Lead",
     WARM_LEAD = "Warm Lead",
     COLD_LEAD = "Cold Lead",
@@ -84,7 +84,7 @@ export enum Status {
     UNQUALIFIED = "Unqualified"
 }
 
-export enum Source {
+export enum Source2 {
     WEBSITE = "Website",
     REFERRAL = "Referral",
     SOCIAL_MEDIA = "Social Media",
@@ -109,7 +109,7 @@ export enum Timeline {
     JUST_BROWSING = "Just Browsing"
 }
 
-export enum Status {
+export enum Status5 {
     ACTIVE = "active",
     PAUSED = "paused",
     SCHEDULED = "scheduled",
@@ -117,7 +117,7 @@ export enum Status {
     DRAFT = "draft"
 }
 
-export enum Status {
+export enum Status6 {
     DRAFT = "draft",
     SCHEDULED = "scheduled",
     SENDING = "sending",
@@ -126,13 +126,13 @@ export enum Status {
     FAILED = "failed"
 }
 
-export enum Status {
+export enum Status7 {
     ACTIVE = "active",
     INACTIVE = "inactive",
     FULL = "full"
 }
 
-export enum Status {
+export enum Status8 {
     ACTIVE = "active",
     EXPIRED = "expired",
     PENDING = "pending",
@@ -144,14 +144,14 @@ export enum DiscountType {
     FIXED = "fixed"
 }
 
-export enum Status {
+export enum Status9 {
     ACTIVE = "active",
     INACTIVE = "inactive",
     EXPIRED = "expired",
     SCHEDULED = "scheduled"
 }
 
-export enum Status {
+export enum Status10 {
     DRAFT = "draft",
     SCHEDULED = "scheduled",
     SENDING = "sending",
@@ -169,7 +169,7 @@ export enum Type {
     OTHER = "other"
 }
 
-export enum Status {
+export enum Status11 {
     TRIAL = "trial",
     ACTIVE = "active",
     PAST_DUE = "past_due",
@@ -185,7 +185,7 @@ export enum BillingCycle {
     ONE_TIME = "one_time"
 }
 
-export enum Status {
+export enum Status12 {
     PENDING = "pending",
     ACTIVE = "active",
     EXPIRED = "expired",
@@ -200,14 +200,14 @@ export enum Package {
     SPOTLIGHT = "spotlight"
 }
 
-export enum Priority {
+export enum Priority3 {
     LOW = "low",
     MEDIUM = "medium",
     HIGH = "high",
     URGENT = "urgent"
 }
 
-export enum Status {
+export enum Status13 {
     PENDING = "pending",
     UNDER_REVIEW = "under_review",
     APPROVED = "approved",
@@ -227,21 +227,21 @@ export enum Reason {
     OTHER = "other"
 }
 
-export enum Status {
+export enum Status14 {
     ACTIVE = "active",
     INACTIVE = "inactive",
     DEPRECATED = "deprecated",
     COMING_SOON = "coming_soon"
 }
 
-export enum BillingCycle {
+export enum BillingCycle2 {
     MONTHLY = "monthly",
     QUARTERLY = "quarterly",
     YEARLY = "yearly",
     ONE_TIME = "one_time"
 }
 
-export enum Status {
+export enum Status15 {
     DRAFT = "draft",
     PENDING = "pending",
     PAID = "paid",
@@ -251,7 +251,7 @@ export enum Status {
     PARTIALLY_PAID = "partially_paid"
 }
 
-export enum Type {
+export enum Type2 {
     SUBSCRIPTION = "subscription",
     FEATURED_LISTING = "featured_listing",
     REFUND = "refund",
@@ -260,7 +260,7 @@ export enum Type {
     OTHER = "other"
 }
 
-export enum Status {
+export enum Status16 {
     PENDING = "pending",
     COMPLETED = "completed",
     FAILED = "failed",
@@ -281,7 +281,7 @@ export enum Category {
     OTHER = "other"
 }
 
-export enum Status {
+export enum Status17 {
     DRAFT = "draft",
     PENDING_REVIEW = "pending_review",
     SCHEDULED = "scheduled",
@@ -289,13 +289,13 @@ export enum Status {
     ARCHIVED = "archived"
 }
 
-export enum Status {
+export enum Status18 {
     DRAFT = "draft",
     PUBLISHED = "published",
     ARCHIVED = "archived"
 }
 
-export enum Category {
+export enum Category2 {
     GENERAL = "general",
     BUYING = "buying",
     SELLING = "selling",
@@ -310,7 +310,7 @@ export enum Category {
     OTHER = "other"
 }
 
-export enum Status {
+export enum Status19 {
     DRAFT = "draft",
     PUBLISHED = "published",
     ARCHIVED = "archived",
@@ -347,7 +347,7 @@ export enum PageType {
     CUSTOM = "custom"
 }
 
-export enum Status {
+export enum Status20 {
     PENDING = "pending",
     APPROVED = "approved",
     REJECTED = "rejected",
@@ -365,7 +365,7 @@ export enum AuthorRole {
     OTHER = "other"
 }
 
-export enum Source {
+export enum Source3 {
     WEBSITE = "website",
     GOOGLE = "google",
     FACEBOOK = "facebook",
@@ -376,7 +376,7 @@ export enum Source {
     OTHER = "other"
 }
 
-export enum Category {
+export enum Category3 {
     ACCOUNT = "account",
     PAYMENT = "payment",
     PROPERTY_LISTING = "property_listing",
@@ -394,14 +394,14 @@ export enum RequesterRole {
     AGENCY = "agency"
 }
 
-export enum Priority {
+export enum Priority4 {
     LOW = "low",
     MEDIUM = "medium",
     HIGH = "high",
     URGENT = "urgent"
 }
 
-export enum Status {
+export enum Status21 {
     OPEN = "open",
     IN_PROGRESS = "in_progress",
     WAITING_CUSTOMER = "waiting_customer",
@@ -410,7 +410,7 @@ export enum Status {
     CLOSED = "closed"
 }
 
-export enum Type {
+export enum Type3 {
     TEXT = "text",
     IMAGE = "image",
     FILE = "file",
@@ -430,7 +430,7 @@ export enum SenderRole {
     SYSTEM = "system"
 }
 
-export enum Status {
+export enum Status22 {
     SENDING = "sending",
     SENT = "sent",
     DELIVERED = "delivered",
@@ -447,7 +447,7 @@ export enum InitiatorRole {
     SYSTEM = "system"
 }
 
-export enum Type {
+export enum Type4 {
     USER_TO_STAFF = "user_to_staff",
     AGENT_TO_STAFF = "agent_to_staff",
     AGENCY_TO_STAFF = "agency_to_staff",
@@ -455,7 +455,7 @@ export enum Type {
     SUPPORT_TICKET = "support_ticket"
 }
 
-export enum Status {
+export enum Status23 {
     ACTIVE = "active",
     PENDING = "pending",
     RESOLVED = "resolved",

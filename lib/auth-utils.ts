@@ -1,4 +1,5 @@
-import { User, UserType } from "@/types/auth";
+import { User } from "@/store/auth";
+import { UserType } from "@/types/appwrite";
 
 export function deriveUserRole(user: User | null): UserType | null {
   if (!user) return null;
@@ -6,12 +7,12 @@ export function deriveUserRole(user: User | null): UserType | null {
   const labels = user.labels || [];
 
   if (labels.includes("agency")) {
-    return "agency";
+    return UserType.AGENCY;
   }
 
   if (labels.includes("agent")) {
-    return "agent";
+    return UserType.AGENT;
   }
 
-  return "user";
+  return UserType.USER;
 }
