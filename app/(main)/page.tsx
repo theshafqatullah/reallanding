@@ -388,34 +388,34 @@ export default function Home() {
             </p>
 
             {/* Search Box */}
-            <div className="bg-white rounded-2xl shadow-2xl p-4 md:p-6 max-w-4xl mx-auto">
-              {/* Tabs */}
-              <div className="flex gap-2 mb-4">
+            <div className="max-w-4xl mx-auto">
+              {/* Tabs - Outside the card */}
+              <div className="flex justify-center gap-2 mb-4">
                 <Button
-                  variant={listingType === "buy" ? "default" : "ghost"}
+                  variant={listingType === "buy" ? "default" : "outline"}
                   onClick={() => setListingType("buy")}
-                  className="rounded-full"
+                  className={`rounded-full px-6 ${listingType === "buy" ? "" : "bg-white/20 border-white/30 text-primary-foreground hover:bg-white/30"}`}
                 >
                   Buy
                 </Button>
                 <Button
-                  variant={listingType === "rent" ? "default" : "ghost"}
+                  variant={listingType === "rent" ? "default" : "outline"}
                   onClick={() => setListingType("rent")}
-                  className="rounded-full"
+                  className={`rounded-full px-6 ${listingType === "rent" ? "" : "bg-white/20 border-white/30 text-primary-foreground hover:bg-white/30"}`}
                 >
                   Rent
                 </Button>
                 <Button
-                  variant={listingType === "sell" ? "default" : "ghost"}
+                  variant={listingType === "sell" ? "default" : "outline"}
                   onClick={() => setListingType("sell")}
-                  className="rounded-full"
+                  className={`rounded-full px-6 ${listingType === "sell" ? "" : "bg-white/20 border-white/30 text-primary-foreground hover:bg-white/30"}`}
                 >
                   Sell
                 </Button>
               </div>
 
-              {/* Search Inputs */}
-              <div className="flex flex-col md:flex-row gap-3">
+              {/* Search Inputs - Rounded Full */}
+              <div className="bg-white rounded-full shadow-2xl p-2 flex flex-col md:flex-row gap-2">
                 <div className="flex-1 relative">
                   <MapPinIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
@@ -423,11 +423,12 @@ export default function Home() {
                     placeholder="Enter city, neighborhood, or ZIP code"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-14 text-gray-900 text-lg rounded-xl border-gray-200"
+                    className="pl-12 h-12 text-gray-900 text-lg rounded-full border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                 </div>
+                <div className="hidden md:block w-px bg-gray-200 my-2" />
                 <Select value={propertyType} onValueChange={setPropertyType}>
-                  <SelectTrigger className="w-full md:w-48 h-14 text-gray-900 rounded-xl border-gray-200">
+                  <SelectTrigger className="w-full md:w-44 h-12 text-gray-900 rounded-full border-0 bg-transparent focus:ring-0">
                     <SelectValue placeholder="Property Type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -438,7 +439,7 @@ export default function Home() {
                     <SelectItem value="townhouse">Townhouse</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="lg" className="h-14 px-8 rounded-xl text-lg">
+                <Button size="lg" className="h-12 px-8 rounded-full text-base">
                   <SearchIcon className="mr-2 h-5 w-5" />
                   Search
                 </Button>

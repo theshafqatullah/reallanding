@@ -52,7 +52,20 @@ import {
   CreditCard,
   Eye,
   EyeOff,
+  Trash2,
+  AlertTriangle,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const DATABASE_ID = "main";
 const USERS_COLLECTION_ID = "users";
@@ -64,9 +77,84 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Users | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<Users>>({});
   const [activeTab, setActiveTab] = useState("profile");
+
+  // Create a new user profile document
+  const createProfile = useCallback(async () => {
+    if (!authUser?.$id || !authUser?.email) return;
+
+    try {
+      setCreating(true);
+
+      // Parse name into first and last name
+      const nameParts = (authUser.name || "").split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Create new user document
+      const newProfile = await databases.createDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        ID.unique(),
+        {
+          user_id: authUser.$id,
+          email: authUser.email,
+          username: authUser.email.split("@")[0],
+          first_name: firstName,
+          last_name: lastName,
+          phone: authUser.phone || null,
+          user_type: UserType.USER,
+          is_active: true,
+          is_premium: false,
+          is_verified: authUser.emailVerification || false,
+          is_featured: false,
+          accepts_inquiries: true,
+          availability_status: AvailabilityStatus.AVAILABLE,
+          account_status: "active",
+          profile_completion_percentage: 20,
+          profile_views: 0,
+          total_listings: 0,
+          active_listings: 0,
+          total_sales: 0,
+          total_reviews: 0,
+          rating: 0,
+          experience_years: 0,
+          team_size: 0,
+          response_time_hours: 24,
+          response_rate_percentage: 0,
+          deals_closed: 0,
+          total_inquiries_received: 0,
+          total_inquiries_sent: 0,
+          total_earnings: 0,
+          pending_commissions: 0,
+          credits_balance: 0,
+          email_notifications_enabled: true,
+          sms_notifications_enabled: false,
+          push_notifications_enabled: true,
+          marketing_emails_enabled: false,
+          identity_verified: false,
+          documents_verified: false,
+          background_check_completed: false,
+          bank_account_verified: false,
+          payment_method_verified: false,
+        }
+      );
+
+      const userProfile = newProfile as unknown as Users;
+      setProfile(userProfile);
+      setEditedProfile(userProfile);
+      setIsEditing(true); // Start in edit mode for new profiles
+      toast.success("Profile created! Please complete your information.");
+    } catch (err) {
+      console.error("Error creating profile:", err);
+      toast.error("Failed to create profile");
+    } finally {
+      setCreating(false);
+    }
+  }, [authUser]);
 
   // Fetch user profile from users collection
   const fetchProfile = useCallback(async () => {
@@ -243,6 +331,28 @@ export default function ProfilePage() {
     }
   };
 
+  // Delete profile
+  const handleDeleteProfile = async () => {
+    if (!profile?.$id) return;
+
+    try {
+      setSaving(true);
+      await databases.deleteDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        profile.$id
+      );
+      setProfile(null);
+      setEditedProfile({});
+      toast.success("Profile deleted successfully");
+    } catch (err) {
+      console.error("Error deleting profile:", err);
+      toast.error("Failed to delete profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Loading state
   if (loading || authLoading) {
     return (
@@ -252,17 +362,39 @@ export default function ProfilePage() {
     );
   }
 
-  // No profile found
+  // No profile found - offer to create one
   if (!profile) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-4">
-        <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
-          <UserIcon className="h-10 w-10 text-muted-foreground" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4">
+        <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
+          <UserIcon className="h-12 w-12 text-primary" />
         </div>
-        <h1 className="text-2xl font-bold text-foreground">Profile Not Found</h1>
-        <p className="text-muted-foreground text-center">
-          Your profile hasn&apos;t been set up yet. Please contact support.
-        </p>
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold text-foreground mb-2">
+            Welcome, {authUser?.name || "User"}!
+          </h1>
+          <p className="text-muted-foreground mb-6">
+            Your profile hasn&apos;t been set up yet. Create your profile to start listing properties and connecting with buyers.
+          </p>
+          <Button 
+            onClick={createProfile} 
+            disabled={creating}
+            size="lg"
+            className="gap-2"
+          >
+            {creating ? (
+              <>
+                <Spinner className="h-4 w-4" />
+                Creating Profile...
+              </>
+            ) : (
+              <>
+                <UserIcon className="h-4 w-4" />
+                Create My Profile
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -1063,6 +1195,56 @@ export default function ProfilePage() {
                 />
               </div>
             </Section>
+
+            {/* Danger Zone */}
+            <div className="p-5 bg-destructive/5 rounded-xl border border-destructive/20">
+              <div className="flex items-start gap-3 mb-4">
+                <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                <div>
+                  <h3 className="text-lg font-semibold text-destructive">
+                    Danger Zone
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Irreversible and destructive actions
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-background rounded-lg border border-border">
+                <div>
+                  <p className="font-medium text-foreground">Delete Profile</p>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently delete your profile and all associated data
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="sm" className="gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Delete Profile
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete your
+                        profile and remove all your data from our servers. Your listings,
+                        inquiries, and other related data may also be affected.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteProfile}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Yes, delete my profile
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
