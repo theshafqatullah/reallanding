@@ -1,0 +1,305 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/store/auth";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  User,
+  Settings,
+  Home,
+  Heart,
+  Bell,
+  Shield,
+  CreditCard,
+  HelpCircle,
+  LogOut,
+  ChevronRight,
+  Building2,
+  FileText,
+  MessageSquare,
+  BarChart3,
+  LogIn,
+} from "lucide-react";
+
+interface NavItem {
+  title: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description?: string;
+}
+
+const navItems: NavItem[] = [
+  {
+    title: "Profile",
+    href: "/profile",
+    icon: User,
+    description: "Your personal information",
+  },
+  {
+    title: "My Listings",
+    href: "/profile/listings",
+    icon: Building2,
+    description: "Manage your properties",
+  },
+  {
+    title: "Saved Properties",
+    href: "/profile/saved",
+    icon: Heart,
+    description: "Properties you've saved",
+  },
+  {
+    title: "Inquiries",
+    href: "/profile/inquiries",
+    icon: MessageSquare,
+    description: "Messages and inquiries",
+  },
+  {
+    title: "Analytics",
+    href: "/profile/analytics",
+    icon: BarChart3,
+    description: "Views and performance",
+  },
+];
+
+const settingsItems: NavItem[] = [
+  {
+    title: "Account Settings",
+    href: "/profile/settings",
+    icon: Settings,
+    description: "Manage your account",
+  },
+  {
+    title: "Notifications",
+    href: "/profile/notifications",
+    icon: Bell,
+    description: "Notification preferences",
+  },
+  {
+    title: "Security",
+    href: "/profile/security",
+    icon: Shield,
+    description: "Password and security",
+  },
+  {
+    title: "Billing",
+    href: "/profile/billing",
+    icon: CreditCard,
+    description: "Subscription and payments",
+  },
+];
+
+function ProfileSidebar() {
+  const pathname = usePathname();
+  const { signOut } = useAuth();
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  return (
+    <aside className="hidden lg:flex flex-col w-64 shrink-0">
+      <div className="sticky top-20">
+        <nav className="space-y-1">
+          {/* Main Navigation */}
+          <div className="pb-4">
+            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Dashboard
+            </h3>
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className={cn("h-5 w-5", isActive ? "" : "text-muted-foreground group-hover:text-foreground")} />
+                  <span className="flex-1">{item.title}</span>
+                  {isActive && <ChevronRight className="h-4 w-4" />}
+                </Link>
+              );
+            })}
+          </div>
+
+          <Separator />
+
+          {/* Settings Navigation */}
+          <div className="py-4">
+            <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Settings
+            </h3>
+            {settingsItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className={cn("h-5 w-5", isActive ? "" : "text-muted-foreground group-hover:text-foreground")} />
+                  <span className="flex-1">{item.title}</span>
+                  {isActive && <ChevronRight className="h-4 w-4" />}
+                </Link>
+              );
+            })}
+          </div>
+
+          <Separator />
+
+          {/* Help & Sign Out */}
+          <div className="py-4 space-y-1">
+            <Link
+              href="/contact"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <HelpCircle className="h-5 w-5" />
+              <span>Help & Support</span>
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </nav>
+      </div>
+    </aside>
+  );
+}
+
+function MobileNav() {
+  const pathname = usePathname();
+
+  const allItems = [...navItems, ...settingsItems];
+
+  return (
+    <div className="lg:hidden sticky top-16 z-40 bg-background border-b">
+      <div className="overflow-x-auto">
+        <nav className="flex gap-1 p-2 min-w-max">
+          {allItems.slice(0, 6).map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.title}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+  );
+}
+
+export default function ProfileLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated, loading } = useAuth();
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
+
+  // Not authenticated - show sign in prompt
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="mb-8">
+            <div className="w-48 h-48 mx-auto bg-muted rounded-full flex items-center justify-center">
+              <div className="relative">
+                <User className="w-24 h-24 text-muted-foreground/50" />
+                <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Sign in to access your profile
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            Access your personal dashboard, manage your listings, and connect
+            with potential buyers and sellers.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button asChild size="lg">
+              <Link href="/signin">
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/signup">Create Account</Link>
+            </Button>
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-border">
+            <p className="text-sm text-muted-foreground">
+              By signing in, you agree to our{" "}
+              <Link href="/terms" className="text-primary hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Mobile Navigation */}
+      <MobileNav />
+
+      <div className="container mx-auto max-w-7xl px-4 py-8">
+        <div className="flex gap-8">
+          {/* Desktop Sidebar */}
+          <ProfileSidebar />
+
+          {/* Main Content */}
+          <main className="flex-1 min-w-0">{children}</main>
+        </div>
+      </div>
+    </div>
+  );
+}

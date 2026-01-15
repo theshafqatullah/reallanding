@@ -243,60 +243,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Not logged in state
-  if (!authLoading && !isAuthenticated) {
-    return (
-      <div className="min-h-[70vh] flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          {/* Illustration */}
-          <div className="mb-8">
-            <div className="w-48 h-48 mx-auto bg-muted rounded-full flex items-center justify-center">
-              <div className="relative">
-                <UserIcon className="w-24 h-24 text-muted-foreground/50" />
-                <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <h1 className="text-2xl font-bold text-foreground mb-3">
-            Sign in to view your profile
-          </h1>
-          <p className="text-muted-foreground mb-8">
-            Access your personal dashboard, manage your listings, and connect
-            with potential buyers and sellers.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="lg">
-              <Link href="/signin">
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/signup">Create Account</Link>
-            </Button>
-          </div>
-
-          <div className="mt-8 pt-8 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              By signing in, you agree to our{" "}
-              <Link href="/terms" className="text-primary hover:underline">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="text-primary hover:underline">
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Loading state
   if (loading || authLoading) {
     return (

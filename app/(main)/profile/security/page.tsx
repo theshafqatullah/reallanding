@@ -1,0 +1,349 @@
+"use client";
+
+import { useState } from "react";
+import { useAuth } from "@/store/auth";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import {
+  Shield,
+  Key,
+  Smartphone,
+  Monitor,
+  MapPin,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Save,
+  LogOut,
+} from "lucide-react";
+
+// Mock sessions data
+const MOCK_SESSIONS = [
+  {
+    id: "1",
+    device: "Chrome on Windows",
+    location: "Lahore, Pakistan",
+    ip: "192.168.1.1",
+    lastActive: "2026-01-15T10:30:00",
+    current: true,
+  },
+  {
+    id: "2",
+    device: "Safari on iPhone",
+    location: "Lahore, Pakistan",
+    ip: "192.168.1.2",
+    lastActive: "2026-01-14T18:45:00",
+    current: false,
+  },
+  {
+    id: "3",
+    device: "Chrome on Android",
+    location: "Karachi, Pakistan",
+    ip: "192.168.1.3",
+    lastActive: "2026-01-10T09:15:00",
+    current: false,
+  },
+];
+
+export default function SecurityPage() {
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [twoFactor, setTwoFactor] = useState(false);
+  const [loginAlerts, setLoginAlerts] = useState(true);
+  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+
+  const handlePasswordChange = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword) {
+      toast.error("Please fill in all password fields");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
+    setSaving(true);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    setSaving(false);
+    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    toast.success("Password changed successfully");
+  };
+
+  const handleRevokeSession = (sessionId: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    toast.success("Session revoked");
+  };
+
+  const handleRevokeAllSessions = () => {
+    setSessions((prev) => prev.filter((s) => s.current));
+    toast.success("All other sessions have been revoked");
+  };
+
+  const formatLastActive = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 5) return "Active now";
+    if (diffMins < 60) return `${diffMins} minutes ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    return `${diffDays} days ago`;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">Security</h1>
+        <p className="text-muted-foreground">
+          Manage your password and security settings
+        </p>
+      </div>
+
+      {/* Change Password */}
+      <Card className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Key className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold">Change Password</h2>
+            <p className="text-sm text-muted-foreground">
+              Update your password regularly for better security
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 max-w-md">
+          <div className="space-y-2">
+            <Label>Current Password</Label>
+            <div className="relative">
+              <Input
+                type={showCurrentPassword ? "text" : "password"}
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    currentPassword: e.target.value,
+                  })
+                }
+              />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showCurrentPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>New Password</Label>
+            <div className="relative">
+              <Input
+                type={showNewPassword ? "text" : "password"}
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    newPassword: e.target.value,
+                  })
+                }
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showNewPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Must be at least 8 characters
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Confirm New Password</Label>
+            <Input
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  confirmPassword: e.target.value,
+                })
+              }
+            />
+          </div>
+
+          <Button onClick={handlePasswordChange} disabled={saving}>
+            <Save className="h-4 w-4 mr-2" />
+            {saving ? "Updating..." : "Update Password"}
+          </Button>
+        </div>
+      </Card>
+
+      {/* Two-Factor Authentication */}
+      <Card className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Smartphone className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold">Two-Factor Authentication</h2>
+            <p className="text-sm text-muted-foreground">
+              Add an extra layer of security to your account
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center gap-3">
+            {twoFactor ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 text-yellow-600" />
+            )}
+            <div>
+              <p className="font-medium">
+                {twoFactor ? "2FA is enabled" : "2FA is not enabled"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {twoFactor
+                  ? "Your account has extra protection"
+                  : "Enable 2FA for better security"}
+              </p>
+            </div>
+          </div>
+          <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
+        </div>
+      </Card>
+
+      {/* Login Alerts */}
+      <Card className="p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="font-semibold">Login Alerts</h2>
+            <p className="text-sm text-muted-foreground">
+              Get notified of new login activity
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium">Email me on new login</p>
+            <p className="text-sm text-muted-foreground">
+              Receive an email when someone logs into your account
+            </p>
+          </div>
+          <Switch checked={loginAlerts} onCheckedChange={setLoginAlerts} />
+        </div>
+      </Card>
+
+      {/* Active Sessions */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Monitor className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold">Active Sessions</h2>
+              <p className="text-sm text-muted-foreground">
+                Manage your active sessions
+              </p>
+            </div>
+          </div>
+          {sessions.length > 1 && (
+            <Button variant="outline" size="sm" onClick={handleRevokeAllSessions}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign out all others
+            </Button>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          {sessions.map((session) => (
+            <div
+              key={session.id}
+              className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+            >
+              <div className="flex items-start gap-3">
+                <Monitor className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{session.device}</p>
+                    {session.current && (
+                      <Badge variant="secondary" className="text-xs">
+                        Current
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {session.location}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatLastActive(session.lastActive)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {!session.current && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleRevokeSession(session.id)}
+                >
+                  Revoke
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}

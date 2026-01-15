@@ -42,7 +42,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white" onMouseLeave={handleMenuLeave}>
+    <header className="sticky top-0 z-50 w-full bg-white border-b" onMouseLeave={handleMenuLeave}>
       <div className="container mx-auto max-w-7xl flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
