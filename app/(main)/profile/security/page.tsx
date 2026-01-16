@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/store/auth";
 import { account } from "@/services/appwrite";
-import { type Models } from "appwrite";
+import { type Models, AuthenticatorType } from "appwrite";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,13 +34,17 @@ export default function SecurityPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(true);
+  const [loadingMFA, setLoadingMFA] = useState(true);
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
+  const [togglingMFA, setTogglingMFA] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  const [twoFactor, setTwoFactor] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaFactors, setMfaFactors] = useState<Models.MfaFactors | null>(null);
   const [loginAlerts, setLoginAlerts] = useState(true);
   const [sessions, setSessions] = useState<Models.Session[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string>("");
@@ -53,7 +57,7 @@ export default function SecurityPage() {
       setSessions(sessionsList.sessions);
 
       // Get current session
-      const currentSession = await account.getSession("current");
+      const currentSession = await account.getSession({ sessionId: "current" });
       setCurrentSessionId(currentSession.$id);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -62,9 +66,39 @@ export default function SecurityPage() {
     }
   }, []);
 
+  // Fetch MFA status
+  const fetchMFAStatus = useCallback(async () => {
+    try {
+      setLoadingMFA(true);
+      const factors = await account.listMFAFactors();
+      setMfaFactors(factors);
+      // Check if any MFA factor is enabled
+      setMfaEnabled(factors.totp || factors.email || factors.phone);
+    } catch (error) {
+      console.error("Error fetching MFA status:", error);
+    } finally {
+      setLoadingMFA(false);
+    }
+  }, []);
+
+  // Fetch user preferences for login alerts
+  const fetchPreferences = useCallback(async () => {
+    try {
+      setLoadingPrefs(true);
+      const prefs = await account.getPrefs();
+      setLoginAlerts(prefs.loginAlerts !== false); // Default to true if not set
+    } catch (error) {
+      console.error("Error fetching preferences:", error);
+    } finally {
+      setLoadingPrefs(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchSessions();
-  }, [fetchSessions]);
+    fetchMFAStatus();
+    fetchPreferences();
+  }, [fetchSessions, fetchMFAStatus, fetchPreferences]);
 
   const handlePasswordChange = async () => {
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
@@ -84,17 +118,21 @@ export default function SecurityPage() {
 
     setSaving(true);
     try {
-      await account.updatePassword(
-        passwordForm.newPassword,
-        passwordForm.currentPassword
-      );
+      await account.updatePassword({
+        password: passwordForm.newPassword,
+        oldPassword: passwordForm.currentPassword
+      });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       toast.success("Password changed successfully");
     } catch (error: unknown) {
       console.error("Error changing password:", error);
-      const errorMessage = error instanceof Error && 'message' in error 
-        ? error.message 
-        : "Failed to change password";
+      const appwriteError = error as { message?: string; type?: string };
+      let errorMessage = "Failed to change password";
+      if (appwriteError.type === "user_invalid_credentials") {
+        errorMessage = "Current password is incorrect";
+      } else if (appwriteError.message) {
+        errorMessage = appwriteError.message;
+      }
       toast.error(errorMessage);
     } finally {
       setSaving(false);
@@ -103,7 +141,7 @@ export default function SecurityPage() {
 
   const handleRevokeSession = async (sessionId: string) => {
     try {
-      await account.deleteSession(sessionId);
+      await account.deleteSession({ sessionId });
       toast.success("Session revoked");
       fetchSessions();
     } catch (error) {
@@ -121,6 +159,50 @@ export default function SecurityPage() {
     } catch (error) {
       console.error("Error revoking sessions:", error);
       toast.error("Failed to revoke sessions");
+    }
+  };
+
+  // Handle MFA toggle
+  const handleMFAToggle = async (enabled: boolean) => {
+    setTogglingMFA(true);
+    try {
+      if (enabled) {
+        // Enable MFA - this will require setting up an authenticator
+        await account.updateMFA({ mfa: true });
+        toast.success("MFA enabled. Please set up an authenticator app.");
+        // After enabling, user needs to set up TOTP authenticator
+        // You could redirect to a setup page or show a modal here
+      } else {
+        // Disable MFA
+        await account.updateMFA({ mfa: false });
+        toast.success("MFA has been disabled");
+      }
+      setMfaEnabled(enabled);
+      fetchMFAStatus();
+    } catch (error) {
+      console.error("Error toggling MFA:", error);
+      const appwriteError = error as { message?: string };
+      toast.error(appwriteError.message || "Failed to update MFA settings");
+    } finally {
+      setTogglingMFA(false);
+    }
+  };
+
+  // Handle login alerts toggle
+  const handleLoginAlertsToggle = async (enabled: boolean) => {
+    try {
+      const currentPrefs = await account.getPrefs();
+      await account.updatePrefs({
+        prefs: {
+          ...currentPrefs,
+          loginAlerts: enabled
+        }
+      });
+      setLoginAlerts(enabled);
+      toast.success(enabled ? "Login alerts enabled" : "Login alerts disabled");
+    } catch (error) {
+      console.error("Error updating login alerts:", error);
+      toast.error("Failed to update login alerts");
     }
   };
 
@@ -261,26 +343,51 @@ export default function SecurityPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center gap-3">
-            {twoFactor ? (
-              <CheckCircle className="h-5 w-5 text-green-600" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 text-yellow-600" />
-            )}
-            <div>
-              <p className="font-medium">
-                {twoFactor ? "2FA is enabled" : "2FA is not enabled"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {twoFactor
-                  ? "Your account has extra protection"
-                  : "Enable 2FA for better security"}
-              </p>
-            </div>
+        {loadingMFA ? (
+          <div className="flex items-center justify-center py-4">
+            <Spinner className="h-5 w-5" />
           </div>
-          <Switch checked={twoFactor} onCheckedChange={setTwoFactor} />
-        </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                {mfaEnabled ? (
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                )}
+                <div>
+                  <p className="font-medium">
+                    {mfaEnabled ? "2FA is enabled" : "2FA is not enabled"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {mfaEnabled
+                      ? "Your account has extra protection"
+                      : "Enable 2FA for better security"}
+                  </p>
+                </div>
+              </div>
+              <Switch 
+                checked={mfaEnabled} 
+                onCheckedChange={handleMFAToggle}
+                disabled={togglingMFA}
+              />
+            </div>
+            {mfaFactors && (
+              <div className="text-sm text-muted-foreground pl-4">
+                <p className="font-medium mb-1">Active factors:</p>
+                <ul className="list-disc list-inside space-y-1">
+                  {mfaFactors.totp && <li>Authenticator App (TOTP)</li>}
+                  {mfaFactors.email && <li>Email verification</li>}
+                  {mfaFactors.phone && <li>Phone verification</li>}
+                  {!mfaFactors.totp && !mfaFactors.email && !mfaFactors.phone && (
+                    <li>No factors configured</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Login Alerts */}
@@ -297,15 +404,21 @@ export default function SecurityPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium">Email me on new login</p>
-            <p className="text-sm text-muted-foreground">
-              Receive an email when someone logs into your account
-            </p>
+        {loadingPrefs ? (
+          <div className="flex items-center justify-center py-4">
+            <Spinner className="h-5 w-5" />
           </div>
-          <Switch checked={loginAlerts} onCheckedChange={setLoginAlerts} />
-        </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Email me on new login</p>
+              <p className="text-sm text-muted-foreground">
+                Receive an email when someone logs into your account
+              </p>
+            </div>
+            <Switch checked={loginAlerts} onCheckedChange={handleLoginAlertsToggle} />
+          </div>
+        )}
       </Card>
 
       {/* Active Sessions */}

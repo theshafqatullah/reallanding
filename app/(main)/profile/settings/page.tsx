@@ -64,7 +64,6 @@ export default function SettingsPage() {
   const { user, signOut } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [username, setUsername] = useState("");
 
   // Settings state
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
@@ -78,8 +77,6 @@ export default function SettingsPage() {
       const userData = await usersService.getById(user.$id);
 
       if (userData) {
-        setUsername(userData.username || "");
-        
         // Load settings from user's locale/preference fields
         setSettings({
           ...DEFAULT_SETTINGS,
@@ -105,7 +102,6 @@ export default function SettingsPage() {
     setSaving(true);
     try {
       await usersService.update(user.$id, {
-        username: username || undefined,
         language_preference: settings.language,
         timezone: settings.timezone,
         currency_preference: settings.currency,
@@ -209,14 +205,6 @@ export default function SettingsPage() {
               <Label>Account ID</Label>
               <Input value={user?.$id || ""} disabled />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Username</Label>
-            <Input 
-              placeholder="Choose a unique username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
           </div>
         </div>
       </Card>

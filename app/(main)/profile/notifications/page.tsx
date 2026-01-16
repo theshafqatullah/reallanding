@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/store/auth";
 import { notificationsService } from "@/services/notifications";
+import { account } from "@/services/appwrite";
 import { type UserNotifications } from "@/types/appwrite";
 import { toast } from "sonner";
 import {
@@ -75,8 +76,15 @@ export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState("notifications");
   const [notifications, setNotifications] = useState<UserNotifications[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const [loadingSettings, setLoadingSettings] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [saving, setSaving] = useState(false);
+  
+  // Email digest settings
+  const [dailyDigest, setDailyDigest] = useState(true);
+  const [weeklyReport, setWeeklyReport] = useState(true);
+  const [monthlyNewsletter, setMonthlyNewsletter] = useState(false);
+  
   const [settings, setSettings] = useState<NotificationSetting[]>([
     {
       id: "inquiries",
@@ -145,9 +153,49 @@ export default function NotificationsPage() {
     }
   }, [user?.$id]);
 
+  // Fetch notification preferences from account
+  const fetchNotificationPreferences = useCallback(async () => {
+    try {
+      setLoadingSettings(true);
+      const prefs = await account.getPrefs();
+      
+      // Load notification settings if they exist
+      if (prefs.notificationSettings) {
+        const savedSettings = prefs.notificationSettings as Record<string, { email: boolean; push: boolean; sms: boolean }>;
+        setSettings((prev) =>
+          prev.map((setting) => {
+            const saved = savedSettings[setting.id];
+            if (saved) {
+              return {
+                ...setting,
+                email: saved.email ?? setting.email,
+                push: saved.push ?? setting.push,
+                sms: saved.sms ?? setting.sms,
+              };
+            }
+            return setting;
+          })
+        );
+      }
+      
+      // Load email digest preferences
+      if (prefs.emailDigest) {
+        const digest = prefs.emailDigest as { daily?: boolean; weekly?: boolean; monthly?: boolean };
+        setDailyDigest(digest.daily ?? true);
+        setWeeklyReport(digest.weekly ?? true);
+        setMonthlyNewsletter(digest.monthly ?? false);
+      }
+    } catch (error) {
+      console.error("Error fetching notification preferences:", error);
+    } finally {
+      setLoadingSettings(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchNotifications();
-  }, [fetchNotifications]);
+    fetchNotificationPreferences();
+  }, [fetchNotifications, fetchNotificationPreferences]);
 
   const updateSetting = (
     id: string,
@@ -164,10 +212,32 @@ export default function NotificationsPage() {
 
     setSaving(true);
     try {
-      // Convert settings to preferences format
-      // Note: This would typically be saved to a user_preferences collection
-      // or as a JSON field in the user document
-      // For now, we'll just show success since notification_preferences may not exist
+      // Get current preferences
+      const currentPrefs = await account.getPrefs();
+      
+      // Convert settings array to object format
+      const notificationSettings = settings.reduce((acc, setting) => {
+        acc[setting.id] = {
+          email: setting.email,
+          push: setting.push,
+          sms: setting.sms,
+        };
+        return acc;
+      }, {} as Record<string, { email: boolean; push: boolean; sms: boolean }>);
+      
+      // Save to account preferences
+      await account.updatePrefs({
+        prefs: {
+          ...currentPrefs,
+          notificationSettings,
+          emailDigest: {
+            daily: dailyDigest,
+            weekly: weeklyReport,
+            monthly: monthlyNewsletter,
+          },
+        },
+      });
+      
       toast.success("Notification preferences saved");
     } catch (error) {
       console.error("Error saving preferences:", error);
@@ -423,37 +493,43 @@ export default function NotificationsPage() {
               </div>
             </div>
 
-            <div className="space-y-4 ml-11">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Daily Digest</p>
-                  <p className="text-sm text-muted-foreground">
-                    Summary of daily activity
-                  </p>
-                </div>
-                <Switch defaultChecked />
+            {loadingSettings ? (
+              <div className="flex items-center justify-center py-4">
+                <Spinner className="h-5 w-5" />
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Weekly Report</p>
-                  <p className="text-sm text-muted-foreground">
-                    Weekly performance summary
-                  </p>
+            ) : (
+              <div className="space-y-4 ml-11">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Daily Digest</p>
+                    <p className="text-sm text-muted-foreground">
+                      Summary of daily activity
+                    </p>
+                  </div>
+                  <Switch checked={dailyDigest} onCheckedChange={setDailyDigest} />
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Monthly Newsletter</p>
-                  <p className="text-sm text-muted-foreground">
-                    Market trends and insights
-                  </p>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Weekly Report</p>
+                    <p className="text-sm text-muted-foreground">
+                      Weekly performance summary
+                    </p>
+                  </div>
+                  <Switch checked={weeklyReport} onCheckedChange={setWeeklyReport} />
                 </div>
-                <Switch />
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Monthly Newsletter</p>
+                    <p className="text-sm text-muted-foreground">
+                      Market trends and insights
+                    </p>
+                  </div>
+                  <Switch checked={monthlyNewsletter} onCheckedChange={setMonthlyNewsletter} />
+                </div>
               </div>
-            </div>
+            )}
           </Card>
 
           {/* Save Button */}
