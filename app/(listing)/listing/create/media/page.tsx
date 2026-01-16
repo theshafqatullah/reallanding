@@ -20,10 +20,12 @@ import {
   SparklesIcon,
   CheckCircleIcon,
   Loader2Icon,
-  UploadIcon,
   VideoIcon,
   PhoneIcon
 } from "lucide-react";
+import { PropertyImageUpload, type UploadedImage } from "@/components/listing/property-image-upload";
+import { PropertyVideoUpload, type UploadedVideo } from "@/components/listing/property-video-upload";
+import { propertiesService } from "@/services/properties";
 
 export default function CreateListingMediaPage() {
   const router = useRouter();
@@ -40,25 +42,148 @@ export default function CreateListingMediaPage() {
     setError
   } = useListingFormStore();
 
+  // Image and video states
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [uploadedVideos, setUploadedVideos] = useState<UploadedVideo[]>([]);
+
+  // Handle image upload to Appwrite
+  const handleImageUpload = async (file: File): Promise<{ fileId: string; fileUrl: string }> => {
+    return await propertiesService.uploadImage(file);
+  };
+
+  // Handle video upload to Appwrite
+  const handleVideoUpload = async (file: File): Promise<{ fileId: string; fileUrl: string }> => {
+    return await propertiesService.uploadVideo(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
-      // Prepare the complete property data
-      const propertyData = {
-        ...basicInfo,
-        ...details,
-        ...media,
+      // Validation
+      if (!basicInfo.title || !basicInfo.property_type_id || !basicInfo.listing_type_id || !basicInfo.property_status_id) {
+        throw new Error("Please complete the basic information first");
+      }
+
+      if (!basicInfo.location_id) {
+        throw new Error("Please select a location");
+      }
+
+      if (!basicInfo.price || basicInfo.price <= 0) {
+        throw new Error("Please enter a valid price");
+      }
+
+      // Get main image URL from uploaded images
+      const mainImage = uploadedImages.find(img => img.isMain);
+      const mainImageUrl = mainImage?.url || uploadedImages[0]?.url || "";
+
+      // Get first video URL if any
+      const firstVideoUrl = uploadedVideos[0]?.url || "";
+
+      // Create the property
+      const propertyData = await propertiesService.createFullProperty({
+        // Basic info
+        title: basicInfo.title,
+        description: basicInfo.description,
+        property_type_id: basicInfo.property_type_id,
+        listing_type_id: basicInfo.listing_type_id,
+        property_status_id: basicInfo.property_status_id,
+        location_id: basicInfo.location_id,
+        price: basicInfo.price,
+        currency: basicInfo.currency || "PKR",
+        price_negotiable: basicInfo.price_negotiable,
+        address: basicInfo.address,
+        street_address: basicInfo.street_address,
+        building_name: basicInfo.building_name,
+        unit_number: basicInfo.unit_number,
+        sector: basicInfo.sector,
+        block: basicInfo.block,
+        plot_number: basicInfo.plot_number,
         owner_id: user?.$id,
-      };
+        
+        // Details
+        bedrooms: details.bedrooms,
+        bathrooms: details.bathrooms,
+        kitchens: details.kitchens,
+        parking_spaces: details.parking_spaces,
+        total_area: details.total_area,
+        covered_area: details.covered_area,
+        area_unit: details.area_unit,
+        floors: details.floors,
+        floor_number: details.floor_number,
+        facing: details.facing,
+        condition_type: details.condition_type,
+        furnished_status: details.furnished_status,
+        pet_policy: details.pet_policy,
+        ownership_type: details.ownership_type,
+        year_built: details.year_built,
+        available_from: details.available_from ? new Date(details.available_from).toISOString() : undefined,
+        balconies: details.balconies,
+        servant_quarters: details.servant_quarters,
+        laundry_rooms: details.laundry_rooms,
+        store_rooms: details.store_rooms,
+        has_basement: details.has_basement,
+        has_elevator: details.has_elevator,
+        has_pool: details.has_pool,
+        has_garden: details.has_garden,
+        has_gym: details.has_gym,
+        has_powder_room: details.has_powder_room,
+        has_prayer_room: details.has_prayer_room,
+        has_terrace: details.has_terrace,
+        has_study_room: details.has_study_room,
+        has_central_heating: details.has_central_heating,
+        has_central_ac: details.has_central_ac,
+        security_deposit: details.security_deposit,
+        maintenance_charges: details.maintenance_charges,
+        service_charges_monthly: details.service_charges_monthly,
+        hoa_fees_monthly: details.hoa_fees_monthly,
+        is_mortgaged: details.is_mortgaged,
+        clear_title: details.clear_title,
+        construction_status: details.construction_status,
+        possession_status: details.possession_status,
+        is_west_open: details.is_west_open,
+        is_corner: details.is_corner,
+        road_width_feet: details.road_width_feet,
+        
+        // Media
+        main_image_url: mainImageUrl,
+        video_url: firstVideoUrl,
+        virtual_tour_url: media.virtual_tour_url,
+        youtube_video_id: media.youtube_video_id,
+        total_images: uploadedImages.length,
 
-      // TODO: Submit to Appwrite database
-      console.log("Property data to submit:", propertyData);
+        // Contact
+        contact_person_name: media.contact_person_name,
+        contact_phone: media.contact_phone,
+        contact_email: media.contact_email,
+        whatsapp_number: media.whatsapp_number,
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+        // SEO & Marketing
+        meta_description: media.meta_description,
+        seo_keywords: media.seo_keywords,
+        marketing_tagline: media.marketing_tagline,
+        
+        // Publish settings
+        is_featured: media.is_featured,
+        is_urgent_sale: media.is_urgent_sale,
+        is_hot_deal: media.is_hot_deal,
+        is_published: media.is_published,
+      });
+
+      // Create property_images documents for each uploaded image
+      if (uploadedImages.length > 0) {
+        await propertiesService.createPropertyImages(
+          propertyData.$id,
+          uploadedImages.map((img, index) => ({
+            image_url: img.url,
+            image_title: img.name,
+            display_order: index,
+            is_main: img.isMain,
+          }))
+        );
+      }
 
       toast.success("Property listed successfully!", {
         description: "Your property has been submitted for review.",
@@ -100,72 +225,57 @@ export default function CreateListingMediaPage() {
             Property Images
           </CardTitle>
           <CardDescription>
-            Upload high-quality images of your property (first image will be the cover)
+            Upload high-quality images of your property. First image or the one marked as main will be the cover image. Maximum 40 images allowed.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="main_image_url">Main Image URL</Label>
-            <Input
-              id="main_image_url"
-              placeholder="https://example.com/image.jpg"
-              value={media.main_image_url}
-              onChange={(e) => updateMedia({ main_image_url: e.target.value })}
-            />
-            <p className="text-xs text-muted-foreground">
-              This will be displayed as the main listing image
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="cover_image_url">Cover Image URL</Label>
-            <Input
-              id="cover_image_url"
-              placeholder="https://example.com/cover.jpg"
-              value={media.cover_image_url}
-              onChange={(e) => updateMedia({ cover_image_url: e.target.value })}
-            />
-          </div>
-
-          {/* Image Upload Placeholder */}
-          <div className="border-2 border-dashed rounded-lg p-8 text-center">
-            <UploadIcon className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
-            <p className="text-sm text-muted-foreground mb-2">
-              Drag and drop images here, or click to browse
-            </p>
-            <Button type="button" variant="outline" size="sm">
-              Choose Files
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              PNG, JPG up to 10MB each. Maximum 20 images.
-            </p>
-          </div>
+        <CardContent>
+          <PropertyImageUpload
+            images={uploadedImages}
+            onImagesChange={setUploadedImages}
+            onUpload={handleImageUpload}
+            maxImages={40}
+            maxFileSize={10}
+            disabled={isSubmitting}
+          />
         </CardContent>
       </Card>
 
-      {/* Video & Virtual Tour */}
+      {/* Videos Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <VideoIcon className="h-5 w-5 text-primary" />
-            Video & Virtual Tour
+            Property Videos
           </CardTitle>
           <CardDescription>
-            Add video content to make your listing stand out
+            Upload video walkthroughs of your property. Maximum 5 videos allowed, up to 100MB each.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PropertyVideoUpload
+            videos={uploadedVideos}
+            onVideosChange={setUploadedVideos}
+            onUpload={handleVideoUpload}
+            maxVideos={5}
+            maxFileSize={100}
+            disabled={isSubmitting}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Virtual Tour & YouTube */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <VideoIcon className="h-5 w-5 text-primary" />
+            Virtual Tour & External Links
+          </CardTitle>
+          <CardDescription>
+            Add virtual tour or YouTube video links for more engagement
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="video_url">Video URL</Label>
-              <Input
-                id="video_url"
-                placeholder="https://example.com/video.mp4"
-                value={media.video_url}
-                onChange={(e) => updateMedia({ video_url: e.target.value })}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="youtube_video_id">YouTube Video ID</Label>
               <Input
@@ -174,9 +284,12 @@ export default function CreateListingMediaPage() {
                 value={media.youtube_video_id}
                 onChange={(e) => updateMedia({ youtube_video_id: e.target.value })}
               />
+              <p className="text-xs text-muted-foreground">
+                Enter only the video ID from YouTube URL
+              </p>
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="virtual_tour_url">Virtual Tour URL</Label>
               <Input
                 id="virtual_tour_url"

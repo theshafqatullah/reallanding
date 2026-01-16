@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/store/auth";
-import { databases, storage } from "@/services/appwrite";
+import { databases } from "@/services/appwrite";
+import { usersService } from "@/services/users";
 import { Query, ID } from "appwrite";
 import { type Users, AvailabilityStatus, UserType } from "@/types/appwrite";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -69,7 +70,6 @@ import {
 
 const DATABASE_ID = "main";
 const USERS_COLLECTION_ID = "users";
-const STORAGE_BUCKET_ID = "images";
 
 export default function ProfilePage() {
   const { user: authUser, isAuthenticated, loading: authLoading } = useAuth();
@@ -302,23 +302,15 @@ export default function ProfilePage() {
     try {
       setSaving(true);
 
-      // Upload to storage
-      const uploadedFile = await storage.createFile(
-        STORAGE_BUCKET_ID,
-        ID.unique(),
-        file
-      );
+      let fileUrl: string;
 
-      // Get the file URL
-      const fileUrl = storage.getFilePreview(STORAGE_BUCKET_ID, uploadedFile.$id);
-
-      // Update the profile with new image URL
-      await databases.updateDocument(
-        DATABASE_ID,
-        USERS_COLLECTION_ID,
-        profile.$id,
-        { [field]: fileUrl }
-      );
+      if (field === "profile_image_url") {
+        // Upload to avatars bucket
+        fileUrl = await usersService.uploadAvatar(profile.$id, file);
+      } else {
+        // Upload to banners bucket
+        fileUrl = await usersService.uploadBanner(profile.$id, file);
+      }
 
       setProfile({ ...profile, [field]: fileUrl });
       setEditedProfile((prev) => ({ ...prev, [field]: fileUrl }));

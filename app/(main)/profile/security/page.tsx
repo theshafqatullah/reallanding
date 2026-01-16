@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/store/auth";
+import { account } from "@/services/appwrite";
+import { type Models } from "appwrite";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import {
   Shield,
@@ -25,39 +28,12 @@ import {
   LogOut,
 } from "lucide-react";
 
-// Mock sessions data
-const MOCK_SESSIONS = [
-  {
-    id: "1",
-    device: "Chrome on Windows",
-    location: "Lahore, Pakistan",
-    ip: "192.168.1.1",
-    lastActive: "2026-01-15T10:30:00",
-    current: true,
-  },
-  {
-    id: "2",
-    device: "Safari on iPhone",
-    location: "Lahore, Pakistan",
-    ip: "192.168.1.2",
-    lastActive: "2026-01-14T18:45:00",
-    current: false,
-  },
-  {
-    id: "3",
-    device: "Chrome on Android",
-    location: "Karachi, Pakistan",
-    ip: "192.168.1.3",
-    lastActive: "2026-01-10T09:15:00",
-    current: false,
-  },
-];
-
 export default function SecurityPage() {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(true);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -66,7 +42,29 @@ export default function SecurityPage() {
 
   const [twoFactor, setTwoFactor] = useState(false);
   const [loginAlerts, setLoginAlerts] = useState(true);
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
+  const [sessions, setSessions] = useState<Models.Session[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string>("");
+
+  // Fetch sessions
+  const fetchSessions = useCallback(async () => {
+    try {
+      setLoadingSessions(true);
+      const sessionsList = await account.listSessions();
+      setSessions(sessionsList.sessions);
+
+      // Get current session
+      const currentSession = await account.getSession("current");
+      setCurrentSessionId(currentSession.$id);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   const handlePasswordChange = async () => {
     if (!passwordForm.currentPassword || !passwordForm.newPassword) {
@@ -85,20 +83,45 @@ export default function SecurityPage() {
     }
 
     setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    toast.success("Password changed successfully");
+    try {
+      await account.updatePassword(
+        passwordForm.newPassword,
+        passwordForm.currentPassword
+      );
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      toast.success("Password changed successfully");
+    } catch (error: unknown) {
+      console.error("Error changing password:", error);
+      const errorMessage = error instanceof Error && 'message' in error 
+        ? error.message 
+        : "Failed to change password";
+      toast.error(errorMessage);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleRevokeSession = (sessionId: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-    toast.success("Session revoked");
+  const handleRevokeSession = async (sessionId: string) => {
+    try {
+      await account.deleteSession(sessionId);
+      toast.success("Session revoked");
+      fetchSessions();
+    } catch (error) {
+      console.error("Error revoking session:", error);
+      toast.error("Failed to revoke session");
+    }
   };
 
-  const handleRevokeAllSessions = () => {
-    setSessions((prev) => prev.filter((s) => s.current));
-    toast.success("All other sessions have been revoked");
+  const handleRevokeAllSessions = async () => {
+    try {
+      await account.deleteSessions();
+      toast.success("All other sessions have been revoked");
+      // Note: This will also log out current session, so user may need to log in again
+      fetchSessions();
+    } catch (error) {
+      console.error("Error revoking sessions:", error);
+      toast.error("Failed to revoke sessions");
+    }
   };
 
   const formatLastActive = (dateString: string) => {
@@ -113,6 +136,12 @@ export default function SecurityPage() {
     if (diffMins < 60) return `${diffMins} minutes ago`;
     if (diffHours < 24) return `${diffHours} hours ago`;
     return `${diffDays} days ago`;
+  };
+
+  const getDeviceInfo = (session: Models.Session) => {
+    const browser = session.clientName || "Unknown Browser";
+    const os = session.osName || "Unknown OS";
+    return `${browser} on ${os}`;
   };
 
   return (
@@ -301,48 +330,63 @@ export default function SecurityPage() {
           )}
         </div>
 
-        <div className="space-y-4">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
-            >
-              <div className="flex items-start gap-3">
-                <Monitor className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{session.device}</p>
-                    {session.current && (
-                      <Badge variant="secondary" className="text-xs">
-                        Current
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {session.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {formatLastActive(session.lastActive)}
-                    </span>
+        {loadingSessions ? (
+          <div className="flex items-center justify-center py-8">
+            <Spinner className="h-6 w-6" />
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {sessions.map((session) => (
+              <div
+                key={session.$id}
+                className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+              >
+                <div className="flex items-start gap-3">
+                  <Monitor className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{getDeviceInfo(session)}</p>
+                      {session.$id === currentSessionId && (
+                        <Badge variant="secondary" className="text-xs">
+                          Current
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {session.countryName || "Unknown location"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {formatLastActive(session.$createdAt)}
+                      </span>
+                      {session.ip && (
+                        <span className="text-xs">IP: {session.ip}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                {session.$id !== currentSessionId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleRevokeSession(session.$id)}
+                  >
+                    Revoke
+                  </Button>
+                )}
               </div>
-              {!session.current && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => handleRevokeSession(session.id)}
-                >
-                  Revoke
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
+            ))}
+
+            {sessions.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No active sessions found
+              </div>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );

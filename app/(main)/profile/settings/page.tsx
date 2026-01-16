@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/store/auth";
+import { usersService } from "@/services/users";
+import { account } from "@/services/appwrite";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -37,36 +40,137 @@ import {
   Save,
 } from "lucide-react";
 
+interface UserSettings {
+  language: string;
+  timezone: string;
+  currency: string;
+  dateFormat: string;
+  theme: string;
+  compactMode: boolean;
+  showOnlineStatus: boolean;
+}
+
+const DEFAULT_SETTINGS: UserSettings = {
+  language: "en",
+  timezone: "Asia/Karachi",
+  currency: "PKR",
+  dateFormat: "DD/MM/YYYY",
+  theme: "system",
+  compactMode: false,
+  showOnlineStatus: true,
+};
+
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [username, setUsername] = useState("");
 
   // Settings state
-  const [settings, setSettings] = useState({
-    language: "en",
-    timezone: "Asia/Karachi",
-    currency: "PKR",
-    dateFormat: "DD/MM/YYYY",
-    theme: "system",
-    compactMode: false,
-    showOnlineStatus: true,
-  });
+  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+
+  // Load user settings
+  const loadSettings = useCallback(async () => {
+    if (!user?.$id) return;
+
+    try {
+      setLoading(true);
+      const userData = await usersService.getById(user.$id);
+
+      if (userData) {
+        setUsername(userData.username || "");
+        
+        // Load settings from user's locale/preference fields
+        setSettings({
+          ...DEFAULT_SETTINGS,
+          language: userData.language_preference || "en",
+          timezone: userData.timezone || "Asia/Karachi",
+          currency: userData.currency_preference || "PKR",
+        });
+      }
+    } catch (error) {
+      console.error("Error loading settings:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.$id]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const handleSave = async () => {
+    if (!user?.$id) return;
+
     setSaving(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setSaving(false);
-    toast.success("Settings saved successfully");
+    try {
+      await usersService.update(user.$id, {
+        username: username || undefined,
+        language_preference: settings.language,
+        timezone: settings.timezone,
+        currency_preference: settings.currency,
+      });
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast.error("Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleExportData = () => {
-    toast.success("Your data export has been initiated. You'll receive an email shortly.");
+  const handleExportData = async () => {
+    if (!user?.$id) return;
+
+    try {
+      // Fetch user data and related information
+      const userData = await usersService.getById(user.$id);
+
+      // Create a data export
+      const exportData = {
+        user: userData,
+        exportDate: new Date().toISOString(),
+      };
+
+      // Download as JSON
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `reallanding-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success("Data exported successfully");
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast.error("Failed to export data");
+    }
   };
 
   const handleDeleteAccount = async () => {
-    toast.error("Account deletion is not available in demo mode");
+    try {
+      // Delete the user's identity (this will delete the Appwrite account)
+      await account.deleteIdentity(user?.$id || "");
+      await signOut();
+      toast.success("Account deleted successfully");
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Failed to delete account. Please contact support.");
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,7 +212,11 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-2">
             <Label>Username</Label>
-            <Input placeholder="Choose a unique username" />
+            <Input 
+              placeholder="Choose a unique username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
           </div>
         </div>
       </Card>
@@ -338,7 +446,11 @@ export default function SettingsPage() {
       {/* Save Button */}
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-2" />
+          {saving ? (
+            <Spinner className="h-4 w-4 mr-2" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           {saving ? "Saving..." : "Save Settings"}
         </Button>
       </div>

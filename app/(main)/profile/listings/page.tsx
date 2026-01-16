@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/store/auth";
+import { propertiesService } from "@/services/properties";
+import { type Properties } from "@/types/appwrite";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +15,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import Link from "next/link";
+import Image from "next/image";
+import { toast } from "sonner";
 import {
   Plus,
   Building2,
@@ -28,54 +43,7 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  AlertCircle,
 } from "lucide-react";
-
-// Mock data for listings
-const MOCK_LISTINGS = [
-  {
-    id: "1",
-    title: "Modern 3 Bedroom Apartment in DHA Phase 6",
-    location: "DHA Phase 6, Lahore",
-    price: 25000000,
-    status: "active",
-    views: 245,
-    inquiries: 12,
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 1800,
-    createdAt: "2025-12-15",
-    image: null,
-  },
-  {
-    id: "2",
-    title: "Luxury Villa with Pool in Bahria Town",
-    location: "Bahria Town, Lahore",
-    price: 85000000,
-    status: "pending",
-    views: 89,
-    inquiries: 5,
-    bedrooms: 5,
-    bathrooms: 6,
-    area: 5000,
-    createdAt: "2025-12-20",
-    image: null,
-  },
-  {
-    id: "3",
-    title: "Commercial Plaza in Gulberg",
-    location: "Gulberg III, Lahore",
-    price: 150000000,
-    status: "sold",
-    views: 567,
-    inquiries: 34,
-    bedrooms: 0,
-    bathrooms: 4,
-    area: 10000,
-    createdAt: "2025-11-10",
-    image: null,
-  },
-];
 
 function formatPrice(price: number) {
   if (price >= 10000000) {
@@ -86,9 +54,18 @@ function formatPrice(price: number) {
   return `PKR ${price.toLocaleString()}`;
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, isActive: boolean) {
+  if (!isActive) {
+    return (
+      <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
+        <XCircle className="h-3 w-3 mr-1" />
+        Inactive
+      </Badge>
+    );
+  }
+
   switch (status) {
-    case "active":
+    case "approved":
       return (
         <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
           <CheckCircle className="h-3 w-3 mr-1" />
@@ -102,18 +79,11 @@ function getStatusBadge(status: string) {
           Pending
         </Badge>
       );
-    case "sold":
-      return (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          Sold
-        </Badge>
-      );
-    case "expired":
+    case "rejected":
       return (
         <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
           <XCircle className="h-3 w-3 mr-1" />
-          Expired
+          Rejected
         </Badge>
       );
     default:
@@ -121,22 +91,143 @@ function getStatusBadge(status: string) {
   }
 }
 
+function getAvailabilityBadge(availability: string) {
+  switch (availability) {
+    case "sold":
+      return (
+        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Sold
+        </Badge>
+      );
+    case "rented":
+      return (
+        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+          <CheckCircle className="h-3 w-3 mr-1" />
+          Rented
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
+
 export default function MyListingsPage() {
   const { user } = useAuth();
+  const [listings, setListings] = useState<Properties[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
-  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    pending: 0,
+    sold: 0,
+  });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const filteredListings = MOCK_LISTINGS.filter((listing) => {
+  // Fetch listings
+  const fetchListings = useCallback(async () => {
+    if (!user?.$id) return;
+
+    try {
+      setLoading(true);
+      const { properties, total } = await propertiesService.getByOwnerId(
+        user.$id,
+        { limit: 50 }
+      );
+
+      setListings(properties);
+
+      // Calculate stats
+      const newStats = {
+        total,
+        active: properties.filter(
+          (p) => p.verification_status === "approved" && p.is_active
+        ).length,
+        pending: properties.filter(
+          (p) => p.verification_status === "pending"
+        ).length,
+        sold: properties.filter((p) => p.availability === "sold").length,
+      };
+      setStats(newStats);
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+      toast.error("Failed to load listings");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.$id]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  // Filter listings based on active tab
+  const filteredListings = listings.filter((listing) => {
     if (activeTab === "all") return true;
-    return listing.status === activeTab;
+    if (activeTab === "active") {
+      return listing.verification_status === "approved" && listing.is_active;
+    }
+    if (activeTab === "pending") {
+      return listing.verification_status === "pending";
+    }
+    if (activeTab === "sold") {
+      return listing.availability === "sold";
+    }
+    return true;
   });
 
-  const stats = {
-    total: MOCK_LISTINGS.length,
-    active: MOCK_LISTINGS.filter((l) => l.status === "active").length,
-    pending: MOCK_LISTINGS.filter((l) => l.status === "pending").length,
-    sold: MOCK_LISTINGS.filter((l) => l.status === "sold").length,
+  // Handle delete
+  const handleDelete = async (propertyId: string) => {
+    try {
+      setDeletingId(propertyId);
+      await propertiesService.delete(propertyId);
+      toast.success("Listing deleted successfully");
+      fetchListings();
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      toast.error("Failed to delete listing");
+    } finally {
+      setDeletingId(null);
+    }
   };
+
+  // Handle mark as sold
+  const handleMarkAsSold = async (propertyId: string) => {
+    try {
+      await propertiesService.update(propertyId, {
+        availability: "sold",
+        is_active: false,
+      });
+      toast.success("Listing marked as sold");
+      fetchListings();
+    } catch (error) {
+      console.error("Error updating listing:", error);
+      toast.error("Failed to update listing");
+    }
+  };
+
+  // Handle toggle active
+  const handleToggleActive = async (propertyId: string, currentActive: boolean) => {
+    try {
+      await propertiesService.update(propertyId, {
+        is_active: !currentActive,
+      });
+      toast.success(currentActive ? "Listing deactivated" : "Listing activated");
+      fetchListings();
+    } catch (error) {
+      console.error("Error updating listing:", error);
+      toast.error("Failed to update listing");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -203,11 +294,21 @@ export default function MyListingsPage() {
           ) : (
             <div className="space-y-4">
               {filteredListings.map((listing) => (
-                <Card key={listing.id} className="p-4">
+                <Card key={listing.$id} className="p-4">
                   <div className="flex flex-col md:flex-row gap-4">
                     {/* Image */}
-                    <div className="w-full md:w-48 h-32 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                    <div className="w-full md:w-48 h-32 bg-muted rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
+                      {listing.main_image_url ? (
+                        <Image
+                          src={listing.main_image_url}
+                          alt={listing.title}
+                          width={192}
+                          height={128}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Building2 className="h-8 w-8 text-muted-foreground" />
+                      )}
                     </div>
 
                     {/* Details */}
@@ -219,10 +320,13 @@ export default function MyListingsPage() {
                           </h3>
                           <p className="text-muted-foreground flex items-center gap-1 text-sm">
                             <MapPin className="h-3 w-3" />
-                            {listing.location}
+                            {listing.address || "Location not specified"}
                           </p>
                         </div>
-                        {getStatusBadge(listing.status)}
+                        <div className="flex gap-2">
+                          {getAvailabilityBadge(listing.availability)}
+                          {getStatusBadge(listing.verification_status, listing.is_active)}
+                        </div>
                       </div>
 
                       <p className="text-xl font-bold text-primary mt-2">
@@ -230,25 +334,27 @@ export default function MyListingsPage() {
                       </p>
 
                       <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
-                        {listing.bedrooms > 0 && (
+                        {listing.bedrooms && listing.bedrooms > 0 && (
                           <span className="flex items-center gap-1">
                             <Bed className="h-4 w-4" />
                             {listing.bedrooms} Beds
                           </span>
                         )}
-                        {listing.bathrooms > 0 && (
+                        {listing.bathrooms && listing.bathrooms > 0 && (
                           <span className="flex items-center gap-1">
                             <Bath className="h-4 w-4" />
                             {listing.bathrooms} Baths
                           </span>
                         )}
-                        <span className="flex items-center gap-1">
-                          <Ruler className="h-4 w-4" />
-                          {listing.area.toLocaleString()} sq ft
-                        </span>
+                        {listing.total_area && (
+                          <span className="flex items-center gap-1">
+                            <Ruler className="h-4 w-4" />
+                            {listing.total_area.toLocaleString()} {listing.area_unit || "sq ft"}
+                          </span>
+                        )}
                         <span className="flex items-center gap-1">
                           <Eye className="h-4 w-4" />
-                          {listing.views} views
+                          {listing.view_count || 0} views
                         </span>
                       </div>
                     </div>
@@ -256,13 +362,13 @@ export default function MyListingsPage() {
                     {/* Actions */}
                     <div className="flex md:flex-col gap-2 shrink-0">
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/listing/${listing.id}/edit`}>
+                        <Link href={`/listing/${listing.$id}/edit`}>
                           <Edit className="h-4 w-4 mr-1" />
                           Edit
                         </Link>
                       </Button>
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/p/${listing.id}`}>
+                        <Link href={`/p/${listing.slug || listing.$id}`}>
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Link>
@@ -274,12 +380,52 @@ export default function MyListingsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Mark as Sold</DropdownMenuItem>
-                          <DropdownMenuItem>Renew Listing</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
+                          {listing.availability !== "sold" && (
+                            <DropdownMenuItem
+                              onClick={() => handleMarkAsSold(listing.$id)}
+                            >
+                              Mark as Sold
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleToggleActive(listing.$id, listing.is_active)
+                            }
+                          >
+                            {listing.is_active ? "Deactivate" : "Activate"} Listing
                           </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onSelect={(e) => e.preventDefault()}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Listing</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this listing? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(listing.$id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  {deletingId === listing.$id ? (
+                                    <Spinner className="h-4 w-4" />
+                                  ) : (
+                                    "Delete"
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

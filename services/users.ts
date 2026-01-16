@@ -4,7 +4,12 @@ import { type Users, UserType, AvailabilityStatus, AccountStatus } from "@/types
 
 const DATABASE_ID = "main";
 const USERS_COLLECTION_ID = "users";
-const STORAGE_BUCKET_ID = "images";
+const AVATARS_BUCKET_ID = "avatars";
+const BANNERS_BUCKET_ID = "banners";
+
+// Appwrite configuration for generating file URLs
+const APPWRITE_ENDPOINT = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1";
+const APPWRITE_PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || "";
 
 export interface CreateUserData {
   user_id: string;
@@ -179,37 +184,145 @@ export const usersService = {
   },
 
   /**
-   * Upload a profile or banner image
+   * Upload a profile avatar image to the avatars bucket
    */
-  async uploadImage(
+  async uploadAvatar(
     documentId: string,
-    file: File,
-    field: "profile_image_url" | "banner_image_url"
+    file: File
   ): Promise<string> {
     try {
-      // Upload to storage
+      // Upload to avatars bucket
       const uploadedFile = await storage.createFile(
-        STORAGE_BUCKET_ID,
+        AVATARS_BUCKET_ID,
         ID.unique(),
         file
       );
 
-      // Get the file URL
-      const fileUrl = storage.getFilePreview(STORAGE_BUCKET_ID, uploadedFile.$id).toString();
+      // Generate the file view URL for storage in the database
+      const fileUrl = `${APPWRITE_ENDPOINT}/storage/buckets/${AVATARS_BUCKET_ID}/files/${uploadedFile.$id}/view?project=${APPWRITE_PROJECT_ID}`;
 
-      // Update the user document with the new image URL
+      // Update the user document with the new avatar URL
       await databases.updateDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
         documentId,
-        { [field]: fileUrl }
+        { profile_image_url: fileUrl }
       );
 
       return fileUrl;
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Error uploading avatar:", error);
       throw error;
     }
+  },
+
+  /**
+   * Upload a banner image to the banners bucket
+   */
+  async uploadBanner(
+    documentId: string,
+    file: File
+  ): Promise<string> {
+    try {
+      // Upload to banners bucket
+      const uploadedFile = await storage.createFile(
+        BANNERS_BUCKET_ID,
+        ID.unique(),
+        file
+      );
+
+      // Generate the file view URL for storage in the database
+      const fileUrl = `${APPWRITE_ENDPOINT}/storage/buckets/${BANNERS_BUCKET_ID}/files/${uploadedFile.$id}/view?project=${APPWRITE_PROJECT_ID}`;
+
+      // Update the user document with the new banner URL
+      await databases.updateDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        documentId,
+        { banner_image_url: fileUrl }
+      );
+
+      return fileUrl;
+    } catch (error) {
+      console.error("Error uploading banner:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete an avatar image from storage
+   */
+  async deleteAvatar(documentId: string, fileUrl: string): Promise<void> {
+    try {
+      // Extract file ID from URL
+      const fileId = this.extractFileIdFromUrl(fileUrl);
+      if (fileId) {
+        await storage.deleteFile(AVATARS_BUCKET_ID, fileId);
+      }
+
+      // Clear the URL in the user document
+      await databases.updateDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        documentId,
+        { profile_image_url: null }
+      );
+    } catch (error) {
+      console.error("Error deleting avatar:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a banner image from storage
+   */
+  async deleteBanner(documentId: string, fileUrl: string): Promise<void> {
+    try {
+      // Extract file ID from URL
+      const fileId = this.extractFileIdFromUrl(fileUrl);
+      if (fileId) {
+        await storage.deleteFile(BANNERS_BUCKET_ID, fileId);
+      }
+
+      // Clear the URL in the user document
+      await databases.updateDocument(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        documentId,
+        { banner_image_url: null }
+      );
+    } catch (error) {
+      console.error("Error deleting banner:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Extract file ID from Appwrite storage URL
+   */
+  extractFileIdFromUrl(url: string): string | null {
+    try {
+      const regex = /\/files\/([^/]+)\//;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Get file preview URL with optional transformations
+   */
+  getFilePreviewUrl(
+    bucketId: string,
+    fileId: string,
+    options?: { width?: number; height?: number; quality?: number }
+  ): string {
+    let url = `${APPWRITE_ENDPOINT}/storage/buckets/${bucketId}/files/${fileId}/preview?project=${APPWRITE_PROJECT_ID}`;
+    if (options?.width) url += `&width=${options.width}`;
+    if (options?.height) url += `&height=${options.height}`;
+    if (options?.quality) url += `&quality=${options.quality}`;
+    return url;
   },
 
   /**

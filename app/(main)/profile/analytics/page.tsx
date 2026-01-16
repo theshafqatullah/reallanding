@@ -8,7 +8,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/store/auth";
+import { analyticsService, type UserAnalyticsOverview, type PropertyAnalytics } from "@/services/analytics";
+import { toast } from "sonner";
 import {
   Eye,
   TrendingUp,
@@ -23,55 +27,6 @@ import {
   ArrowDownRight,
 } from "lucide-react";
 
-// Mock analytics data
-const MOCK_STATS = {
-  totalViews: 1245,
-  viewsTrend: 12.5,
-  totalInquiries: 48,
-  inquiriesTrend: -5.2,
-  totalSaved: 87,
-  savedTrend: 23.1,
-  totalCalls: 15,
-  callsTrend: 8.3,
-};
-
-const MOCK_PROPERTY_STATS = [
-  {
-    id: "1",
-    title: "Modern 3 Bedroom Apartment in DHA Phase 6",
-    views: 245,
-    inquiries: 12,
-    saves: 34,
-    calls: 5,
-  },
-  {
-    id: "2",
-    title: "Luxury Villa with Pool in Bahria Town",
-    views: 567,
-    inquiries: 24,
-    saves: 45,
-    calls: 8,
-  },
-  {
-    id: "3",
-    title: "Commercial Plaza in Gulberg",
-    views: 433,
-    inquiries: 12,
-    saves: 8,
-    calls: 2,
-  },
-];
-
-const MOCK_CHART_DATA = [
-  { date: "Jan 1", views: 45, inquiries: 3 },
-  { date: "Jan 2", views: 52, inquiries: 5 },
-  { date: "Jan 3", views: 38, inquiries: 2 },
-  { date: "Jan 4", views: 65, inquiries: 8 },
-  { date: "Jan 5", views: 78, inquiries: 6 },
-  { date: "Jan 6", views: 92, inquiries: 4 },
-  { date: "Jan 7", views: 88, inquiries: 7 },
-];
-
 function StatCard({
   title,
   value,
@@ -81,11 +36,11 @@ function StatCard({
 }: {
   title: string;
   value: number | string;
-  trend: number;
+  trend?: number;
   icon: React.ComponentType<{ className?: string }>;
   iconColor: string;
 }) {
-  const isPositive = trend >= 0;
+  const isPositive = trend ? trend >= 0 : true;
 
   return (
     <Card className="p-6">
@@ -98,25 +53,91 @@ function StatCard({
           <Icon className="h-6 w-6" />
         </div>
       </div>
-      <div className="flex items-center gap-1 mt-4">
-        {isPositive ? (
-          <ArrowUpRight className="h-4 w-4 text-green-600" />
-        ) : (
-          <ArrowDownRight className="h-4 w-4 text-red-600" />
-        )}
-        <span
-          className={`text-sm font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}
-        >
-          {Math.abs(trend)}%
-        </span>
-        <span className="text-sm text-muted-foreground">vs last month</span>
-      </div>
+      {trend !== undefined && (
+        <div className="flex items-center gap-1 mt-4">
+          {isPositive ? (
+            <ArrowUpRight className="h-4 w-4 text-green-600" />
+          ) : (
+            <ArrowDownRight className="h-4 w-4 text-red-600" />
+          )}
+          <span
+            className={`text-sm font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}
+          >
+            {Math.abs(trend)}%
+          </span>
+          <span className="text-sm text-muted-foreground">vs last month</span>
+        </div>
+      )}
     </Card>
   );
 }
 
 export default function AnalyticsPage() {
+  const { user } = useAuth();
   const [timeRange, setTimeRange] = useState("30days");
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<UserAnalyticsOverview | null>(null);
+  const [topProperties, setTopProperties] = useState<PropertyAnalytics[]>([]);
+  const [dailyData, setDailyData] = useState<{ date: string; views: number; inquiries: number }[]>([]);
+
+  // Get days count from selection
+  const getDaysCount = useCallback(() => {
+    switch (timeRange) {
+      case "7days":
+        return 7;
+      case "30days":
+        return 30;
+      case "90days":
+        return 90;
+      case "year":
+        return 365;
+      default:
+        return 30;
+    }
+  }, [timeRange]);
+
+  // Fetch analytics data
+  const fetchAnalytics = useCallback(async () => {
+    if (!user?.$id) return;
+
+    try {
+      setLoading(true);
+      const days = getDaysCount();
+
+      const [overviewData, topPropertiesData, dailyStats] = await Promise.all([
+        analyticsService.getUserAnalyticsOverview(user.$id),
+        analyticsService.getTopPerformingProperties(user.$id, "views", 5),
+        analyticsService.getDailyAnalytics(user.$id, days),
+      ]);
+
+      setOverview(overviewData);
+      setTopProperties(topPropertiesData);
+      setDailyData(
+        dailyStats.map((d) => ({
+          date: d.date,
+          views: d.views,
+          inquiries: d.inquiries,
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      toast.error("Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.$id, getDaysCount]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -145,29 +166,29 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Views"
-          value={MOCK_STATS.totalViews.toLocaleString()}
-          trend={MOCK_STATS.viewsTrend}
+          value={(overview?.totalViews || 0).toLocaleString()}
+          trend={overview?.viewsTrend}
           icon={Eye}
           iconColor="bg-blue-100 text-blue-600"
         />
         <StatCard
           title="Inquiries"
-          value={MOCK_STATS.totalInquiries}
-          trend={MOCK_STATS.inquiriesTrend}
+          value={overview?.totalInquiries || 0}
+          trend={overview?.inquiriesTrend}
           icon={MessageSquare}
           iconColor="bg-green-100 text-green-600"
         />
         <StatCard
           title="Saves"
-          value={MOCK_STATS.totalSaved}
-          trend={MOCK_STATS.savedTrend}
+          value={overview?.totalSaves || 0}
+          trend={overview?.savesTrend}
           icon={Heart}
           iconColor="bg-red-100 text-red-600"
         />
         <StatCard
-          title="Phone Calls"
-          value={MOCK_STATS.totalCalls}
-          trend={MOCK_STATS.callsTrend}
+          title="Calls"
+          value={overview?.totalCalls || 0}
+          trend={overview?.callsTrend}
           icon={Phone}
           iconColor="bg-purple-100 text-purple-600"
         />
@@ -176,79 +197,92 @@ export default function AnalyticsPage() {
       {/* Chart Section */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold mb-4">Views & Inquiries Trend</h2>
-        <div className="h-64 flex items-end justify-between gap-2">
-          {MOCK_CHART_DATA.map((data, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center gap-2">
-              <div className="w-full flex flex-col items-center gap-1">
-                <div
-                  className="w-full bg-primary/20 rounded-t"
-                  style={{ height: `${(data.views / 100) * 150}px` }}
-                />
-                <div
-                  className="w-3/4 bg-primary rounded-t"
-                  style={{ height: `${data.inquiries * 15}px` }}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground">{data.date}</span>
+        {dailyData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center text-muted-foreground">
+            No data available for the selected period
+          </div>
+        ) : (
+          <>
+            <div className="h-64 flex items-end justify-between gap-2">
+              {dailyData.slice(-7).map((data, index) => {
+                const maxViews = Math.max(...dailyData.map((d) => d.views), 1);
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                    <div className="w-full flex flex-col items-center gap-1">
+                      <div
+                        className="w-full bg-primary/20 rounded-t"
+                        style={{ height: `${(data.views / maxViews) * 150}px` }}
+                      />
+                      <div
+                        className="w-3/4 bg-primary rounded-t"
+                        style={{ height: `${Math.min(data.inquiries * 15, 100)}px` }}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">{data.date}</span>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-center gap-6 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-primary/20 rounded" />
-            <span className="text-sm text-muted-foreground">Views</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-primary rounded" />
-            <span className="text-sm text-muted-foreground">Inquiries</span>
-          </div>
-        </div>
+            <div className="flex items-center justify-center gap-6 mt-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-primary/20 rounded" />
+                <span className="text-sm text-muted-foreground">Views</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-primary rounded" />
+                <span className="text-sm text-muted-foreground">Inquiries</span>
+              </div>
+            </div>
+          </>
+        )}
       </Card>
 
       {/* Property Performance */}
       <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">Property Performance</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-sm text-muted-foreground border-b">
-                <th className="pb-3 font-medium">Property</th>
-                <th className="pb-3 font-medium text-center">Views</th>
-                <th className="pb-3 font-medium text-center">Inquiries</th>
-                <th className="pb-3 font-medium text-center">Saves</th>
-                <th className="pb-3 font-medium text-center">Calls</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MOCK_PROPERTY_STATS.map((property) => (
-                <tr key={property.id} className="border-b last:border-0">
-                  <td className="py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-muted rounded flex items-center justify-center shrink-0">
-                        <Building2 className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <span className="font-medium line-clamp-1">
-                        {property.title}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 text-center">
-                    <span className="font-semibold">{property.views}</span>
-                  </td>
-                  <td className="py-4 text-center">
-                    <span className="font-semibold">{property.inquiries}</span>
-                  </td>
-                  <td className="py-4 text-center">
-                    <span className="font-semibold">{property.saves}</span>
-                  </td>
-                  <td className="py-4 text-center">
-                    <span className="font-semibold">{property.calls}</span>
-                  </td>
+        <h2 className="text-lg font-semibold mb-4">Top Performing Properties</h2>
+        {topProperties.length === 0 ? (
+          <div className="py-8 text-center text-muted-foreground">
+            No property data available yet
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="text-left text-sm text-muted-foreground border-b">
+                  <th className="pb-3 font-medium">Property</th>
+                  <th className="pb-3 font-medium text-center">Views</th>
+                  <th className="pb-3 font-medium text-center">Inquiries</th>
+                  <th className="pb-3 font-medium text-center">Saves</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {topProperties.map((property) => (
+                  <tr key={property.propertyId} className="border-b last:border-0">
+                    <td className="py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-muted rounded flex items-center justify-center shrink-0">
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <span className="font-medium line-clamp-1">
+                          {property.propertyTitle || "Untitled Property"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 text-center">
+                      <span className="font-semibold">{property.views}</span>
+                    </td>
+                    <td className="py-4 text-center">
+                      <span className="font-semibold">{property.inquiries}</span>
+                    </td>
+                    <td className="py-4 text-center">
+                      <span className="font-semibold">{property.saves}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
       {/* Tips */}

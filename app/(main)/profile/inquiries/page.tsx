@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/store/auth";
+import { inquiriesService } from "@/services/inquiries";
+import { propertiesService } from "@/services/properties";
+import { type PropertyInquiries, type Properties } from "@/types/appwrite";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -16,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import {
   MessageSquare,
   Phone,
@@ -29,55 +35,23 @@ import {
   Filter,
 } from "lucide-react";
 
-// Mock inquiries data
-const MOCK_INQUIRIES = [
-  {
-    id: "1",
-    propertyId: "prop-1",
-    propertyTitle: "Modern 3 Bedroom Apartment in DHA Phase 6",
-    senderName: "Ahmed Khan",
-    senderEmail: "ahmed@example.com",
-    senderPhone: "+92 300 1234567",
-    message: "I am interested in this property. Is it still available? I would like to schedule a visit this weekend if possible.",
-    status: "unread",
-    createdAt: "2026-01-14T10:30:00",
-    type: "inquiry",
-  },
-  {
-    id: "2",
-    propertyId: "prop-2",
-    propertyTitle: "Luxury Villa with Pool in Bahria Town",
-    senderName: "Fatima Ali",
-    senderEmail: "fatima@example.com",
-    senderPhone: "+92 321 9876543",
-    message: "What is the best price you can offer? I am a serious buyer and can close within 2 weeks.",
-    status: "read",
-    createdAt: "2026-01-13T15:45:00",
-    type: "inquiry",
-  },
-  {
-    id: "3",
-    propertyId: "prop-1",
-    propertyTitle: "Modern 3 Bedroom Apartment in DHA Phase 6",
-    senderName: "Usman Malik",
-    senderEmail: "usman@example.com",
-    senderPhone: "+92 333 5551234",
-    message: "Is the property available for rent? I am looking for a 1-year lease starting from March.",
-    status: "replied",
-    createdAt: "2026-01-12T09:15:00",
-    type: "inquiry",
-  },
-];
+// Extended inquiry type with property details
+interface InquiryWithProperty extends PropertyInquiries {
+  propertyTitle?: string;
+}
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, isRead: boolean) {
+  if (!isRead) {
+    return (
+      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+        <AlertCircle className="h-3 w-3 mr-1" />
+        New
+      </Badge>
+    );
+  }
+
   switch (status) {
-    case "unread":
-      return (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-          <AlertCircle className="h-3 w-3 mr-1" />
-          New
-        </Badge>
-      );
+    case "pending":
     case "read":
       return (
         <Badge variant="secondary">
@@ -114,44 +88,122 @@ function formatTimeAgo(dateString: string) {
 }
 
 export default function InquiriesPage() {
-  const [inquiries, setInquiries] = useState(MOCK_INQUIRIES);
+  const { user } = useAuth();
+  const [inquiries, setInquiries] = useState<InquiryWithProperty[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedInquiry, setSelectedInquiry] = useState<typeof MOCK_INQUIRIES[0] | null>(null);
+  const [selectedInquiry, setSelectedInquiry] = useState<InquiryWithProperty | null>(null);
   const [replyMessage, setReplyMessage] = useState("");
+  const [replying, setReplying] = useState(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    unread: 0,
+    replied: 0,
+  });
 
+  // Fetch inquiries
+  const fetchInquiries = useCallback(async () => {
+    if (!user?.$id) return;
+
+    try {
+      setLoading(true);
+      const { inquiries: fetchedInquiries, total } = await inquiriesService.getReceivedInquiries(
+        user.$id,
+        { limit: 50 }
+      );
+
+      // Fetch property titles for each inquiry
+      const inquiriesWithProperty = await Promise.all(
+        fetchedInquiries.map(async (inquiry) => {
+          try {
+            const property = await propertiesService.getById(inquiry.property_id);
+            return {
+              ...inquiry,
+              propertyTitle: property?.title || "Unknown Property",
+            };
+          } catch {
+            return {
+              ...inquiry,
+              propertyTitle: "Unknown Property",
+            };
+          }
+        })
+      );
+
+      setInquiries(inquiriesWithProperty);
+
+      // Calculate stats
+      const newStats = {
+        total,
+        unread: fetchedInquiries.filter((i) => !i.is_read).length,
+        replied: fetchedInquiries.filter((i) => i.status === "replied").length,
+      };
+      setStats(newStats);
+    } catch (error) {
+      console.error("Error fetching inquiries:", error);
+      toast.error("Failed to load inquiries");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.$id]);
+
+  useEffect(() => {
+    fetchInquiries();
+  }, [fetchInquiries]);
+
+  // Filter inquiries
   const filteredInquiries = inquiries.filter((inquiry) => {
     const matchesTab =
       activeTab === "all" ||
-      (activeTab === "unread" && inquiry.status === "unread") ||
+      (activeTab === "unread" && !inquiry.is_read) ||
       (activeTab === "replied" && inquiry.status === "replied");
 
     const matchesSearch =
       !searchQuery ||
-      inquiry.senderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inquiry.propertyTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inquiry.inquirer_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inquiry.propertyTitle || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
       inquiry.message.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesTab && matchesSearch;
   });
 
-  const stats = {
-    total: inquiries.length,
-    unread: inquiries.filter((i) => i.status === "unread").length,
-    replied: inquiries.filter((i) => i.status === "replied").length,
+  // Handle reply
+  const handleReply = async () => {
+    if (!selectedInquiry || !replyMessage || !user?.$id) return;
+
+    try {
+      setReplying(true);
+      await inquiriesService.reply(selectedInquiry.$id, replyMessage, user.$id);
+      toast.success("Reply sent successfully");
+      setReplyMessage("");
+      setSelectedInquiry(null);
+      fetchInquiries();
+    } catch (error) {
+      console.error("Error sending reply:", error);
+      toast.error("Failed to send reply");
+    } finally {
+      setReplying(false);
+    }
   };
 
-  const handleReply = () => {
-    if (!selectedInquiry || !replyMessage) return;
+  // Handle mark as read
+  const handleMarkAsRead = async (inquiryId: string) => {
+    try {
+      await inquiriesService.markAsRead(inquiryId);
+      fetchInquiries();
+    } catch (error) {
+      console.error("Error marking as read:", error);
+    }
+  };
 
-    setInquiries((prev) =>
-      prev.map((i) =>
-        i.id === selectedInquiry.id ? { ...i, status: "replied" } : i
-      )
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
     );
-    setReplyMessage("");
-    setSelectedInquiry(null);
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -219,17 +271,19 @@ export default function InquiriesPage() {
             <div className="space-y-4">
               {filteredInquiries.map((inquiry) => (
                 <Card
-                  key={inquiry.id}
-                  className={`p-4 ${inquiry.status === "unread" ? "border-primary/50 bg-primary/5" : ""}`}
+                  key={inquiry.$id}
+                  className={`p-4 cursor-pointer transition-colors ${!inquiry.is_read ? "border-primary/50 bg-primary/5" : ""}`}
+                  onClick={() => !inquiry.is_read && handleMarkAsRead(inquiry.$id)}
                 >
                   <div className="flex gap-4">
                     {/* Avatar */}
                     <Avatar className="h-12 w-12 shrink-0">
                       <AvatarFallback>
-                        {inquiry.senderName
+                        {(inquiry.inquirer_name || "U")
                           .split(" ")
                           .map((n) => n[0])
-                          .join("")}
+                          .join("")
+                          .toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
 
@@ -239,9 +293,9 @@ export default function InquiriesPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-semibold">
-                              {inquiry.senderName}
+                              {inquiry.inquirer_name || "Unknown User"}
                             </h3>
-                            {getStatusBadge(inquiry.status)}
+                            {getStatusBadge(inquiry.status, inquiry.is_read)}
                           </div>
                           <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
                             <Building2 className="h-3 w-3" />
@@ -249,7 +303,7 @@ export default function InquiriesPage() {
                           </p>
                         </div>
                         <span className="text-xs text-muted-foreground shrink-0">
-                          {formatTimeAgo(inquiry.createdAt)}
+                          {formatTimeAgo(inquiry.$createdAt)}
                         </span>
                       </div>
 
@@ -259,16 +313,20 @@ export default function InquiriesPage() {
 
                       {/* Contact Info & Actions */}
                       <div className="flex flex-wrap items-center gap-4 mt-3">
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Mail className="h-3 w-3" />
-                          {inquiry.senderEmail}
-                        </span>
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {inquiry.senderPhone}
-                        </span>
+                        {inquiry.inquirer_email && (
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Mail className="h-3 w-3" />
+                            {inquiry.inquirer_email}
+                          </span>
+                        )}
+                        {inquiry.inquirer_phone && (
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {inquiry.inquirer_phone}
+                          </span>
+                        )}
 
-                        <div className="flex gap-2 ml-auto">
+                        <div className="flex gap-2 ml-auto" onClick={(e) => e.stopPropagation()}>
                           <Dialog>
                             <DialogTrigger asChild>
                               <Button
@@ -282,7 +340,7 @@ export default function InquiriesPage() {
                             <DialogContent>
                               <DialogHeader>
                                 <DialogTitle>
-                                  Reply to {inquiry.senderName}
+                                  Reply to {inquiry.inquirer_name || "User"}
                                 </DialogTitle>
                                 <DialogDescription>
                                   Regarding: {inquiry.propertyTitle}
@@ -304,11 +362,16 @@ export default function InquiriesPage() {
                                   <Button
                                     variant="outline"
                                     onClick={() => setSelectedInquiry(null)}
+                                    disabled={replying}
                                   >
                                     Cancel
                                   </Button>
-                                  <Button onClick={handleReply}>
-                                    <Send className="h-4 w-4 mr-2" />
+                                  <Button onClick={handleReply} disabled={replying || !replyMessage}>
+                                    {replying ? (
+                                      <Spinner className="h-4 w-4 mr-2" />
+                                    ) : (
+                                      <Send className="h-4 w-4 mr-2" />
+                                    )}
                                     Send Reply
                                   </Button>
                                 </div>
@@ -316,11 +379,13 @@ export default function InquiriesPage() {
                             </DialogContent>
                           </Dialog>
 
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={`tel:${inquiry.senderPhone}`}>
-                              <Phone className="h-4 w-4" />
-                            </a>
-                          </Button>
+                          {inquiry.inquirer_phone && (
+                            <Button variant="outline" size="sm" asChild>
+                              <a href={`tel:${inquiry.inquirer_phone}`}>
+                                <Phone className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

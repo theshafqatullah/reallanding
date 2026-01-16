@@ -1,11 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/store/auth";
+import { savedPropertiesService } from "@/services/saved-properties";
+import { type Properties } from "@/types/appwrite";
+import { toast } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Heart,
   Building2,
@@ -20,48 +26,20 @@ import {
   BellOff,
 } from "lucide-react";
 
-// Mock saved properties
-const MOCK_SAVED = [
-  {
-    id: "1",
-    title: "Stunning 4 Bedroom House in Model Town",
-    location: "Model Town, Lahore",
-    price: 45000000,
-    bedrooms: 4,
-    bathrooms: 3,
-    area: 3200,
-    savedAt: "2026-01-10",
-    priceAlert: true,
-  },
-  {
-    id: "2",
-    title: "Penthouse with City View in Gulberg",
-    location: "Gulberg, Lahore",
-    price: 75000000,
-    bedrooms: 3,
-    bathrooms: 4,
-    area: 2800,
-    savedAt: "2026-01-08",
-    priceAlert: false,
-  },
-  {
-    id: "3",
-    title: "Family Home in Bahria Town",
-    location: "Bahria Town Phase 5, Lahore",
-    price: 35000000,
-    bedrooms: 5,
-    bathrooms: 4,
-    area: 4000,
-    savedAt: "2026-01-05",
-    priceAlert: true,
-  },
-];
+// Type for saved property with details
+interface SavedPropertyWithDetails {
+  $id: string;
+  property_id: string;
+  folder_name?: string | null;
+  notes?: string | null;
+  $createdAt: string;
+  property?: Properties;
+}
 
-const MOCK_COLLECTIONS = [
-  { id: "1", name: "Dream Homes", count: 5 },
-  { id: "2", name: "Investment Properties", count: 3 },
-  { id: "3", name: "Vacation Homes", count: 2 },
-];
+interface Folder {
+  name: string;
+  count: number;
+}
 
 function formatPrice(price: number) {
   if (price >= 10000000) {
@@ -73,20 +51,72 @@ function formatPrice(price: number) {
 }
 
 export default function SavedPropertiesPage() {
-  const [savedProperties, setSavedProperties] = useState(MOCK_SAVED);
+  const { user } = useAuth();
+  const [savedProperties, setSavedProperties] = useState<SavedPropertyWithDetails[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    folders: 0,
+    thisMonth: 0,
+  });
 
-  const handleRemove = (id: string) => {
-    setSavedProperties((prev) => prev.filter((p) => p.id !== id));
+  // Fetch saved properties
+  const fetchSavedProperties = useCallback(async () => {
+    if (!user?.$id) return;
+
+    try {
+      setLoading(true);
+      const [savedData, foldersData, statsData] = await Promise.all([
+        savedPropertiesService.getUserSavedPropertiesWithDetails(user.$id, { limit: 50 }),
+        savedPropertiesService.getUserFolders(user.$id),
+        savedPropertiesService.getUserSavedStats(user.$id),
+      ]);
+
+      setSavedProperties(savedData.savedProperties as SavedPropertyWithDetails[]);
+      setFolders(foldersData);
+      setStats({
+        total: statsData.total,
+        folders: foldersData.length,
+        thisMonth: statsData.thisMonth,
+      });
+    } catch (error) {
+      console.error("Error fetching saved properties:", error);
+      toast.error("Failed to load saved properties");
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.$id]);
+
+  useEffect(() => {
+    fetchSavedProperties();
+  }, [fetchSavedProperties]);
+
+  const handleRemove = async (savedId: string, propertyId: string) => {
+    if (!user?.$id) return;
+
+    try {
+      setRemovingId(savedId);
+      await savedPropertiesService.unsaveProperty(user.$id, propertyId);
+      toast.success("Property removed from saved");
+      fetchSavedProperties();
+    } catch (error) {
+      console.error("Error removing saved property:", error);
+      toast.error("Failed to remove property");
+    } finally {
+      setRemovingId(null);
+    }
   };
 
-  const togglePriceAlert = (id: string) => {
-    setSavedProperties((prev) =>
-      prev.map((p) =>
-        p.id === id ? { ...p, priceAlert: !p.priceAlert } : p
-      )
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Spinner className="h-8 w-8" />
+      </div>
     );
-  };
+  }
 
   return (
     <div className="space-y-6">
@@ -99,24 +129,18 @@ export default function SavedPropertiesPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Total Saved</p>
-          <p className="text-2xl font-bold">{savedProperties.length}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-sm text-muted-foreground">Price Alerts</p>
-          <p className="text-2xl font-bold">
-            {savedProperties.filter((p) => p.priceAlert).length}
-          </p>
+          <p className="text-2xl font-bold">{stats.total}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Collections</p>
-          <p className="text-2xl font-bold">{MOCK_COLLECTIONS.length}</p>
+          <p className="text-2xl font-bold">{stats.folders}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">This Month</p>
-          <p className="text-2xl font-bold">3</p>
+          <p className="text-2xl font-bold">{stats.thisMonth}</p>
         </Card>
       </div>
 
@@ -136,110 +160,117 @@ export default function SavedPropertiesPage() {
                 Start browsing and save properties you&apos;re interested in.
               </p>
               <Button asChild>
-                <Link href="/search">Browse Properties</Link>
+                <Link href="/properties">Browse Properties</Link>
               </Button>
             </Card>
           ) : (
             <div className="grid gap-4">
-              {savedProperties.map((property) => (
-                <Card key={property.id} className="p-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    {/* Image */}
-                    <div className="w-full md:w-48 h-32 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                      <Building2 className="h-8 w-8 text-muted-foreground" />
-                    </div>
+              {savedProperties.map((saved) => {
+                const property = saved.property;
+                if (!property) return null;
 
-                    {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold text-lg line-clamp-1">
-                            {property.title}
-                          </h3>
-                          <p className="text-muted-foreground flex items-center gap-1 text-sm">
-                            <MapPin className="h-3 w-3" />
-                            {property.location}
-                          </p>
-                        </div>
-                        {property.priceAlert && (
-                          <Badge variant="secondary" className="shrink-0">
-                            <Bell className="h-3 w-3 mr-1" />
-                            Price Alert
-                          </Badge>
-                        )}
-                      </div>
-
-                      <p className="text-xl font-bold text-primary mt-2">
-                        {formatPrice(property.price)}
-                      </p>
-
-                      <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Bed className="h-4 w-4" />
-                          {property.bedrooms} Beds
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Bath className="h-4 w-4" />
-                          {property.bathrooms} Baths
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Ruler className="h-4 w-4" />
-                          {property.area.toLocaleString()} sq ft
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Saved on {new Date(property.savedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex md:flex-col gap-2 shrink-0">
-                      <Button size="sm" asChild>
-                        <Link href={`/p/${property.id}`}>
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          View
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => togglePriceAlert(property.id)}
-                      >
-                        {property.priceAlert ? (
-                          <>
-                            <BellOff className="h-4 w-4 mr-1" />
-                            Remove Alert
-                          </>
+                return (
+                  <Card key={saved.$id} className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Image */}
+                      <div className="w-full md:w-48 h-32 bg-muted rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden">
+                        {property.main_image_url ? (
+                          <Image
+                            src={property.main_image_url}
+                            alt={property.title}
+                            fill
+                            className="object-cover"
+                          />
                         ) : (
-                          <>
-                            <Bell className="h-4 w-4 mr-1" />
-                            Add Alert
-                          </>
+                          <Building2 className="h-8 w-8 text-muted-foreground" />
                         )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleRemove(property.id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Remove
-                      </Button>
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="font-semibold text-lg line-clamp-1">
+                              {property.title}
+                            </h3>
+                            <p className="text-muted-foreground flex items-center gap-1 text-sm">
+                              <MapPin className="h-3 w-3" />
+                              {property.address || "Location not specified"}
+                            </p>
+                          </div>
+                          {saved.folder_name && (
+                            <Badge variant="secondary" className="shrink-0">
+                              {saved.folder_name}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <p className="text-xl font-bold text-primary mt-2">
+                          {formatPrice(property.price)}
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
+                          {property.bedrooms && (
+                            <span className="flex items-center gap-1">
+                              <Bed className="h-4 w-4" />
+                              {property.bedrooms} Beds
+                            </span>
+                          )}
+                          {property.bathrooms && (
+                            <span className="flex items-center gap-1">
+                              <Bath className="h-4 w-4" />
+                              {property.bathrooms} Baths
+                            </span>
+                          )}
+                          {property.total_area && (
+                            <span className="flex items-center gap-1">
+                              <Ruler className="h-4 w-4" />
+                              {property.total_area.toLocaleString()} {property.area_unit || "sq ft"}
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Saved on {new Date(saved.$createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex md:flex-col gap-2 shrink-0">
+                        <Button size="sm" asChild>
+                          <Link href={`/p/${property.slug || property.$id}`}>
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            View
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleRemove(saved.$id, saved.property_id)}
+                          disabled={removingId === saved.$id}
+                        >
+                          {removingId === saved.$id ? (
+                            <Spinner className="h-4 w-4 mr-1" />
+                          ) : (
+                            <Trash2 className="h-4 w-4 mr-1" />
+                          )}
+                          Remove
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
 
         <TabsContent value="collections" className="mt-6">
           <div className="grid md:grid-cols-3 gap-4">
-            {MOCK_COLLECTIONS.map((collection) => (
+            {folders.map((folder) => (
               <Card
-                key={collection.id}
+                key={folder.name}
                 className="p-6 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex items-center gap-4">
@@ -247,29 +278,23 @@ export default function SavedPropertiesPage() {
                     <Heart className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{collection.name}</h3>
+                    <h3 className="font-semibold">{folder.name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {collection.count} properties
+                      {folder.count} properties
                     </p>
                   </div>
                 </div>
               </Card>
             ))}
 
-            {/* Add Collection */}
-            <Card className="p-6 border-dashed hover:shadow-md transition-shadow cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center">
-                  <Heart className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Create Collection</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Organize your saves
-                  </p>
-                </div>
-              </div>
-            </Card>
+            {folders.length === 0 && (
+              <Card className="p-6 border-dashed col-span-full text-center">
+                <Heart className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                <p className="text-muted-foreground">
+                  No collections yet. Save properties with folders to organize them.
+                </p>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>
