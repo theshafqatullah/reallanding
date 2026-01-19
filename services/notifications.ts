@@ -225,7 +225,7 @@ export const notificationsService = {
       title: "New Property Inquiry",
       message: `${inquirerName} has sent an inquiry about your property.`,
       related_property_id: propertyId,
-      action_url: `/profile/inquiries`,
+      action_url: `/inquiries`,
     });
   },
 
@@ -240,7 +240,7 @@ export const notificationsService = {
       title: "Property Saved",
       message: `${saverName} has saved your property to their favorites.`,
       related_property_id: propertyId,
-      action_url: `/profile/analytics`,
+      action_url: `/analytics`,
     });
   },
 

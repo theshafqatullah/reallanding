@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 // Types
 // ============================================================================
 
-export interface User extends Models.User<Models.Preferences> {}
+export interface User extends Models.User<Models.Preferences> { }
 
 export interface SignInCredentials {
   email: string;
@@ -42,6 +42,25 @@ export interface AuthState {
   error: string | null;
 }
 
+export interface UpdateNameParams {
+  name: string;
+}
+
+export interface UpdateEmailParams {
+  email: string;
+  password: string;
+}
+
+export interface UpdatePhoneParams {
+  phone: string;
+  password: string;
+}
+
+export interface UpdatePasswordParams {
+  password: string;
+  oldPassword?: string;
+}
+
 export interface AuthActions {
   checkAuth: () => Promise<void>;
   signIn: (credentials: SignInCredentials) => Promise<void>;
@@ -51,6 +70,14 @@ export interface AuthActions {
   signInWithOAuth: (provider: OAuthProvider) => void;
   requestPasswordRecovery: (params: PasswordRecoveryParams) => Promise<void>;
   confirmPasswordRecovery: (params: ResetPasswordParams) => Promise<void>;
+  updateName: (params: UpdateNameParams) => Promise<void>;
+  updateEmail: (params: UpdateEmailParams) => Promise<void>;
+  updatePhone: (params: UpdatePhoneParams) => Promise<void>;
+  updatePassword: (params: UpdatePasswordParams) => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  getSessions: () => Promise<Models.Session[]>;
+  deleteSession: (sessionId: string) => Promise<void>;
+  deleteAllSessions: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -78,7 +105,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ isLoading: true });
     }
     set({ error: null });
-    
+
     try {
       const user = await account.get();
       set({
@@ -105,11 +132,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     try {
       // Create session
       await account.createEmailPasswordSession({ email, password });
-      
+
       // Wait a moment for cookie to be set, then get user
       await new Promise(resolve => setTimeout(resolve, 100));
       const user = await account.get();
-      
+
       set({
         user: user as User,
         isAuthenticated: true,
@@ -246,6 +273,159 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   /**
+   * Update user's name
+   */
+  updateName: async ({ name }: UpdateNameParams) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedUser = await account.updateName({ name });
+      set({
+        user: updatedUser as User,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to update name.";
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
+
+  /**
+   * Update user's email
+   */
+  updateEmail: async ({ email, password }: UpdateEmailParams) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedUser = await account.updateEmail({ email, password });
+      set({
+        user: updatedUser as User,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to update email.";
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
+
+  /**
+   * Update user's phone
+   */
+  updatePhone: async ({ phone, password }: UpdatePhoneParams) => {
+    set({ isLoading: true, error: null });
+    try {
+      const updatedUser = await account.updatePhone({ phone, password });
+      set({
+        user: updatedUser as User,
+        isLoading: false,
+        error: null,
+      });
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to update phone.";
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
+
+  /**
+   * Update user's password
+   */
+  updatePassword: async ({ password, oldPassword }: UpdatePasswordParams) => {
+    set({ isLoading: true, error: null });
+    try {
+      await account.updatePassword({ password, oldPassword });
+      set({ isLoading: false, error: null });
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to update password.";
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
+
+  /**
+   * Delete the user's account (blocks/deactivates)
+   */
+  deleteAccount: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      await account.updateStatus();
+      set({
+        user: null,
+        isAuthenticated: false,
+        isLoading: false,
+        error: null,
+      });
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to delete account.";
+      set({ isLoading: false, error: message });
+      throw error;
+    }
+  },
+
+  /**
+   * Get all active sessions
+   */
+  getSessions: async () => {
+    try {
+      const response = await account.listSessions();
+      return response.sessions;
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      return [];
+    }
+  },
+
+  /**
+   * Delete a specific session
+   */
+  deleteSession: async (sessionId: string) => {
+    try {
+      await account.deleteSession({ sessionId });
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to delete session.";
+      throw new Error(message);
+    }
+  },
+
+  /**
+   * Delete all sessions except current
+   */
+  deleteAllSessions: async () => {
+    try {
+      await account.deleteSessions();
+    } catch (error) {
+      const message =
+        error instanceof AppwriteException
+          ? error.message
+          : "Failed to delete sessions.";
+      throw new Error(message);
+    }
+  },
+
+  /**
    * Clear error state
    */
   clearError: () => set({ error: null }),
@@ -315,6 +495,14 @@ export const useAuth = () => {
     signInWithOAuth: store.signInWithOAuth,
     requestPasswordRecovery: store.requestPasswordRecovery,
     confirmPasswordRecovery: store.confirmPasswordRecovery,
+    updateName: store.updateName,
+    updateEmail: store.updateEmail,
+    updatePhone: store.updatePhone,
+    updatePassword: store.updatePassword,
+    deleteAccount: store.deleteAccount,
+    getSessions: store.getSessions,
+    deleteSession: store.deleteSession,
+    deleteAllSessions: store.deleteAllSessions,
     checkAuth: store.checkAuth,
     clearError: store.clearError,
   };

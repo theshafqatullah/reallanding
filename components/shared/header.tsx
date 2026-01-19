@@ -21,9 +21,17 @@ type MegaMenuType = "properties" | "agents" | "services" | null;
 export function Header() {
   const [activeMenu, setActiveMenu] = useState<MegaMenuType>(null);
   const [mounted, setMounted] = useState(false);
-  
+
   // Use the new auth hook
   const { user, isAuthenticated, loading, signOut } = useAuth();
+
+  // Check if user is an agent or agency
+  const isAgentOrAgency = user?.labels?.some(
+    (label) => label === "agent" || label === "agency"
+  ) ?? false;
+
+  // Get the appropriate profile route based on user role
+  const profileRoute = isAgentOrAgency ? "/profile" : "/u/profile";
 
   React.useEffect(() => {
     setMounted(true);
@@ -53,11 +61,11 @@ export function Header() {
         </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
+        <nav className="hidden lg:flex items-center space-x-6 text-sm font-medium">
           <Link href="/" className="text-foreground/60 hover:text-foreground transition-colors">
             Home
           </Link>
-          
+
           {/* Properties */}
           <button
             className="flex items-center space-x-1 text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
@@ -85,22 +93,22 @@ export function Header() {
             <ChevronDownIcon className={`h-3 w-3 transition-transform duration-200 ${activeMenu === "services" ? "rotate-180" : ""}`} />
           </button>
 
-          <Link 
-            href="/blogs" 
+          <Link
+            href="/blogs"
             className="text-foreground/60 hover:text-foreground transition-colors"
             onMouseEnter={handleMenuLeave}
           >
             Blog
           </Link>
-          <Link 
-            href="/about" 
+          <Link
+            href="/about"
             className="text-foreground/60 hover:text-foreground transition-colors"
             onMouseEnter={handleMenuLeave}
           >
             About
           </Link>
-          <Link 
-            href="/contact" 
+          <Link
+            href="/contact"
             className="text-foreground/60 hover:text-foreground transition-colors"
             onMouseEnter={handleMenuLeave}
           >
@@ -117,8 +125,8 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full cursor-pointer">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage 
-                      src={avatars.getInitials(user.name || user.email, 40, 40).toString()} 
+                    <AvatarImage
+                      src={avatars.getInitials(user.name || user.email, 40, 40).toString()}
                       alt={user.name || user.email}
                     />
                     <AvatarFallback className="bg-primary text-primary-foreground">
@@ -138,13 +146,13 @@ export function Header() {
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center">
+                  <Link href={profileRoute} className="flex items-center">
                     <UserIcon className="mr-2 h-4 w-4" />
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/settings" className="flex items-center">
+                  <Link href="/profile/settings" className="flex items-center">
                     <SettingsIcon className="mr-2 h-4 w-4" />
                     <span>Settings</span>
                   </Link>
@@ -170,62 +178,62 @@ export function Header() {
 
         {/* Mobile Menu */}
         {mounted && (
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">
                   <MenuIcon className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end">
-              <DropdownMenuItem asChild>
-                <Link href="/">Home</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/properties">Properties</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/agents">Agents</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/services">Services</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/blogs">Blog</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/about">About</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/contact">Contact</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/terms">Terms</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/privacy">Privacy</Link>
-              </DropdownMenuItem>
-              {!isAuthenticated && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/signin">Sign In</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/signup">Sign Up</Link>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              <DropdownMenuContent className="w-48" align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/">Home</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/properties">Properties</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/agents">Agents</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/services">Services</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/blogs">Blog</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/about">About</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/contact">Contact</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/terms">Terms</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/privacy">Privacy</Link>
+                </DropdownMenuItem>
+                {!isAuthenticated && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/signin">Sign In</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/signup">Sign Up</Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         )}
       </div>
 
       {/* Mega Menu - Properties */}
       {activeMenu === "properties" && (
-        <div 
+        <div
           className="fixed left-0 right-0 top-16 w-full bg-white border-b shadow-lg z-40 animate-in fade-in slide-in-from-top-2 duration-200 ease-out"
           onMouseEnter={() => handleMenuEnter("properties")}
           onMouseLeave={handleMenuLeave}
@@ -325,7 +333,7 @@ export function Header() {
 
       {/* Mega Menu - Agents */}
       {activeMenu === "agents" && (
-        <div 
+        <div
           className="fixed left-0 right-0 top-16 w-full bg-white border-b shadow-lg z-40 animate-in fade-in slide-in-from-top-2 duration-200 ease-out"
           onMouseEnter={() => handleMenuEnter("agents")}
           onMouseLeave={handleMenuLeave}
@@ -410,7 +418,7 @@ export function Header() {
 
       {/* Mega Menu - Services */}
       {activeMenu === "services" && (
-        <div 
+        <div
           className="fixed left-0 right-0 top-16 w-full bg-white border-b shadow-lg z-40 animate-in fade-in slide-in-from-top-2 duration-200 ease-out"
           onMouseEnter={() => handleMenuEnter("services")}
           onMouseLeave={handleMenuLeave}

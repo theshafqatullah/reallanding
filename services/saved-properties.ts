@@ -320,6 +320,44 @@ export const savedPropertiesService = {
   },
 
   /**
+   * Delete a saved property by ID
+   */
+  async delete(savedPropertyId: string): Promise<void> {
+    try {
+      // Get the saved property to find the property_id for decrementing count
+      const saved = await this.getById(savedPropertyId);
+      
+      await databases.deleteDocument(
+        DATABASE_ID,
+        SAVED_PROPERTIES_COLLECTION_ID,
+        savedPropertyId
+      );
+
+      // Decrement the property's favorite count if we found it
+      if (saved?.property_id) {
+        try {
+          const property = await databases.getDocument(
+            DATABASE_ID,
+            PROPERTIES_COLLECTION_ID,
+            saved.property_id
+          );
+          await databases.updateDocument(
+            DATABASE_ID,
+            PROPERTIES_COLLECTION_ID,
+            saved.property_id,
+            { favorite_count: Math.max(0, (property.favorite_count || 0) - 1) }
+          );
+        } catch {
+          // Property update is non-critical
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting saved property:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Toggle favorite status
    */
   async toggleFavorite(savedPropertyId: string): Promise<UserSavedProperties> {

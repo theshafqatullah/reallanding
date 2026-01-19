@@ -72,12 +72,14 @@ const DATABASE_ID = "main";
 const USERS_COLLECTION_ID = "users";
 
 export default function ProfilePage() {
-  const { user: authUser, isAuthenticated, loading: authLoading } = useAuth();
+  const { user: authUser, isAuthenticated, loading: authLoading, updateName } = useAuth();
 
   const [profile, setProfile] = useState<Users | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState<Partial<Users>>({});
   const [activeTab, setActiveTab] = useState("profile");
@@ -186,10 +188,28 @@ export default function ProfilePage() {
   useEffect(() => {
     if (isAuthenticated && authUser?.$id) {
       fetchProfile();
+      setDisplayName(authUser.name || "");
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [isAuthenticated, authUser?.$id, authLoading, fetchProfile]);
+  }, [isAuthenticated, authUser?.$id, authUser?.name, authLoading, fetchProfile]);
+
+  // Handle display name update (Appwrite account)
+  const handleUpdateDisplayName = async () => {
+    if (!displayName.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
+    try {
+      setSavingName(true);
+      await updateName({ name: displayName.trim() });
+      toast.success("Display name updated successfully");
+    } catch {
+      toast.error("Failed to update display name");
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   // Handle input changes
   const handleInputChange = (
@@ -368,8 +388,8 @@ export default function ProfilePage() {
           <p className="text-muted-foreground mb-6">
             Your profile hasn&apos;t been set up yet. Create your profile to start listing properties and connecting with buyers.
           </p>
-          <Button 
-            onClick={createProfile} 
+          <Button
+            onClick={createProfile}
             disabled={creating}
             size="lg"
             className="gap-2"
@@ -391,12 +411,9 @@ export default function ProfilePage() {
     );
   }
 
-  const fullName =
-    `${profile.first_name || ""} ${profile.last_name || ""}`.trim() ||
-    "Unknown User";
-  const initials =
-    `${profile.first_name?.[0] || ""}${profile.last_name?.[0] || ""}`.toUpperCase() ||
-    "U";
+  // Always use name from Appwrite account for display
+  const fullName = authUser?.name || "Unknown User";
+  const initials = fullName.split(" ").map(n => n[0]).join("").toUpperCase() || "U";
 
   return (
     <div className="min-h-screen bg-background">
@@ -586,18 +603,45 @@ export default function ProfilePage() {
               {/* Personal Information */}
               <Section title="Personal Information">
                 <div className="grid gap-4">
+                  {/* Display Name from Appwrite Account */}
+                  <div className="space-y-2">
+                    <Label htmlFor="displayName" className="text-sm font-medium">
+                      Display Name
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="displayName"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                        placeholder="Your display name"
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={handleUpdateDisplayName}
+                        disabled={savingName || displayName === authUser?.name}
+                        size="sm"
+                      >
+                        {savingName ? <Spinner className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      This is your account display name shown across the platform
+                    </p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       label="First Name"
                       value={editedProfile.first_name || ""}
                       onChange={(v) => handleInputChange("first_name", v)}
                       disabled={!isEditing}
+                      placeholder="Optional"
                     />
                     <FormField
                       label="Last Name"
                       value={editedProfile.last_name || ""}
                       onChange={(v) => handleInputChange("last_name", v)}
                       disabled={!isEditing}
+                      placeholder="Optional"
                     />
                   </div>
                   <FormField
@@ -1346,19 +1390,17 @@ function VerificationCard({
 }) {
   return (
     <div
-      className={`p-4 rounded-xl border ${
-        verified
+      className={`p-4 rounded-xl border ${verified
           ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900"
           : "bg-muted/50 border-border"
-      }`}
+        }`}
     >
       <div className="flex items-start gap-3">
         <div
-          className={`mt-0.5 p-1.5 rounded-full ${
-            verified
+          className={`mt-0.5 p-1.5 rounded-full ${verified
               ? "bg-green-100 dark:bg-green-900/50"
               : "bg-muted"
-          }`}
+            }`}
         >
           {verified ? (
             <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -1368,11 +1410,10 @@ function VerificationCard({
         </div>
         <div>
           <p
-            className={`font-medium ${
-              verified
+            className={`font-medium ${verified
                 ? "text-green-700 dark:text-green-400"
                 : "text-foreground"
-            }`}
+              }`}
           >
             {label}
           </p>
