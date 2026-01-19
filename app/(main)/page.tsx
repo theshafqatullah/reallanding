@@ -465,35 +465,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Property Categories */}
-      <section className="py-16 bg-background">
+      {/* Stats Section - Build Trust Immediately */}
+      <section className="py-16 bg-card border-y border-border">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Browse by Property Type
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Find the perfect property that fits your lifestyle and needs
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {propertyCategories.map((category) => (
-              <Link href="/properties" key={category.name}>
-                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
-                  <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-primary transition-colors">
-                    <category.icon className="h-8 w-8 text-primary group-hover:text-primary-foreground transition-colors" />
-                  </div>
-                  <h3 className="font-semibold text-foreground mb-1">{category.name}</h3>
-                  <p className="text-sm text-muted-foreground">{category.count.toLocaleString()} Properties</p>
-                </Card>
-              </Link>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <stat.icon className="h-7 w-7 text-primary" />
+                </div>
+                <div className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{stat.value}</div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Featured Properties */}
+      {/* Featured Properties - Show Product Right Away */}
       <section className="py-20">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
@@ -580,18 +569,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Popular Cities - Geographic Discovery */}
       <section className="py-20 bg-background">
         <div className="container mx-auto max-w-7xl px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <stat.icon className="h-8 w-8 text-primary" />
-                </div>
-                <div className="text-4xl md:text-5xl font-bold mb-2 text-foreground">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
-              </div>
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Explore Popular Cities
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Discover properties in the most sought-after locations
+              </p>
+            </div>
+            <Link href="/properties">
+              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
+                View All Cities
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {popularCities.map((city) => (
+              <Link href="/properties" key={city.name}>
+                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer">
+                  <div className="relative h-48">
+                    <Image
+                      src={city.image}
+                      alt={city.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                    <div className="absolute bottom-4 left-4 text-white">
+                      <h3 className="text-2xl font-bold mb-1">{city.name}</h3>
+                      <p className="text-white/80 text-sm">{city.properties.toLocaleString()} Properties</p>
+                    </div>
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-white/90 text-foreground hover:bg-white">
+                        Avg. {city.avgPrice}
+                      </Badge>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
@@ -646,7 +667,65 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Property Categories - Help with Navigation */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Browse by Property Type
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Find the perfect property that fits your lifestyle and needs
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {propertyCategories.map((category) => (
+              <Link href="/properties" key={category.name}>
+                <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
+                  <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-primary transition-colors">
+                    <category.icon className="h-8 w-8 text-primary group-hover:text-primary-foreground transition-colors" />
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-1">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground">{category.count.toLocaleString()} Properties</p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us - Reinforce Value */}
+      <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Why Choose Real Landing
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              We provide the best experience in finding your perfect property
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {whyChooseUs.map((feature, index) => (
+              <div key={index} className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center">
+                    <feature.icon className="h-7 w-7 text-primary" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials - Social Proof */}
       <section className="py-20 bg-background">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
@@ -682,135 +761,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Cities */}
+      {/* Recently Sold - FOMO/Urgency */}
       <section className="py-20">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Explore Popular Cities
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl">
-                Discover properties in the most sought-after locations
-              </p>
-            </div>
-            <Link href="/properties">
-              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
-                View All Cities
-                <ArrowRightIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularCities.map((city) => (
-              <Link href="/properties" key={city.name}>
-                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer">
-                  <div className="relative h-48">
-                    <Image
-                      src={city.image}
-                      alt={city.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <h3 className="text-2xl font-bold mb-1">{city.name}</h3>
-                      <p className="text-white/80 text-sm">{city.properties.toLocaleString()} Properties</p>
-                    </div>
-                    <div className="absolute top-4 right-4">
-                      <Badge className="bg-white/90 text-foreground hover:bg-white">
-                        Avg. {city.avgPrice}
-                      </Badge>
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose Us */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Why Choose Real Landing
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We provide the best experience in finding your perfect property
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {whyChooseUs.map((feature, index) => (
-              <div key={index} className="flex gap-4">
-                <div className="flex-shrink-0">
-                  <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center">
-                    <feature.icon className="h-7 w-7 text-primary" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Agents */}
-      <section className="py-20">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Meet Our Expert Agents
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl">
-                Work with the best professionals in the industry
-              </p>
-            </div>
-            <Link href="/agents">
-              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
-                View All Agents
-                <ArrowRightIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredAgents.map((agent) => (
-              <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
-                <div className="relative h-64">
-                  <Image
-                    src={agent.image}
-                    alt={agent.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-lg text-foreground">{agent.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{agent.title}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1">
-                      <StarIcon className="h-4 w-4 fill-chart-4 text-chart-4" />
-                      <span className="font-medium">{agent.rating}</span>
-                    </div>
-                    <Badge variant="secondary">{agent.deals} Deals</Badge>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Recently Sold */}
-      <section className="py-20 bg-background">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
             <div>
@@ -872,8 +824,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Mortgage Calculator CTA */}
+      {/* Featured Agents - Human Connection */}
       <section className="py-20">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                Meet Our Expert Agents
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl">
+                Work with the best professionals in the industry
+              </p>
+            </div>
+            <Link href="/agents">
+              <Button variant="outline" className="mt-4 md:mt-0 rounded-full">
+                View All Agents
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredAgents.map((agent) => (
+              <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
+                <div className="relative h-64">
+                  <Image
+                    src={agent.image}
+                    alt={agent.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="p-5">
+                  <h3 className="font-semibold text-lg text-foreground">{agent.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">{agent.title}</p>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1">
+                      <StarIcon className="h-4 w-4 fill-chart-4 text-chart-4" />
+                      <span className="font-medium">{agent.rating}</span>
+                    </div>
+                    <Badge variant="secondary">{agent.deals} Deals</Badge>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mortgage Calculator CTA - Interactive Engagement */}
+      <section className="py-20 bg-background">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="flex flex-col lg:flex-row items-center gap-12 p-8 md:p-12 rounded-3xl bg-gradient-to-br from-primary/5 via-secondary to-primary/5 border border-border">
             <div className="flex-1 text-center lg:text-left">
