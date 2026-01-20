@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
   SelectContent,
@@ -512,7 +513,7 @@ function RightSidebar({
   );
 }
 
-export default function PropertiesPage() {
+function PropertiesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -1166,5 +1167,23 @@ export default function PropertiesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function PropertiesPageLoading() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Spinner className="h-8 w-8" />
+    </div>
+  );
+}
+
+// Export with Suspense wrapper
+export default function PropertiesPage() {
+  return (
+    <Suspense fallback={<PropertiesPageLoading />}>
+      <PropertiesPageContent />
+    </Suspense>
   );
 }
