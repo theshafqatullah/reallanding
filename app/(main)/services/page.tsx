@@ -327,7 +327,7 @@ export default function ServicesPage() {
               <span className="text-secondary">Real Estate Need</span>
             </h1>
             <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-              From buying and selling to investment and management, our comprehensive 
+              From buying and selling to investment and management, our comprehensive
               services are designed to guide you through every step of your real estate journey.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
@@ -441,9 +441,9 @@ export default function ServicesPage() {
             {specialties.map((specialty) => (
               <Card
                 key={specialty.title}
-                className="overflow-hidden border border-border shadow-none group hover:-translate-y-1 transition-all duration-300"
+                className="overflow-hidden border border-border shadow-none group hover:-translate-y-1 transition-all duration-300 p-0 gap-0"
               >
-                <div className="relative h-48">
+                <div className="relative h-48 overflow-hidden">
                   <Image
                     src={specialty.image}
                     alt={specialty.title}
@@ -556,9 +556,8 @@ export default function ServicesPage() {
             {pricingPlans.map((plan) => (
               <Card
                 key={plan.name}
-                className={`p-8 border shadow-none relative ${
-                  plan.popular ? "border-primary border-2" : "border-border"
-                }`}
+                className={`p-8 border shadow-none relative ${plan.popular ? "border-primary border-2" : "border-border"
+                  }`}
               >
                 {plan.popular && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
@@ -653,7 +652,7 @@ export default function ServicesPage() {
                   24/7 Dedicated Support
                 </h2>
                 <p className="text-lg text-primary-foreground/80 mb-6">
-                  Our dedicated support team is available around the clock to assist you 
+                  Our dedicated support team is available around the clock to assist you
                   with any questions or concerns about your real estate transactions.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -708,7 +707,7 @@ export default function ServicesPage() {
                 Ready to Get Started?
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl">
-                Contact us today for a free consultation and let our experts help you 
+                Contact us today for a free consultation and let our experts help you
                 achieve your real estate goals.
               </p>
             </div>

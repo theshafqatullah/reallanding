@@ -342,6 +342,11 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [propertyType, setPropertyType] = useState("all");
   const [listingType, setListingType] = useState("buy");
+  // State for new hero filters
+  const [propertyStatus, setPropertyStatus] = useState("all");
+  const [bedsFilter, setBedsFilter] = useState("any");
+  const [priceFilter, setPriceFilter] = useState("any");
+  const [activeTab, setActiveTab] = useState("properties");
 
   useEffect(() => {
     setMounted(true);
@@ -354,113 +359,237 @@ export default function Home() {
     return `$${price.toLocaleString()}`;
   };
 
-  // Show loading state until component is mounted and auth is resolved
-  if (!mounted || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // No longer showing full-page loading - auth loading is handled in header
 
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/90 via-primary to-primary/80 text-primary-foreground">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }} />
+      <section className="relative min-h-[600px] md:min-h-[700px] flex flex-col">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1920&h=1080&fit=crop"
+            alt="Beautiful home"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/30" />
         </div>
 
-        <div className="container mx-auto max-w-7xl px-4 py-20 md:py-32 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge variant="secondary" className="mb-6 bg-white/20 text-primary-foreground border-white/30 hover:bg-white/30">
-              🏠 #1 Property Listing Platform
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Find Your Perfect
-              <span className="text-secondary"> Home</span>
+        <div className="container mx-auto max-w-7xl px-4 py-12 md:py-16 relative z-10 flex-1 flex flex-col">
+          {/* Hero Text */}
+          <div className="text-center text-white mb-8">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+              Real homes live here
             </h1>
-            <p className="text-xl md:text-2xl text-primary-foreground/80 mb-10 max-w-2xl mx-auto">
-              Discover thousands of properties for sale and rent. Your dream home is just a search away.
+            <p className="text-lg md:text-xl text-white/90">
+              Real Data. Real Brokers. Real Properties.
             </p>
+          </div>
 
-            {/* Search Box */}
-            <div className="max-w-4xl mx-auto">
-              {/* Tabs - Outside the card */}
-              <div className="flex justify-center gap-2 mb-4">
-                <Button
-                  variant={listingType === "buy" ? "default" : "outline"}
-                  onClick={() => setListingType("buy")}
-                  className={`rounded-full px-6 ${listingType === "buy" ? "" : "bg-white/20 border-white/30 text-primary-foreground hover:bg-white/30"}`}
-                >
-                  Buy
-                </Button>
-                <Button
-                  variant={listingType === "rent" ? "default" : "outline"}
-                  onClick={() => setListingType("rent")}
-                  className={`rounded-full px-6 ${listingType === "rent" ? "" : "bg-white/20 border-white/30 text-primary-foreground hover:bg-white/30"}`}
-                >
-                  Rent
-                </Button>
-                <Button
-                  variant={listingType === "sell" ? "default" : "outline"}
-                  onClick={() => setListingType("sell")}
-                  className={`rounded-full px-6 ${listingType === "sell" ? "" : "bg-white/20 border-white/30 text-primary-foreground hover:bg-white/30"}`}
-                >
-                  Sell
-                </Button>
-              </div>
+          {/* Category Tabs */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-white rounded-full p-1.5 shadow-lg inline-flex gap-1">
+              <button
+                onClick={() => setActiveTab("properties")}
+                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "properties"
+                  ? "bg-primary text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+                  }`}
+              >
+                Properties
+              </button>
+              <button
+                onClick={() => setActiveTab("new-projects")}
+                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "new-projects"
+                  ? "bg-primary text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+                  }`}
+              >
+                New Projects
+              </button>
+              <button
+                onClick={() => setActiveTab("transactions")}
+                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "transactions"
+                  ? "bg-primary text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+                  }`}
+              >
+                Transactions
+              </button>
+              <button
+                onClick={() => setActiveTab("estimate")}
+                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all relative ${activeTab === "estimate"
+                  ? "bg-primary text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+                  }`}
+              >
+                TruEstimate™
+                <span className="absolute -top-2 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
+                  NEW
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab("agents")}
+                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "agents"
+                  ? "bg-primary text-white"
+                  : "text-gray-700 hover:bg-gray-100"
+                  }`}
+              >
+                Agents
+              </button>
+            </div>
+          </div>
 
-              {/* Search Inputs - Rounded Full */}
-              <div className="bg-white rounded-full shadow-2xl p-2 flex flex-col md:flex-row gap-2">
+          {/* Search Card */}
+          <div className="max-w-4xl mx-auto w-full">
+            <Card className="bg-white rounded-2xl shadow-2xl p-4 md:p-6">
+              {/* First Row - Buy/Rent Toggle + Location + Search */}
+              <div className="flex flex-col md:flex-row gap-3 mb-4">
+                {/* Buy/Rent Toggle */}
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+                  <button
+                    onClick={() => setListingType("buy")}
+                    className={`px-5 py-2.5 text-sm font-medium transition-all ${listingType === "buy"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    Buy
+                  </button>
+                  <button
+                    onClick={() => setListingType("rent")}
+                    className={`px-5 py-2.5 text-sm font-medium transition-all border-l border-gray-200 ${listingType === "rent"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    Rent
+                  </button>
+                </div>
+
+                {/* Location Input */}
                 <div className="flex-1 relative">
-                  <MapPinIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     type="text"
                     placeholder="Enter city, neighborhood, or ZIP code"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-12 h-12 text-gray-900 text-lg rounded-full border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="pl-10 h-11 text-gray-900 rounded-lg border-gray-200 focus-visible:ring-primary"
                   />
                 </div>
-                <div className="hidden md:block w-px bg-gray-200 my-2" />
-                <Select value={propertyType} onValueChange={setPropertyType}>
-                  <SelectTrigger className="w-full md:w-44 h-12 text-gray-900 rounded-full border-0 bg-transparent focus:ring-0">
-                    <SelectValue placeholder="Property Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="house">House</SelectItem>
-                    <SelectItem value="apartment">Apartment</SelectItem>
-                    <SelectItem value="condo">Condo</SelectItem>
-                    <SelectItem value="townhouse">Townhouse</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button size="lg" className="h-12 px-8 rounded-full text-base">
+
+                {/* Search Button */}
+                <Button size="lg" className="h-11 px-8 rounded-lg">
                   <SearchIcon className="mr-2 h-5 w-5" />
                   Search
                 </Button>
               </div>
-            </div>
 
-            {/* Quick Stats */}
-            <div className="flex flex-wrap justify-center gap-8 mt-10 text-primary-foreground/80">
-              <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-5 w-5 text-secondary" />
-                <span>50,000+ Listings</span>
+              {/* Second Row - Filters */}
+              <div className="flex flex-wrap gap-3">
+                {/* Property Status Toggle */}
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setPropertyStatus("all")}
+                    className={`px-4 py-2 text-sm font-medium transition-all ${propertyStatus === "all"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setPropertyStatus("ready")}
+                    className={`px-4 py-2 text-sm font-medium transition-all border-l border-gray-200 ${propertyStatus === "ready"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    Ready
+                  </button>
+                  <button
+                    onClick={() => setPropertyStatus("off-plan")}
+                    className={`px-4 py-2 text-sm font-medium transition-all border-l border-gray-200 ${propertyStatus === "off-plan"
+                      ? "bg-primary text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    Off-Plan
+                  </button>
+                </div>
+
+                {/* Property Type */}
+                <Select value={propertyType} onValueChange={setPropertyType}>
+                  <SelectTrigger className="w-40 h-10 rounded-lg border-gray-200">
+                    <SelectValue placeholder="Residential" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="residential">Residential</SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="land">Land</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Beds */}
+                <Select value={bedsFilter} onValueChange={setBedsFilter}>
+                  <SelectTrigger className="w-32 h-10 rounded-lg border-gray-200">
+                    <SelectValue placeholder="Beds" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any Beds</SelectItem>
+                    <SelectItem value="1">1 Bed</SelectItem>
+                    <SelectItem value="2">2 Beds</SelectItem>
+                    <SelectItem value="3">3 Beds</SelectItem>
+                    <SelectItem value="4">4+ Beds</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Price */}
+                <Select value={priceFilter} onValueChange={setPriceFilter}>
+                  <SelectTrigger className="w-36 h-10 rounded-lg border-gray-200">
+                    <SelectValue placeholder="Price" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">Any Price</SelectItem>
+                    <SelectItem value="0-200k">$0 - $200K</SelectItem>
+                    <SelectItem value="200k-500k">$200K - $500K</SelectItem>
+                    <SelectItem value="500k-1m">$500K - $1M</SelectItem>
+                    <SelectItem value="1m+">$1M+</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-5 w-5 text-secondary" />
-                <span>Verified Agents</span>
+
+              {/* AI Prompt Banner */}
+              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                    <HomeIcon className="h-4 w-4 text-primary" />
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    Want to find out more about real estate using AI?
+                  </span>
+                </div>
+                <Link href="/ai-search" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                  Try AI Search
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Link>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircleIcon className="h-5 w-5 text-secondary" />
-                <span>Free to Use</span>
-              </div>
-            </div>
+            </Card>
+          </div>
+
+          {/* Experience the Journey Button */}
+          <div className="flex justify-center mt-auto pt-8">
+            <Button
+              variant="outline"
+              className="rounded-full bg-black/50 border-white/30 text-white hover:bg-black/70 hover:text-white px-6"
+            >
+              <PlayCircleIcon className="mr-2 h-5 w-5" />
+              Experience the Journey
+            </Button>
           </div>
         </div>
       </section>
@@ -504,8 +633,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredProperties.map((property) => (
-              <Card key={property.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
-                <div className="relative">
+              <Card key={property.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 p-0 gap-0">
+                <div className="relative overflow-hidden">
                   <Image
                     src={property.image}
                     alt={property.title}
@@ -592,8 +721,8 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {popularCities.map((city) => (
               <Link href="/properties" key={city.name}>
-                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer">
-                  <div className="relative h-48">
+                <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 cursor-pointer p-0 gap-0">
+                  <div className="relative h-48 overflow-hidden">
                     <Image
                       src={city.image}
                       alt={city.name}
@@ -777,8 +906,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {recentlySold.map((property, index) => (
-              <Card key={index} className="overflow-hidden">
-                <div className="relative">
+              <Card key={index} className="overflow-hidden p-0 gap-0">
+                <div className="relative overflow-hidden">
                   <Image
                     src={property.image}
                     alt={property.title}
@@ -846,8 +975,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredAgents.map((agent) => (
-              <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
-                <div className="relative h-64">
+              <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0">
+                <div className="relative h-64 overflow-hidden">
                   <Image
                     src={agent.image}
                     alt={agent.name}
@@ -943,8 +1072,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {blogPosts.map((post, index) => (
-              <Card key={index} className="overflow-hidden group hover:shadow-lg transition-all duration-300">
-                <div className="relative h-48">
+              <Card key={index} className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0">
+                <div className="relative h-48 overflow-hidden">
                   <Image
                     src={post.image}
                     alt={post.title}

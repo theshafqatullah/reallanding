@@ -127,7 +127,7 @@ export default function AboutPage() {
               <span className="text-secondary">Since 2010</span>
             </h1>
             <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-              We&apos;re on a mission to make finding your perfect property as simple, 
+              We&apos;re on a mission to make finding your perfect property as simple,
               transparent, and enjoyable as it should be.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
@@ -181,14 +181,14 @@ export default function AboutPage() {
                 From a Small Office to Industry Leader
               </h2>
               <p className="text-lg text-muted-foreground mb-6">
-                Real Landing started in 2010 with a simple belief: everyone deserves 
-                access to honest, transparent real estate services. What began as a 
-                small team in New York has grown into a nationwide platform trusted 
+                Real Landing started in 2010 with a simple belief: everyone deserves
+                access to honest, transparent real estate services. What began as a
+                small team in New York has grown into a nationwide platform trusted
                 by millions.
               </p>
               <p className="text-lg text-muted-foreground mb-8">
-                Today, we&apos;re proud to have helped over 25,000 families find their 
-                perfect homes, facilitated billions in property transactions, and 
+                Today, we&apos;re proud to have helped over 25,000 families find their
+                perfect homes, facilitated billions in property transactions, and
                 built a community of over 1,000 dedicated real estate professionals.
               </p>
               <div className="flex flex-wrap gap-4">
@@ -242,9 +242,9 @@ export default function AboutPage() {
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-4">Our Mission</h2>
               <p className="text-muted-foreground text-lg">
-                To revolutionize the real estate experience by providing transparent, 
-                efficient, and personalized services that help everyone find their 
-                perfect property. We believe in making homeownership accessible and 
+                To revolutionize the real estate experience by providing transparent,
+                efficient, and personalized services that help everyone find their
+                perfect property. We believe in making homeownership accessible and
                 the journey enjoyable.
               </p>
             </Card>
@@ -255,9 +255,9 @@ export default function AboutPage() {
               </div>
               <h2 className="text-2xl font-bold text-foreground mb-4">Our Vision</h2>
               <p className="text-muted-foreground text-lg">
-                To be the most trusted real estate platform globally, empowering 
-                millions to make informed property decisions with confidence. We 
-                envision a world where finding your dream home is simple, transparent, 
+                To be the most trusted real estate platform globally, empowering
+                millions to make informed property decisions with confidence. We
+                envision a world where finding your dream home is simple, transparent,
                 and stress-free.
               </p>
             </Card>
@@ -322,9 +322,8 @@ export default function AboutPage() {
               {milestones.map((milestone, index) => (
                 <div
                   key={milestone.year}
-                  className={`flex flex-col md:flex-row items-center gap-4 ${
-                    index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
-                  }`}
+                  className={`flex flex-col md:flex-row items-center gap-4 ${index % 2 === 0 ? "md:flex-row" : "md:flex-row-reverse"
+                    }`}
                 >
                   <div className={`flex-1 ${index % 2 === 0 ? "md:text-right" : "md:text-left"}`}>
                     <Card className="p-6 border border-border shadow-none bg-white inline-block">
@@ -367,9 +366,9 @@ export default function AboutPage() {
             {team.map((member) => (
               <Card
                 key={member.name}
-                className="overflow-hidden border border-border shadow-none group"
+                className="overflow-hidden border border-border shadow-none group p-0 gap-0"
               >
-                <div className="relative h-64">
+                <div className="relative h-64 overflow-hidden">
                   <Image
                     src={member.image}
                     alt={member.name}
@@ -440,7 +439,7 @@ export default function AboutPage() {
             <span className="text-4xl text-primary">&ldquo;</span>
           </div>
           <blockquote className="text-2xl md:text-3xl font-medium text-foreground mb-8 leading-relaxed">
-            Our success is measured not by the number of properties we sell, 
+            Our success is measured not by the number of properties we sell,
             but by the number of families we help find their perfect home.
           </blockquote>
           <div className="flex items-center justify-center gap-4">

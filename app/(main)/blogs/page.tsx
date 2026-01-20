@@ -258,9 +258,9 @@ export default function BlogPage() {
             <h2 className="text-2xl font-bold text-foreground">Featured Article</h2>
           </div>
 
-          <Card className="overflow-hidden border border-border shadow-none">
+          <Card className="overflow-hidden border border-border shadow-none p-0 gap-0">
             <div className="grid grid-cols-1 lg:grid-cols-2">
-              <div className="relative h-64 lg:h-auto">
+              <div className="relative h-64 lg:h-auto overflow-hidden">
                 <Image
                   src={featuredPost.image}
                   alt={featuredPost.title}
@@ -327,9 +327,9 @@ export default function BlogPage() {
                 {blogPosts.map((post) => (
                   <Card
                     key={post.id}
-                    className="overflow-hidden border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group"
+                    className="overflow-hidden border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group p-0 gap-0"
                   >
-                    <div className="relative h-48">
+                    <div className="relative h-48 overflow-hidden">
                       <Image
                         src={post.image}
                         alt={post.title}
