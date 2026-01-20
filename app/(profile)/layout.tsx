@@ -25,6 +25,7 @@ import {
   BarChart3,
   LogIn,
   PlusIcon,
+  Inbox,
 } from "lucide-react";
 
 interface NavItem {
@@ -52,6 +53,12 @@ const navItems: NavItem[] = [
     href: "/saved",
     icon: Heart,
     description: "Properties you've saved",
+  },
+  {
+    title: "Inbox",
+    href: "/inbox",
+    icon: Inbox,
+    description: "Your messages",
   },
   {
     title: "Inquiries",

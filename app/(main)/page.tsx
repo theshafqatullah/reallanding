@@ -9,12 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   SearchIcon,
   MapPinIcon,
@@ -44,6 +43,7 @@ import {
   TrendingDownIcon,
   EyeIcon,
   MessageSquareIcon,
+  ChevronDownIcon,
 } from "lucide-react";
 
 // Mock featured properties data
@@ -347,6 +347,10 @@ export default function Home() {
   const [bedsFilter, setBedsFilter] = useState("any");
   const [priceFilter, setPriceFilter] = useState("any");
   const [activeTab, setActiveTab] = useState("properties");
+  // Dialog states for filter modals
+  const [typeDialogOpen, setTypeDialogOpen] = useState(false);
+  const [bedsDialogOpen, setBedsDialogOpen] = useState(false);
+  const [priceDialogOpen, setPriceDialogOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -419,18 +423,6 @@ export default function Home() {
                 Transactions
               </button>
               <button
-                onClick={() => setActiveTab("estimate")}
-                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all relative ${activeTab === "estimate"
-                  ? "bg-primary text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-                  }`}
-              >
-                TruEstimate™
-                <span className="absolute -top-2 -right-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold">
-                  NEW
-                </span>
-              </button>
-              <button
                 onClick={() => setActiveTab("agents")}
                 className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "agents"
                   ? "bg-primary text-white"
@@ -444,14 +436,14 @@ export default function Home() {
 
           {/* Search Card */}
           <div className="max-w-4xl mx-auto w-full">
-            <Card className="bg-white rounded-2xl shadow-2xl p-4 md:p-6">
+            <Card className="bg-white rounded-3xl shadow-2xl p-5 md:p-8">
               {/* First Row - Buy/Rent Toggle + Location + Search */}
-              <div className="flex flex-col md:flex-row gap-3 mb-4">
+              <div className="flex flex-col md:flex-row gap-3">
                 {/* Buy/Rent Toggle */}
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden flex-shrink-0">
+                <div className="flex rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
                   <button
                     onClick={() => setListingType("buy")}
-                    className={`px-5 py-2.5 text-sm font-medium transition-all ${listingType === "buy"
+                    className={`px-6 py-3 text-sm font-medium transition-all ${listingType === "buy"
                       ? "bg-primary text-white"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
@@ -460,7 +452,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setListingType("rent")}
-                    className={`px-5 py-2.5 text-sm font-medium transition-all border-l border-gray-200 ${listingType === "rent"
+                    className={`px-6 py-3 text-sm font-medium transition-all border-l border-gray-200 ${listingType === "rent"
                       ? "bg-primary text-white"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
@@ -471,30 +463,30 @@ export default function Home() {
 
                 {/* Location Input */}
                 <div className="flex-1 relative">
-                  <MapPinIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <MapPinIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     type="text"
                     placeholder="Enter city, neighborhood, or ZIP code"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 h-11 text-gray-900 rounded-lg border-gray-200 focus-visible:ring-primary"
+                    className="pl-12 h-12 text-gray-900 rounded-full border-gray-200 focus-visible:ring-primary"
                   />
                 </div>
 
                 {/* Search Button */}
-                <Button size="lg" className="h-11 px-8 rounded-lg">
+                <Button size="lg" className="h-12 px-10 rounded-full text-base">
                   <SearchIcon className="mr-2 h-5 w-5" />
                   Search
                 </Button>
               </div>
 
               {/* Second Row - Filters */}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex gap-3 items-center w-full">
                 {/* Property Status Toggle */}
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                <div className="flex rounded-full border border-gray-200 overflow-hidden h-11">
                   <button
                     onClick={() => setPropertyStatus("all")}
-                    className={`px-4 py-2 text-sm font-medium transition-all ${propertyStatus === "all"
+                    className={`px-5 text-sm font-medium transition-all h-full ${propertyStatus === "all"
                       ? "bg-primary text-white"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
@@ -503,7 +495,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setPropertyStatus("ready")}
-                    className={`px-4 py-2 text-sm font-medium transition-all border-l border-gray-200 ${propertyStatus === "ready"
+                    className={`px-5 text-sm font-medium transition-all border-l border-gray-200 h-full ${propertyStatus === "ready"
                       ? "bg-primary text-white"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
@@ -512,7 +504,7 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setPropertyStatus("off-plan")}
-                    className={`px-4 py-2 text-sm font-medium transition-all border-l border-gray-200 ${propertyStatus === "off-plan"
+                    className={`px-5 text-sm font-medium transition-all border-l border-gray-200 h-full ${propertyStatus === "off-plan"
                       ? "bg-primary text-white"
                       : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
@@ -521,59 +513,130 @@ export default function Home() {
                   </button>
                 </div>
 
-                {/* Property Type */}
-                <Select value={propertyType} onValueChange={setPropertyType}>
-                  <SelectTrigger className="w-40 h-10 rounded-lg border-gray-200">
-                    <SelectValue placeholder="Residential" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="residential">Residential</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                    <SelectItem value="land">Land</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Property Type Button */}
+                <button
+                  onClick={() => setTypeDialogOpen(true)}
+                  className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  <span>{propertyType === "all" ? "All Types" : propertyType.charAt(0).toUpperCase() + propertyType.slice(1)}</span>
+                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                </button>
 
-                {/* Beds */}
-                <Select value={bedsFilter} onValueChange={setBedsFilter}>
-                  <SelectTrigger className="w-32 h-10 rounded-lg border-gray-200">
-                    <SelectValue placeholder="Beds" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any Beds</SelectItem>
-                    <SelectItem value="1">1 Bed</SelectItem>
-                    <SelectItem value="2">2 Beds</SelectItem>
-                    <SelectItem value="3">3 Beds</SelectItem>
-                    <SelectItem value="4">4+ Beds</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Beds Button */}
+                <button
+                  onClick={() => setBedsDialogOpen(true)}
+                  className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  <span>{bedsFilter === "any" ? "Any Beds" : bedsFilter === "4" ? "4+ Beds" : `${bedsFilter} Bed${bedsFilter !== "1" ? "s" : ""}`}</span>
+                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                </button>
 
-                {/* Price */}
-                <Select value={priceFilter} onValueChange={setPriceFilter}>
-                  <SelectTrigger className="w-36 h-10 rounded-lg border-gray-200">
-                    <SelectValue placeholder="Price" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="any">Any Price</SelectItem>
-                    <SelectItem value="0-200k">$0 - $200K</SelectItem>
-                    <SelectItem value="200k-500k">$200K - $500K</SelectItem>
-                    <SelectItem value="500k-1m">$500K - $1M</SelectItem>
-                    <SelectItem value="1m+">$1M+</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Price Button */}
+                <button
+                  onClick={() => setPriceDialogOpen(true)}
+                  className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  <span>{priceFilter === "any" ? "Any Price" : priceFilter}</span>
+                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                </button>
               </div>
 
+              {/* Property Type Dialog */}
+              <Dialog open={typeDialogOpen} onOpenChange={setTypeDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Property Type</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-3 pt-4">
+                    {["all", "residential", "commercial", "land"].map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          setPropertyType(type);
+                          setTypeDialogOpen(false);
+                        }}
+                        className={`p-4 rounded-xl border text-sm font-medium transition-all ${propertyType === type
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          }`}
+                      >
+                        {type === "all" ? "All Types" : type.charAt(0).toUpperCase() + type.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Beds Dialog */}
+              <Dialog open={bedsDialogOpen} onOpenChange={setBedsDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Number of Bedrooms</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-3 gap-3 pt-4">
+                    {["any", "1", "2", "3", "4", "5"].map((bed) => (
+                      <button
+                        key={bed}
+                        onClick={() => {
+                          setBedsFilter(bed);
+                          setBedsDialogOpen(false);
+                        }}
+                        className={`p-4 rounded-xl border text-sm font-medium transition-all ${bedsFilter === bed
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          }`}
+                      >
+                        {bed === "any" ? "Any" : bed === "5" ? "5+" : bed}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Price Dialog */}
+              <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Price Range</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-1 gap-2 pt-4">
+                    {[
+                      { value: "any", label: "Any Price" },
+                      { value: "0-200k", label: "$0 - $200,000" },
+                      { value: "200k-500k", label: "$200,000 - $500,000" },
+                      { value: "500k-1m", label: "$500,000 - $1,000,000" },
+                      { value: "1m-2m", label: "$1,000,000 - $2,000,000" },
+                      { value: "2m+", label: "$2,000,000+" },
+                    ].map((price) => (
+                      <button
+                        key={price.value}
+                        onClick={() => {
+                          setPriceFilter(price.value);
+                          setPriceDialogOpen(false);
+                        }}
+                        className={`p-4 rounded-xl border text-sm font-medium transition-all text-left ${priceFilter === price.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          }`}
+                      >
+                        {price.label}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               {/* AI Prompt Banner */}
-              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+              <div className=" pt-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <HomeIcon className="h-4 w-4 text-primary" />
+                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                    <HomeIcon className="h-5 w-5 text-primary" />
                   </div>
                   <span className="text-sm text-gray-600">
                     Want to find out more about real estate using AI?
                   </span>
                 </div>
-                <Link href="/ai-search" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
+                <Link href="/ai-search" className="text-sm font-medium text-primary hover:underline flex items-center gap-1 whitespace-nowrap">
                   Try AI Search
                   <ArrowRightIcon className="h-4 w-4" />
                 </Link>
