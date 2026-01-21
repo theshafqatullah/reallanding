@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -23,6 +21,8 @@ import {
   ArrowLeftIcon,
   CheckCircleIcon,
 } from "lucide-react";
+
+export { metadata } from "./metadata";
 
 const sections = [
   {
@@ -243,7 +243,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-4">
-              We are committed to protecting your privacy and ensuring the security of your 
+              We are committed to protecting your privacy and ensuring the security of your
               personal information. This policy explains how we handle your data.
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-primary-foreground/70">
@@ -331,9 +331,8 @@ export default function PrivacyPage() {
                       {section.content.map((paragraph, index) => (
                         <p
                           key={index}
-                          className={`text-muted-foreground leading-relaxed ${
-                            paragraph.startsWith("•") ? "pl-4" : ""
-                          }`}
+                          className={`text-muted-foreground leading-relaxed ${paragraph.startsWith("•") ? "pl-4" : ""
+                            }`}
                         >
                           {paragraph}
                         </p>

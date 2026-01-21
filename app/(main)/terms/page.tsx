@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -20,6 +18,8 @@ import {
   BookOpenIcon,
   ArrowLeftIcon,
 } from "lucide-react";
+
+export { metadata } from "./metadata";
 
 const sections = [
   {
@@ -209,7 +209,7 @@ export default function TermsPage() {
               Terms of Service
             </h1>
             <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-4">
-              Please read these terms carefully before using our services. By using Real Landing, 
+              Please read these terms carefully before using our services. By using Real Landing,
               you agree to be bound by these terms and conditions.
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-primary-foreground/70">
@@ -277,9 +277,8 @@ export default function TermsPage() {
                       {section.content.map((paragraph, index) => (
                         <p
                           key={index}
-                          className={`text-muted-foreground leading-relaxed ${
-                            paragraph.startsWith("•") ? "pl-4" : ""
-                          }`}
+                          className={`text-muted-foreground leading-relaxed ${paragraph.startsWith("•") ? "pl-4" : ""
+                            }`}
                         >
                           {paragraph}
                         </p>

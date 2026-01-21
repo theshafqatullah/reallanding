@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,6 +34,8 @@ import {
   TargetIcon,
   ZapIcon,
 } from "lucide-react";
+
+export { metadata } from "./metadata";
 
 const mainServices = [
   {

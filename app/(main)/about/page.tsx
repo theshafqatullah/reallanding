@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,6 +22,8 @@ import {
   SparklesIcon,
   HandshakeIcon,
 } from "lucide-react";
+
+export { metadata } from "./metadata";
 
 const stats = [
   { label: "Properties Sold", value: "50K+", icon: HomeIcon },
