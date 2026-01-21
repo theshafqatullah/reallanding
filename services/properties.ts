@@ -121,6 +121,8 @@ export interface PropertyFilters {
   is_featured?: boolean;
   property_type_id?: string;
   listing_type_id?: string;
+  country_id?: string;
+  state_id?: string;
   city_id?: string;
   location_id?: string;
   min_price?: number;
@@ -279,6 +281,12 @@ export const propertiesService = {
       }
       if (filters?.listing_type_id) {
         queries.push(Query.equal("listing_type_id", filters.listing_type_id));
+      }
+      if (filters?.country_id) {
+        queries.push(Query.equal("country_id", filters.country_id));
+      }
+      if (filters?.state_id) {
+        queries.push(Query.equal("state_id", filters.state_id));
       }
       if (filters?.city_id) {
         queries.push(Query.equal("city_id", filters.city_id));

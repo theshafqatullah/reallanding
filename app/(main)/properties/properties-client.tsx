@@ -72,8 +72,9 @@ import {
     type City,
 } from "@/services/lookups";
 import { savedPropertiesService } from "@/services/saved-properties";
+import { usersService } from "@/services/users";
 import { useAuth } from "@/store/auth";
-import { type Properties, type UserSavedProperties } from "@/types/appwrite";
+import { type Properties, type UserSavedProperties, type Users } from "@/types/appwrite";
 import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 15;
@@ -121,9 +122,11 @@ function PropertyListCard({
     const locationName = property.location?.name || "";
     const fullLocation = [locationName, cityName].filter(Boolean).join(", ");
     const currency = property.currency || "PKR";
+    const agentName = property.contact_person_name || "Agent";
+    const agentInitial = agentName.charAt(0).toUpperCase();
 
     return (
-        <Card className="overflow-hidden hover:shadow-lg transition-all border-border bg-card">
+        <Card className="p-0 overflow-hidden hover:shadow-lg transition-all border-border bg-card">
             <div className="flex flex-col lg:flex-row">
                 {/* Image Section */}
                 <div className="relative w-full lg:w-[380px] h-64 lg:h-[280px] flex-shrink-0">
@@ -168,29 +171,25 @@ function PropertyListCard({
                             e.preventDefault();
                             onSaveToggle(property.$id);
                         }}
-                        className="absolute bottom-3 right-3 p-2 bg-card/95 backdrop-blur-sm rounded-full shadow-md hover:bg-card transition-colors"
+                        className="absolute top-3 right-3 p-2 bg-card/95 backdrop-blur-sm rounded-full shadow-md hover:bg-card transition-colors"
                     >
                         <HeartIcon
                             className={`w-5 h-5 ${isSaved ? "fill-red-500 text-red-500" : "text-muted-foreground"}`}
                         />
                     </button>
 
-                    {/* Agent/Agency Badge */}
-                    {property.agent_id && (
-                        <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-white/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 shadow-sm">
-                            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                <BadgeCheckIcon className="w-4 h-4 text-primary-foreground" />
-                            </div>
-                            <span className="text-xs font-medium text-foreground">Agent</span>
-                        </div>
-                    )}
+                    {/* Listing Type Badge */}
+                    <div className="absolute bottom-3 left-3">
+                        <Badge className="bg-primary/90 text-primary-foreground text-xs px-2.5 py-1">
+                            {listingType}
+                        </Badge>
+                    </div>
 
-                    {/* Image indicators (dots) */}
+                    {/* Image Count */}
                     {property.total_images && property.total_images > 1 && (
-                        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
-                            {Array.from({ length: Math.min(property.total_images, 5) }).map((_, i) => (
-                                <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-white" : "bg-white/50"}`} />
-                            ))}
+                        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                            <GridIcon className="w-3 h-3" />
+                            {property.total_images}
                         </div>
                     )}
                 </div>
@@ -205,26 +204,37 @@ function PropertyListCard({
                                     <span className="text-sm font-normal text-muted-foreground mr-1">{currency}</span>
                                     {formatPrice(property.price, currency)}
                                 </p>
+                                {property.price_negotiable && (
+                                    <span className="text-xs text-green-600 font-medium">Negotiable</span>
+                                )}
                             </div>
                         </div>
 
                         {/* Property Type & Features Row */}
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3">
                             <span className="font-medium text-foreground">{propertyType}</span>
                             <span className="text-border">|</span>
-                            <div className="flex items-center gap-1">
-                                <BedDoubleIcon className="w-4 h-4" />
-                                <span>{property.bedrooms || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <BathIcon className="w-4 h-4" />
-                                <span>{property.bathrooms || 0}</span>
-                            </div>
-                            <span className="text-border">|</span>
-                            <div className="flex items-center gap-1">
-                                <span className="text-muted-foreground">Area:</span>
-                                <span>{formatArea(property.total_area, property.area_unit)}</span>
-                            </div>
+                            {property.bedrooms !== null && property.bedrooms > 0 && (
+                                <div className="flex items-center gap-1">
+                                    <BedDoubleIcon className="w-4 h-4" />
+                                    <span>{property.bedrooms} Beds</span>
+                                </div>
+                            )}
+                            {property.bathrooms !== null && property.bathrooms > 0 && (
+                                <div className="flex items-center gap-1">
+                                    <BathIcon className="w-4 h-4" />
+                                    <span>{property.bathrooms} Baths</span>
+                                </div>
+                            )}
+                            {property.total_area && (
+                                <>
+                                    <span className="text-border">|</span>
+                                    <div className="flex items-center gap-1">
+                                        <RulerIcon className="w-4 h-4" />
+                                        <span>{formatArea(property.total_area, property.area_unit)}</span>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* Title */}
@@ -235,49 +245,80 @@ function PropertyListCard({
                         </Link>
 
                         {/* Location */}
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mb-4">
+                        <p className="text-sm text-muted-foreground flex items-center gap-1 mb-3">
                             <MapPinIcon className="w-4 h-4 flex-shrink-0" />
                             <span className="line-clamp-1">{fullLocation || "Location not specified"}</span>
                         </p>
 
-                        {/* Verification Badge */}
-                        {property.is_verified && (
-                            <div className="flex items-center gap-2 text-xs text-primary font-medium mb-4">
-                                <CheckIcon className="w-4 h-4" />
-                                <span>Property authenticity verified</span>
-                            </div>
-                        )}
-
-                        {/* Additional Info Row */}
-                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-4">
-                            {property.available_from && (
-                                <div className="flex items-center gap-1.5 bg-accent px-3 py-1.5 rounded-md">
-                                    <CalendarIcon className="w-3.5 h-3.5" />
-                                    <span className="font-medium text-accent-foreground">AVAILABLE</span>
-                                    <span>{new Date(property.available_from).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
-                                </div>
+                        {/* Additional Details */}
+                        <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mb-4">
+                            {property.furnished_status && property.furnished_status !== "unfurnished" && (
+                                <Badge variant="secondary" className="text-xs capitalize">
+                                    {property.furnished_status.replace(/_/g, " ")}
+                                </Badge>
+                            )}
+                            {property.is_corner && (
+                                <Badge variant="secondary" className="text-xs">Corner Plot</Badge>
+                            )}
+                            {property.has_parking && (
+                                <Badge variant="secondary" className="text-xs">Parking</Badge>
+                            )}
+                            {property.bank_loan_available && (
+                                <Badge variant="secondary" className="text-xs">Bank Loan</Badge>
                             )}
                             {property.installment_available && (
-                                <div className="flex items-center gap-1.5 bg-accent px-3 py-1.5 rounded-md">
-                                    <span className="font-medium text-accent-foreground">PAYMENT PLAN</span>
-                                    <span>{property.down_payment_percentage || 20}/{100 - (property.down_payment_percentage || 20)}</span>
-                                </div>
+                                <Badge variant="outline" className="text-xs border-green-500 text-green-600">
+                                    Installment Plan
+                                </Badge>
                             )}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 mt-auto pt-4 border-t border-border">
-                            <Button variant="outline" size="sm" className="flex-1 gap-2">
-                                <MailIcon className="w-4 h-4" />
-                                Email
-                            </Button>
-                            <Button variant="outline" size="sm" className="flex-1 gap-2">
-                                <PhoneIcon className="w-4 h-4" />
-                                Call
-                            </Button>
-                            <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white px-4">
-                                <MessageCircleIcon className="w-4 h-4" />
-                            </Button>
+                        {/* Agent & Quick Actions Row */}
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-border">
+                            {/* Agent Info */}
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                                    {agentInitial}
+                                </div>
+                                <div className="hidden sm:block">
+                                    <p className="text-sm font-medium text-foreground line-clamp-1">{agentName}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {property.agent_id ? "Agent" : "Owner"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Quick Contact Buttons */}
+                            <div className="flex items-center gap-2">
+                                {property.contact_email && (
+                                    <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                                        <a href={`mailto:${property.contact_email}`}>
+                                            <MailIcon className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Email</span>
+                                        </a>
+                                    </Button>
+                                )}
+                                {property.contact_phone && (
+                                    <Button variant="outline" size="sm" className="gap-1.5" asChild>
+                                        <a href={`tel:${property.contact_phone}`}>
+                                            <PhoneIcon className="w-4 h-4" />
+                                            <span className="hidden sm:inline">Call</span>
+                                        </a>
+                                    </Button>
+                                )}
+                                {property.whatsapp_number && (
+                                    <Button size="sm" className="bg-green-500 hover:bg-green-600 text-white gap-1.5" asChild>
+                                        <a
+                                            href={`https://wa.me/${property.whatsapp_number.replace(/\D/g, "")}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            <MessageCircleIcon className="w-4 h-4" />
+                                            <span className="hidden sm:inline">WhatsApp</span>
+                                        </a>
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -303,9 +344,11 @@ function PropertyGridCard({
     const locationName = property.location?.name || "";
     const fullLocation = [locationName, cityName].filter(Boolean).join(", ");
     const currency = property.currency || "PKR";
+    const agentName = property.contact_person_name || "Agent";
+    const agentInitial = agentName.charAt(0).toUpperCase();
 
     return (
-        <Card className="overflow-hidden hover:shadow-lg transition-all group bg-card border-border">
+        <Card className="p-0 overflow-hidden hover:shadow-lg transition-all group bg-card border-border">
             {/* Image */}
             <div className="relative h-48 overflow-hidden">
                 <Link href={`/p/${property.slug || property.$id}`}>
@@ -343,10 +386,15 @@ function PropertyGridCard({
             {/* Content */}
             <div className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                    <p className="text-lg font-bold text-foreground">
-                        <span className="text-xs font-normal text-muted-foreground mr-1">{currency}</span>
-                        {formatPrice(property.price, currency)}
-                    </p>
+                    <div>
+                        <p className="text-lg font-bold text-foreground">
+                            <span className="text-xs font-normal text-muted-foreground mr-1">{currency}</span>
+                            {formatPrice(property.price, currency)}
+                        </p>
+                        {property.price_negotiable && (
+                            <span className="text-[10px] text-green-600 font-medium">Negotiable</span>
+                        )}
+                    </div>
                     <Badge variant="outline" className="text-xs border-border">{listingType}</Badge>
                 </div>
 
@@ -363,17 +411,56 @@ function PropertyGridCard({
 
                 {/* Features */}
                 <div className="flex items-center justify-between text-xs text-muted-foreground py-2 border-t border-border">
-                    <div className="flex items-center gap-1">
-                        <BedDoubleIcon className="w-3.5 h-3.5" />
-                        <span>{property.bedrooms || 0}</span>
+                    {property.bedrooms !== null && property.bedrooms > 0 && (
+                        <div className="flex items-center gap-1">
+                            <BedDoubleIcon className="w-3.5 h-3.5" />
+                            <span>{property.bedrooms}</span>
+                        </div>
+                    )}
+                    {property.bathrooms !== null && property.bathrooms > 0 && (
+                        <div className="flex items-center gap-1">
+                            <BathIcon className="w-3.5 h-3.5" />
+                            <span>{property.bathrooms}</span>
+                        </div>
+                    )}
+                    {property.total_area && (
+                        <div className="flex items-center gap-1">
+                            <RulerIcon className="w-3.5 h-3.5" />
+                            <span>{formatArea(property.total_area, property.area_unit)}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Agent & Quick Actions */}
+                <div className="flex items-center justify-between pt-3 border-t border-border">
+                    {/* Agent Info */}
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold">
+                            {agentInitial}
+                        </div>
+                        <span className="text-xs text-muted-foreground line-clamp-1 max-w-[80px]">{agentName}</span>
                     </div>
+
+                    {/* Quick Contact */}
                     <div className="flex items-center gap-1">
-                        <BathIcon className="w-3.5 h-3.5" />
-                        <span>{property.bathrooms || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <RulerIcon className="w-3.5 h-3.5" />
-                        <span>{formatArea(property.total_area, property.area_unit)}</span>
+                        {property.contact_phone && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                                <a href={`tel:${property.contact_phone}`}>
+                                    <PhoneIcon className="w-3.5 h-3.5" />
+                                </a>
+                            </Button>
+                        )}
+                        {property.whatsapp_number && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:text-green-700" asChild>
+                                <a
+                                    href={`https://wa.me/${property.whatsapp_number.replace(/\D/g, "")}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <MessageCircleIcon className="w-3.5 h-3.5" />
+                                </a>
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -550,6 +637,9 @@ function PropertiesPageContent() {
     const [tempBeds, setTempBeds] = useState<number | undefined>(undefined);
     const [tempBaths, setTempBaths] = useState<number | undefined>(undefined);
 
+    // Agent info for filtered view
+    const [agentInfo, setAgentInfo] = useState<Users | null>(null);
+
     // Load lookup data
     useEffect(() => {
         const loadLookups = async () => {
@@ -595,6 +685,8 @@ function PropertiesPageContent() {
 
         const type = searchParams.get("type");
         const city = searchParams.get("city");
+        const location = searchParams.get("location");
+        const state = searchParams.get("state");
         const listing = searchParams.get("listing");
         const minPrice = searchParams.get("min_price");
         const maxPrice = searchParams.get("max_price");
@@ -604,9 +696,12 @@ function PropertiesPageContent() {
         const page = searchParams.get("page");
         const purpose = searchParams.get("purpose");
         const status = searchParams.get("status");
+        const agent = searchParams.get("agent");
 
         if (type) urlFilters.property_type_id = type;
         if (city) urlFilters.city_id = city;
+        if (location) urlFilters.location_id = location;
+        if (state) urlFilters.state_id = state;
         if (listing) urlFilters.listing_type_id = listing;
         if (minPrice) urlFilters.min_price = parseInt(minPrice);
         if (maxPrice) urlFilters.max_price = parseInt(maxPrice);
@@ -633,6 +728,18 @@ function PropertiesPageContent() {
         if (status && status !== "all") {
             urlFilters.construction_status = status;
             setSelectedStatus(status);
+        }
+        if (agent) {
+            urlFilters.agent_id = agent;
+            // Fetch agent info
+            usersService.getById(agent).then((agentData) => {
+                setAgentInfo(agentData);
+            }).catch((err) => {
+                console.error("Error fetching agent info:", err);
+                setAgentInfo(null);
+            });
+        } else {
+            setAgentInfo(null);
         }
 
         setFilters(urlFilters);
@@ -662,6 +769,8 @@ function PropertiesPageContent() {
         const params = new URLSearchParams();
         if (newFilters.property_type_id) params.set("type", newFilters.property_type_id);
         if (newFilters.city_id) params.set("city", newFilters.city_id);
+        if (newFilters.location_id) params.set("location", newFilters.location_id);
+        if (newFilters.state_id) params.set("state", newFilters.state_id);
         if (newFilters.listing_type_id) params.set("listing", newFilters.listing_type_id);
         if (newFilters.min_price) params.set("min_price", newFilters.min_price.toString());
         if (newFilters.max_price) params.set("max_price", newFilters.max_price.toString());
@@ -669,6 +778,7 @@ function PropertiesPageContent() {
         if (newFilters.bathrooms) params.set("baths", newFilters.bathrooms.toString());
         if (newFilters.construction_status) params.set("status", newFilters.construction_status);
         if (newFilters.search) params.set("q", newFilters.search);
+        if (newFilters.agent_id) params.set("agent", newFilters.agent_id);
         if (page > 1) params.set("page", page.toString());
         if (selectedPurpose !== "buy") params.set("purpose", selectedPurpose);
 
@@ -1004,12 +1114,75 @@ function PropertiesPageContent() {
 
             {/* Main Content */}
             <div className="container mx-auto max-w-7xl px-4 py-8">
+                {/* Agent Banner */}
+                {agentInfo && (
+                    <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex flex-col sm:flex-row items-center gap-4">
+                        <div className="relative h-16 w-16 rounded-full overflow-hidden bg-primary/10 flex-shrink-0">
+                            {agentInfo.profile_image_url ? (
+                                <Image
+                                    src={agentInfo.profile_image_url}
+                                    alt={`${agentInfo.first_name || ''} ${agentInfo.last_name || ''}`}
+                                    fill
+                                    className="object-cover"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-primary text-xl font-bold">
+                                    {(agentInfo.first_name?.[0] || agentInfo.username?.[0] || 'A').toUpperCase()}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                            <p className="text-sm text-muted-foreground mb-1">
+                                Showing properties by
+                            </p>
+                            <h2 className="text-lg font-semibold text-foreground">
+                                {agentInfo.first_name && agentInfo.last_name
+                                    ? `${agentInfo.first_name} ${agentInfo.last_name}`
+                                    : agentInfo.company_name || agentInfo.username}
+                            </h2>
+                            {agentInfo.designation && (
+                                <p className="text-sm text-muted-foreground">{agentInfo.designation}</p>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={`/u/${agentInfo.username}`}>
+                                    View Profile
+                                </Link>
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    router.push("/properties");
+                                }}
+                            >
+                                <XIcon className="h-4 w-4 mr-1" />
+                                Clear Filter
+                            </Button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Results Header */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                     <h1 className="text-xl font-semibold text-foreground">
-                        Properties {purposeText}
-                        {filters.city_id && cities.find(c => c.$id === filters.city_id) && (
-                            <span className="text-primary"> in {cities.find(c => c.$id === filters.city_id)?.name}</span>
+                        {agentInfo ? (
+                            <>
+                                Properties by{" "}
+                                <span className="text-primary">
+                                    {agentInfo.first_name && agentInfo.last_name
+                                        ? `${agentInfo.first_name} ${agentInfo.last_name}`
+                                        : agentInfo.company_name || agentInfo.username}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                Properties {purposeText}
+                                {filters.city_id && cities.find(c => c.$id === filters.city_id) && (
+                                    <span className="text-primary"> in {cities.find(c => c.$id === filters.city_id)?.name}</span>
+                                )}
+                            </>
                         )}
                     </h1>
 

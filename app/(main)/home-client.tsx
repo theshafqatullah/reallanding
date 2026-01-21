@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/auth";
-import { lookupsService, type PropertyType, type ListingType } from "@/services/lookups";
+import { lookupsService, type PropertyType, type ListingType, type City, type Location } from "@/services/lookups";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -358,6 +358,8 @@ export default function HomePageClient() {
   // Lookup data from Appwrite
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [listingTypes, setListingTypes] = useState<ListingType[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
 
   // Load lookup data on mount
   useEffect(() => {
@@ -365,12 +367,16 @@ export default function HomePageClient() {
 
     const loadLookups = async () => {
       try {
-        const [propTypes, listTypes] = await Promise.all([
+        const [propTypes, listTypes, allCities, allLocations] = await Promise.all([
           lookupsService.getPropertyTypes(),
           lookupsService.getListingTypes(),
+          lookupsService.getAllCities(),
+          lookupsService.getAllLocations(),
         ]);
         setPropertyTypes(propTypes);
         setListingTypes(listTypes);
+        setCities(allCities);
+        setLocations(allLocations);
       } catch (error) {
         console.error("Error loading lookups:", error);
       }
@@ -379,12 +385,35 @@ export default function HomePageClient() {
   }, []);
 
   // Handle search and navigate to properties page with filters
-  const handleSearch = () => {
+  const handleSearch = async () => {
     const params = new URLSearchParams();
 
-    // Add search query
+    // Search for matching city or location by name
     if (searchQuery.trim()) {
-      params.set("q", searchQuery.trim());
+      const query = searchQuery.trim().toLowerCase();
+
+      // First try to match against loaded cities
+      const matchedCity = cities.find(
+        (c) => c.name?.toLowerCase().includes(query) ||
+          c.name?.toLowerCase() === query
+      );
+
+      if (matchedCity) {
+        params.set("city", matchedCity.$id);
+      } else {
+        // Try to match against locations/areas
+        const matchedLocation = locations.find(
+          (l) => l.name?.toLowerCase().includes(query) ||
+            l.name?.toLowerCase() === query
+        );
+
+        if (matchedLocation) {
+          params.set("location", matchedLocation.$id);
+        } else {
+          // No exact match - use as text search
+          params.set("q", searchQuery.trim());
+        }
+      }
     }
 
     // Add listing type (buy/rent) - find the matching listing type ID

@@ -249,6 +249,89 @@ export const lookupsService = {
     }
   },
 
+  /**
+   * Search cities by name (fulltext search)
+   */
+  async searchCities(searchTerm: string): Promise<City[]> {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        CITIES_COLLECTION_ID,
+        [
+          Query.search("name", searchTerm),
+          Query.equal("is_active", true),
+          Query.limit(20),
+        ]
+      );
+      return response.documents as unknown as City[];
+    } catch (error) {
+      console.error("Error searching cities:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Search locations/areas by name (fulltext search)
+   */
+  async searchLocations(searchTerm: string): Promise<Location[]> {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        LOCATIONS_COLLECTION_ID,
+        [
+          Query.search("name", searchTerm),
+          Query.equal("is_active", true),
+          Query.limit(20),
+        ]
+      );
+      return response.documents as unknown as Location[];
+    } catch (error) {
+      console.error("Error searching locations:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Search all locations (cities and areas/societies) by name
+   * Returns combined results with type indicator
+   */
+  async searchAllLocations(searchTerm: string): Promise<{
+    cities: City[];
+    locations: Location[];
+  }> {
+    try {
+      const [cities, locations] = await Promise.all([
+        this.searchCities(searchTerm),
+        this.searchLocations(searchTerm),
+      ]);
+      return { cities, locations };
+    } catch (error) {
+      console.error("Error searching all locations:", error);
+      return { cities: [], locations: [] };
+    }
+  },
+
+  /**
+   * Get all locations (areas/societies)
+   */
+  async getAllLocations(): Promise<Location[]> {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        LOCATIONS_COLLECTION_ID,
+        [
+          Query.equal("is_active", true),
+          Query.orderAsc("name"),
+          Query.limit(500),
+        ]
+      );
+      return response.documents as unknown as Location[];
+    } catch (error) {
+      console.error("Error fetching all locations:", error);
+      throw error;
+    }
+  },
+
   // ========================================================================
   // Locations (Areas/Societies)
   // ========================================================================

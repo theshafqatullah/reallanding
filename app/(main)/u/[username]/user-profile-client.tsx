@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { databases } from "@/services/appwrite";
 import { Query } from "appwrite";
-import { type Users, AvailabilityStatus } from "@/types/appwrite";
+import { type Users, AvailabilityStatus, UserType } from "@/types/appwrite";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -205,7 +205,16 @@ export default function UserProfileClient() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pb-2">
+            <div className="flex flex-wrap gap-3 pb-2">
+              {/* View Properties button for agents/agencies */}
+              {(user.user_type === UserType.AGENT || user.user_type === UserType.AGENCY) && (
+                <Button asChild variant="secondary">
+                  <Link href={`/properties?agent=${user.$id}`}>
+                    <Home className="h-4 w-4 mr-2" />
+                    View Properties
+                  </Link>
+                </Button>
+              )}
               {user.phone && (
                 <Button asChild>
                   <a href={`tel:${user.phone}`}>
@@ -326,12 +335,12 @@ export default function UserProfileClient() {
                 <div className="flex items-center gap-3">
                   <div
                     className={`h-3 w-3 rounded-full ${user.availability_status === AvailabilityStatus.AVAILABLE
-                        ? "bg-green-500"
-                        : user.availability_status === AvailabilityStatus.BUSY
-                          ? "bg-yellow-500"
-                          : user.availability_status === AvailabilityStatus.AWAY
-                            ? "bg-orange-500"
-                            : "bg-muted-foreground"
+                      ? "bg-green-500"
+                      : user.availability_status === AvailabilityStatus.BUSY
+                        ? "bg-yellow-500"
+                        : user.availability_status === AvailabilityStatus.AWAY
+                          ? "bg-orange-500"
+                          : "bg-muted-foreground"
                       }`}
                   />
                   <span className="font-medium capitalize">
@@ -724,8 +733,8 @@ function VerificationBadge({
   return (
     <div
       className={`flex items-center gap-2 p-3 rounded-lg border ${verified
-          ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900"
-          : "bg-muted/50 border-border"
+        ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900"
+        : "bg-muted/50 border-border"
         }`}
     >
       <CheckCircle

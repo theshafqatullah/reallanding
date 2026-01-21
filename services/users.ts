@@ -87,6 +87,84 @@ export const usersService = {
   },
 
   /**
+   * Get all agents and agencies
+   */
+  async getAgents(options?: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    userType?: UserType.AGENT | UserType.AGENCY;
+  }): Promise<{ agents: Users[]; total: number }> {
+    try {
+      const queries = [
+        // Filter by agent or agency user types
+        options?.userType 
+          ? Query.equal("user_type", options.userType)
+          : Query.or([
+              Query.equal("user_type", UserType.AGENT),
+              Query.equal("user_type", UserType.AGENCY)
+            ]),
+        // Only active accounts
+        Query.equal("account_status", AccountStatus.ACTIVE),
+        Query.equal("is_active", true),
+        // Sort by featured first, then by rating
+        Query.orderDesc("is_featured"),
+        Query.orderDesc("rating"),
+        // Pagination
+        Query.limit(options?.limit || 20),
+        Query.offset(options?.offset || 0),
+      ];
+
+      // Add search if provided
+      if (options?.search) {
+        queries.push(Query.search("first_name", options.search));
+      }
+
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        queries
+      );
+
+      return {
+        agents: response.documents as unknown as Users[],
+        total: response.total,
+      };
+    } catch (error) {
+      console.error("Error fetching agents:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get featured agents
+   */
+  async getFeaturedAgents(limit: number = 4): Promise<Users[]> {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        USERS_COLLECTION_ID,
+        [
+          Query.or([
+            Query.equal("user_type", UserType.AGENT),
+            Query.equal("user_type", UserType.AGENCY)
+          ]),
+          Query.equal("account_status", AccountStatus.ACTIVE),
+          Query.equal("is_active", true),
+          Query.equal("is_featured", true),
+          Query.orderDesc("rating"),
+          Query.limit(limit),
+        ]
+      );
+
+      return response.documents as unknown as Users[];
+    } catch (error) {
+      console.error("Error fetching featured agents:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Create a new user profile
    */
   async create(data: CreateUserData): Promise<Users> {
@@ -400,29 +478,6 @@ export const usersService = {
       };
     } catch (error) {
       console.error("Error listing users:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get featured agents
-   */
-  async getFeaturedAgents(limit: number = 4): Promise<Users[]> {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        USERS_COLLECTION_ID,
-        [
-          Query.equal("user_type", UserType.AGENT),
-          Query.equal("is_featured", true),
-          Query.equal("is_active", true),
-          Query.limit(limit),
-        ]
-      );
-
-      return response.documents as unknown as Users[];
-    } catch (error) {
-      console.error("Error fetching featured agents:", error);
       throw error;
     }
   },

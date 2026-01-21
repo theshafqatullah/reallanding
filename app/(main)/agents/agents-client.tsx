@@ -1,12 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { usersService } from "@/services/users";
+import { type Users, UserType } from "@/types/appwrite";
 import {
     StarIcon,
     PhoneIcon,
@@ -33,161 +37,6 @@ import {
     ChevronDownIcon,
 } from "lucide-react";
 
-const agents = [
-    {
-        id: 1,
-        name: "Sarah Johnson",
-        role: "Senior Real Estate Agent",
-        specialties: ["Luxury Homes", "Investment"],
-        rating: 4.9,
-        reviews: 127,
-        sales: 89,
-        volume: "$45M+",
-        experience: "8+ years",
-        phone: "+1 (555) 123-4567",
-        email: "sarah.johnson@reallanding.com",
-        location: "Manhattan, NY",
-        languages: ["English", "Spanish"],
-        bio: "Specializes in luxury residential properties and investment opportunities. Known for exceptional client service and market expertise.",
-        image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop",
-        featured: true,
-        availability: "Available",
-    },
-    {
-        id: 2,
-        name: "Michael Chen",
-        role: "Commercial Specialist",
-        specialties: ["Commercial", "Industrial"],
-        rating: 4.8,
-        reviews: 94,
-        sales: 156,
-        volume: "$120M+",
-        experience: "12+ years",
-        phone: "+1 (555) 123-4568",
-        email: "michael.chen@reallanding.com",
-        location: "San Francisco, CA",
-        languages: ["English", "Mandarin"],
-        bio: "Expert in commercial real estate transactions with a focus on office buildings, retail spaces, and industrial properties.",
-        image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop",
-        featured: true,
-        availability: "Available",
-    },
-    {
-        id: 3,
-        name: "Emily Rodriguez",
-        role: "Residential Expert",
-        specialties: ["First-time Buyers", "Family Homes"],
-        rating: 5.0,
-        reviews: 203,
-        sales: 134,
-        volume: "$62M+",
-        experience: "6+ years",
-        phone: "+1 (555) 123-4569",
-        email: "emily.rodriguez@reallanding.com",
-        location: "Miami, FL",
-        languages: ["English", "Spanish", "Portuguese"],
-        bio: "Dedicated to helping first-time buyers and families find their perfect homes. Patient, knowledgeable, and supportive.",
-        image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop",
-        featured: true,
-        availability: "Available",
-    },
-    {
-        id: 4,
-        name: "David Thompson",
-        role: "Investment Advisor",
-        specialties: ["Investment", "Rentals"],
-        rating: 4.7,
-        reviews: 78,
-        sales: 67,
-        volume: "$38M+",
-        experience: "10+ years",
-        phone: "+1 (555) 123-4570",
-        email: "david.thompson@reallanding.com",
-        location: "Chicago, IL",
-        languages: ["English"],
-        bio: "Investment-focused agent helping clients build profitable real estate portfolios with strategic property acquisitions.",
-        image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-        featured: false,
-        availability: "Busy",
-    },
-    {
-        id: 5,
-        name: "Lisa Park",
-        role: "Luxury Specialist",
-        specialties: ["Luxury", "Waterfront"],
-        rating: 4.9,
-        reviews: 156,
-        sales: 78,
-        volume: "$95M+",
-        experience: "15+ years",
-        phone: "+1 (555) 123-4571",
-        email: "lisa.park@reallanding.com",
-        location: "Los Angeles, CA",
-        languages: ["English", "Korean"],
-        bio: "Luxury and waterfront property expert with an extensive network and deep understanding of high-end real estate markets.",
-        image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop",
-        featured: true,
-        availability: "Available",
-    },
-    {
-        id: 6,
-        name: "James Wilson",
-        role: "New Construction Specialist",
-        specialties: ["New Builds", "Condos"],
-        rating: 4.8,
-        reviews: 89,
-        sales: 92,
-        volume: "$55M+",
-        experience: "7+ years",
-        phone: "+1 (555) 123-4572",
-        email: "james.wilson@reallanding.com",
-        location: "Austin, TX",
-        languages: ["English"],
-        bio: "Specialist in new construction properties and condominium developments. Expert in pre-construction sales.",
-        image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-        featured: false,
-        availability: "Available",
-    },
-    {
-        id: 7,
-        name: "Maria Santos",
-        role: "Relocation Specialist",
-        specialties: ["Relocation", "Residential"],
-        rating: 4.9,
-        reviews: 112,
-        sales: 98,
-        volume: "$42M+",
-        experience: "9+ years",
-        phone: "+1 (555) 123-4573",
-        email: "maria.santos@reallanding.com",
-        location: "Boston, MA",
-        languages: ["English", "Spanish", "Italian"],
-        bio: "Helping families and professionals relocate seamlessly with comprehensive moving support and local expertise.",
-        image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop",
-        featured: false,
-        availability: "Available",
-    },
-    {
-        id: 8,
-        name: "Alex Turner",
-        role: "Property Manager",
-        specialties: ["Property Management", "Rentals"],
-        rating: 4.6,
-        reviews: 67,
-        sales: 45,
-        volume: "$28M+",
-        experience: "5+ years",
-        phone: "+1 (555) 123-4574",
-        email: "alex.turner@reallanding.com",
-        location: "Seattle, WA",
-        languages: ["English"],
-        bio: "Expert property manager helping landlords maximize returns while providing excellent tenant experiences.",
-        image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop",
-        featured: false,
-        availability: "Busy",
-    },
-];
-
 const teamStats = [
     { label: "Expert Agents", value: "200+", icon: UsersIcon },
     { label: "Properties Sold", value: "50K+", icon: HomeIcon },
@@ -196,12 +45,9 @@ const teamStats = [
 ];
 
 const specialties = [
-    { name: "All Agents", count: 200 },
-    { name: "Luxury", count: 35 },
-    { name: "Commercial", count: 28 },
-    { name: "Residential", count: 85 },
-    { name: "Investment", count: 32 },
-    { name: "New Construction", count: 20 },
+    { name: "All Agents", value: "all" },
+    { name: "Agents", value: UserType.AGENT },
+    { name: "Agencies", value: UserType.AGENCY },
 ];
 
 const whyChooseUs = [
@@ -248,11 +94,109 @@ const testimonials = [
     },
 ];
 
-export default function AgentsPageClient() {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedSpecialty, setSelectedSpecialty] = useState("All Agents");
+// Helper function to get agent display name
+function getAgentDisplayName(agent: Users): string {
+    if (agent.first_name && agent.last_name) {
+        return `${agent.first_name} ${agent.last_name}`;
+    }
+    if (agent.first_name) return agent.first_name;
+    if (agent.company_name) return agent.company_name;
+    return agent.username;
+}
 
-    const featuredAgents = agents.filter((agent) => agent.featured);
+// Helper function to get agent role/designation
+function getAgentRole(agent: Users): string {
+    if (agent.designation) return agent.designation;
+    if (agent.user_type === UserType.AGENCY) return "Real Estate Agency";
+    return "Real Estate Agent";
+}
+
+// Helper function to get agent location
+function getAgentLocation(agent: Users): string {
+    const parts = [agent.city, agent.state, agent.country].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : "Location not specified";
+}
+
+// Helper function to get agent specializations array
+function getAgentSpecializations(agent: Users): string[] {
+    if (!agent.specializations) return [];
+    return agent.specializations.split(",").map((s) => s.trim()).slice(0, 3);
+}
+
+// Default avatar for agents without profile images
+const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop";
+
+export default function AgentsPageClient() {
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState("");
+    const [selectedFilter, setSelectedFilter] = useState<string>("all");
+    const [agents, setAgents] = useState<Users[]>([]);
+    const [featuredAgents, setFeaturedAgents] = useState<Users[]>([]);
+    const [totalAgents, setTotalAgents] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [offset, setOffset] = useState(0);
+    const LIMIT = 8;
+
+    // Fetch agents on mount and when filters change
+    useEffect(() => {
+        const fetchAgents = async () => {
+            setLoading(true);
+            try {
+                const userType = selectedFilter === "all"
+                    ? undefined
+                    : selectedFilter as UserType.AGENT | UserType.AGENCY;
+
+                const [agentsResult, featured] = await Promise.all([
+                    usersService.getAgents({
+                        limit: LIMIT,
+                        offset: 0,
+                        userType
+                    }),
+                    usersService.getFeaturedAgents(4),
+                ]);
+
+                setAgents(agentsResult.agents);
+                setTotalAgents(agentsResult.total);
+                setFeaturedAgents(featured);
+                setOffset(LIMIT);
+            } catch (error) {
+                console.error("Failed to fetch agents:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAgents();
+    }, [selectedFilter]);
+
+    // Load more agents
+    const handleLoadMore = async () => {
+        setLoadingMore(true);
+        try {
+            const userType = selectedFilter === "all"
+                ? undefined
+                : selectedFilter as UserType.AGENT | UserType.AGENCY;
+
+            const result = await usersService.getAgents({
+                limit: LIMIT,
+                offset,
+                userType,
+            });
+
+            setAgents((prev) => [...prev, ...result.agents]);
+            setOffset((prev) => prev + LIMIT);
+        } catch (error) {
+            console.error("Failed to load more agents:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    // Navigate to agent profile
+    const handleAgentClick = (agent: Users) => {
+        router.push(`/u/${agent.username}`);
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -345,74 +289,95 @@ export default function AgentsPageClient() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {featuredAgents.map((agent) => (
-                            <Card
-                                key={agent.id}
-                                className="overflow-hidden border border-border shadow-none group hover:-translate-y-1 transition-all duration-300"
-                            >
-                                <div className="relative">
-                                    <div className="h-48 relative">
-                                        <Image
-                                            src={agent.image}
-                                            alt={agent.name}
-                                            fill
-                                            className="object-cover"
-                                        />
+                        {loading ? (
+                            // Loading skeletons
+                            Array.from({ length: 4 }).map((_, i) => (
+                                <Card key={i} className="p-0 overflow-hidden border border-border shadow-none">
+                                    <Skeleton className="h-48 w-full" />
+                                    <div className="p-5 space-y-3">
+                                        <Skeleton className="h-5 w-3/4" />
+                                        <Skeleton className="h-4 w-1/2" />
+                                        <Skeleton className="h-8 w-full" />
                                     </div>
-                                    <Badge className="absolute top-3 right-3 bg-primary">
-                                        <StarIcon className="h-3 w-3 mr-1 fill-white" />
-                                        {agent.rating}
-                                    </Badge>
-                                    <Badge
-                                        className={`absolute top-3 left-3 ${agent.availability === "Available" ? "bg-green-500" : "bg-orange-500"
-                                            }`}
-                                    >
-                                        {agent.availability}
-                                    </Badge>
-                                </div>
-                                <div className="p-5">
-                                    <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                                        {agent.name}
-                                    </h3>
-                                    <p className="text-primary text-sm font-medium mb-3">{agent.role}</p>
-
-                                    <div className="flex flex-wrap gap-1 mb-4">
-                                        {agent.specialties.map((specialty) => (
-                                            <Badge key={specialty} variant="secondary" className="text-xs">
-                                                {specialty}
+                                </Card>
+                            ))
+                        ) : featuredAgents.length > 0 ? (
+                            featuredAgents.map((agent) => (
+                                <Card
+                                    key={agent.$id}
+                                    className="p-0 overflow-hidden border border-border shadow-none group hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+                                    onClick={() => handleAgentClick(agent)}
+                                >
+                                    <div className="relative">
+                                        <div className="h-48 relative">
+                                            <Image
+                                                src={agent.profile_image_url || DEFAULT_AVATAR}
+                                                alt={getAgentDisplayName(agent)}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        {agent.rating > 0 && (
+                                            <Badge className="absolute top-3 right-3 bg-primary">
+                                                <StarIcon className="h-3 w-3 mr-1 fill-white" />
+                                                {agent.rating.toFixed(1)}
                                             </Badge>
-                                        ))}
+                                        )}
+                                        <Badge
+                                            className={`absolute top-3 left-3 ${agent.availability_status === "available" ? "bg-green-500" : "bg-orange-500"
+                                                }`}
+                                        >
+                                            {agent.availability_status === "available" ? "Available" : "Busy"}
+                                        </Badge>
                                     </div>
+                                    <div className="p-5">
+                                        <h3 className="text-lg font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+                                            {getAgentDisplayName(agent)}
+                                        </h3>
+                                        <p className="text-primary text-sm font-medium mb-3">{getAgentRole(agent)}</p>
 
-                                    <div className="grid grid-cols-2 gap-3 text-center mb-4">
-                                        <div className="bg-secondary rounded-lg p-2">
-                                            <div className="font-semibold text-foreground">{agent.sales}</div>
-                                            <div className="text-xs text-muted-foreground">Sales</div>
+                                        <div className="flex flex-wrap gap-1 mb-4">
+                                            {getAgentSpecializations(agent).map((specialty) => (
+                                                <Badge key={specialty} variant="secondary" className="text-xs">
+                                                    {specialty}
+                                                </Badge>
+                                            ))}
+                                            {agent.user_type === UserType.AGENCY && (
+                                                <Badge variant="outline" className="text-xs">
+                                                    <BuildingIcon className="h-3 w-3 mr-1" />
+                                                    Agency
+                                                </Badge>
+                                            )}
                                         </div>
-                                        <div className="bg-secondary rounded-lg p-2">
-                                            <div className="font-semibold text-foreground">{agent.volume}</div>
-                                            <div className="text-xs text-muted-foreground">Volume</div>
+
+                                        <div className="grid grid-cols-2 gap-3 text-center mb-4">
+                                            <div className="bg-secondary rounded-lg p-2">
+                                                <div className="font-semibold text-foreground">{agent.total_sales}</div>
+                                                <div className="text-xs text-muted-foreground">Sales</div>
+                                            </div>
+                                            <div className="bg-secondary rounded-lg p-2">
+                                                <div className="font-semibold text-foreground">{agent.active_listings}</div>
+                                                <div className="text-xs text-muted-foreground">Listings</div>
+                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                                        <MapPinIcon className="h-4 w-4" />
-                                        <span>{agent.location}</span>
-                                    </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                                            <MapPinIcon className="h-4 w-4" />
+                                            <span className="truncate">{getAgentLocation(agent)}</span>
+                                        </div>
 
-                                    <div className="flex gap-2">
-                                        <Button size="sm" className="flex-1 rounded-full">
-                                            <PhoneIcon className="h-4 w-4 mr-1" />
-                                            Call
-                                        </Button>
-                                        <Button size="sm" variant="outline" className="flex-1 rounded-full">
-                                            <MailIcon className="h-4 w-4 mr-1" />
-                                            Email
+                                        <Button size="sm" variant="outline" className="w-full rounded-full">
+                                            View Profile
+                                            <ArrowRightIcon className="h-4 w-4 ml-1" />
                                         </Button>
                                     </div>
-                                </div>
-                            </Card>
-                        ))}
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-8 text-muted-foreground">
+                                No featured agents available at the moment.
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
@@ -442,87 +407,126 @@ export default function AgentsPageClient() {
                         {specialties.map((specialty) => (
                             <Button
                                 key={specialty.name}
-                                variant={selectedSpecialty === specialty.name ? "default" : "outline"}
+                                variant={selectedFilter === specialty.value ? "default" : "outline"}
                                 size="sm"
                                 className="rounded-full"
-                                onClick={() => setSelectedSpecialty(specialty.name)}
+                                onClick={() => setSelectedFilter(specialty.value)}
                             >
                                 {specialty.name}
-                                <Badge
-                                    variant="secondary"
-                                    className={`ml-2 ${selectedSpecialty === specialty.name ? "bg-white/20" : ""}`}
-                                >
-                                    {specialty.count}
-                                </Badge>
                             </Button>
                         ))}
                     </div>
 
                     {/* Agents Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {agents.map((agent) => (
-                            <Card
-                                key={agent.id}
-                                className="p-5 border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group"
-                            >
-                                <div className="flex items-start gap-4 mb-4">
-                                    <div className="relative">
-                                        <Image
-                                            src={agent.image}
-                                            alt={agent.name}
-                                            width={64}
-                                            height={64}
-                                            className="rounded-full object-cover"
-                                        />
-                                        <div
-                                            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${agent.availability === "Available" ? "bg-green-500" : "bg-orange-500"
-                                                }`}
-                                        />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                                            {agent.name}
-                                        </h3>
-                                        <p className="text-sm text-primary truncate">{agent.role}</p>
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <StarIcon className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                            <span className="text-xs font-medium text-foreground">{agent.rating}</span>
-                                            <span className="text-xs text-muted-foreground">({agent.reviews})</span>
+                        {loading ? (
+                            // Loading skeletons
+                            Array.from({ length: 8 }).map((_, i) => (
+                                <Card key={i} className="p-5 border border-border shadow-none">
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <Skeleton className="w-16 h-16 rounded-full" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-4 w-3/4" />
+                                            <Skeleton className="h-3 w-1/2" />
                                         </div>
                                     </div>
-                                </div>
+                                    <Skeleton className="h-12 w-full mb-4" />
+                                    <Skeleton className="h-8 w-full" />
+                                </Card>
+                            ))
+                        ) : agents.length > 0 ? (
+                            agents.map((agent) => (
+                                <Card
+                                    key={agent.$id}
+                                    className="p-5 border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                                    onClick={() => handleAgentClick(agent)}
+                                >
+                                    <div className="flex items-start gap-4 mb-4">
+                                        <div className="relative">
+                                            <Image
+                                                src={agent.profile_image_url || DEFAULT_AVATAR}
+                                                alt={getAgentDisplayName(agent)}
+                                                width={64}
+                                                height={64}
+                                                className="rounded-full object-cover"
+                                            />
+                                            <div
+                                                className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${agent.availability_status === "available" ? "bg-green-500" : "bg-orange-500"
+                                                    }`}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                                                {getAgentDisplayName(agent)}
+                                            </h3>
+                                            <p className="text-sm text-primary truncate">{getAgentRole(agent)}</p>
+                                            {agent.rating > 0 && (
+                                                <div className="flex items-center gap-1 mt-1">
+                                                    <StarIcon className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                                                    <span className="text-xs font-medium text-foreground">{agent.rating.toFixed(1)}</span>
+                                                    <span className="text-xs text-muted-foreground">({agent.total_reviews})</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
 
-                                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{agent.bio}</p>
+                                    {agent.bio && (
+                                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{agent.bio}</p>
+                                    )}
 
-                                <div className="flex flex-wrap gap-1 mb-4">
-                                    {agent.specialties.map((specialty) => (
-                                        <Badge key={specialty} variant="secondary" className="text-xs">
-                                            {specialty}
-                                        </Badge>
-                                    ))}
-                                </div>
+                                    <div className="flex flex-wrap gap-1 mb-4">
+                                        {getAgentSpecializations(agent).map((specialty) => (
+                                            <Badge key={specialty} variant="secondary" className="text-xs">
+                                                {specialty}
+                                            </Badge>
+                                        ))}
+                                        {agent.user_type === UserType.AGENCY && (
+                                            <Badge variant="outline" className="text-xs">
+                                                <BuildingIcon className="h-3 w-3 mr-1" />
+                                                Agency
+                                            </Badge>
+                                        )}
+                                    </div>
 
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-                                    <MapPinIcon className="h-3 w-3" />
-                                    <span>{agent.location}</span>
-                                    <span>•</span>
-                                    <span>{agent.experience}</span>
-                                </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+                                        <MapPinIcon className="h-3 w-3" />
+                                        <span className="truncate">{getAgentLocation(agent)}</span>
+                                        {agent.experience_years > 0 && (
+                                            <>
+                                                <span>•</span>
+                                                <span>{agent.experience_years}+ years</span>
+                                            </>
+                                        )}
+                                    </div>
 
-                                <Button variant="outline" size="sm" className="w-full rounded-full">
-                                    View Profile
-                                    <ArrowRightIcon className="h-4 w-4 ml-1" />
-                                </Button>
-                            </Card>
-                        ))}
+                                    <Button variant="outline" size="sm" className="w-full rounded-full">
+                                        View Profile
+                                        <ArrowRightIcon className="h-4 w-4 ml-1" />
+                                    </Button>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-8 text-muted-foreground">
+                                No agents found. Please try different filters.
+                            </div>
+                        )}
                     </div>
 
-                    <div className="text-center mt-10">
-                        <Button variant="outline" size="lg" className="rounded-full px-8">
-                            Load More Agents
-                            <ChevronDownIcon className="h-4 w-4 ml-2" />
-                        </Button>
-                    </div>
+                    {/* Load More Button */}
+                    {!loading && agents.length < totalAgents && (
+                        <div className="text-center mt-10">
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className="rounded-full px-8"
+                                onClick={handleLoadMore}
+                                disabled={loadingMore}
+                            >
+                                {loadingMore ? "Loading..." : "Load More Agents"}
+                                <ChevronDownIcon className="h-4 w-4 ml-2" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </section>
 
