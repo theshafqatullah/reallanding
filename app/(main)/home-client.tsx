@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/auth";
+import { lookupsService, type PropertyType, type ListingType } from "@/services/lookups";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -338,6 +340,7 @@ const partners = [
 
 export default function HomePageClient() {
   const { user, isAuthenticated, loading } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [propertyType, setPropertyType] = useState("all");
@@ -352,9 +355,109 @@ export default function HomePageClient() {
   const [bedsDialogOpen, setBedsDialogOpen] = useState(false);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
 
+  // Lookup data from Appwrite
+  const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
+  const [listingTypes, setListingTypes] = useState<ListingType[]>([]);
+
+  // Load lookup data on mount
   useEffect(() => {
     setMounted(true);
+
+    const loadLookups = async () => {
+      try {
+        const [propTypes, listTypes] = await Promise.all([
+          lookupsService.getPropertyTypes(),
+          lookupsService.getListingTypes(),
+        ]);
+        setPropertyTypes(propTypes);
+        setListingTypes(listTypes);
+      } catch (error) {
+        console.error("Error loading lookups:", error);
+      }
+    };
+    loadLookups();
   }, []);
+
+  // Handle search and navigate to properties page with filters
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+
+    // Add search query
+    if (searchQuery.trim()) {
+      params.set("q", searchQuery.trim());
+    }
+
+    // Add listing type (buy/rent) - find the matching listing type ID
+    if (listingType) {
+      const matchingListingType = listingTypes.find(
+        (lt) => lt.name?.toLowerCase() === listingType.toLowerCase() ||
+          lt.slug?.toLowerCase() === listingType.toLowerCase()
+      );
+      if (matchingListingType) {
+        params.set("listing", matchingListingType.$id);
+      }
+      // Also set purpose for UI state
+      if (listingType !== "buy") {
+        params.set("purpose", listingType);
+      }
+    }
+
+    // Add property status (all/ready/off-plan)
+    if (propertyStatus && propertyStatus !== "all") {
+      params.set("status", propertyStatus);
+    }
+
+    // Add property type - use the ID directly if it's from lookup, otherwise find it
+    if (propertyType && propertyType !== "all") {
+      // Check if it's already an ID (from propertyTypes list)
+      const isId = propertyTypes.some((pt) => pt.$id === propertyType);
+      if (isId) {
+        params.set("type", propertyType);
+      } else {
+        // Try to find by name/category
+        const matchingType = propertyTypes.find(
+          (pt) => pt.name?.toLowerCase() === propertyType.toLowerCase() ||
+            pt.category?.toLowerCase() === propertyType.toLowerCase()
+        );
+        if (matchingType) {
+          params.set("type", matchingType.$id);
+        }
+      }
+    }
+
+    // Add bedrooms filter
+    if (bedsFilter && bedsFilter !== "any") {
+      // Handle 5+ as 5
+      const beds = bedsFilter === "5+" ? "5" : bedsFilter;
+      params.set("beds", beds);
+    }
+
+    // Add price filter with Pakistani Rupees ranges (Lac/Crore)
+    if (priceFilter && priceFilter !== "any") {
+      const priceRanges: Record<string, { min?: number; max?: number }> = {
+        // Standard ranges
+        "0-200k": { min: 0, max: 200000 },
+        "200k-500k": { min: 200000, max: 500000 },
+        "500k-1m": { min: 500000, max: 1000000 },
+        "1m-2m": { min: 1000000, max: 2000000 },
+        "2m+": { min: 2000000 },
+        // Pakistani Rupees ranges (Lac = 100,000, Crore = 10,000,000)
+        "0-50lac": { min: 0, max: 5000000 },
+        "50lac-1cr": { min: 5000000, max: 10000000 },
+        "1cr-2cr": { min: 10000000, max: 20000000 },
+        "2cr-5cr": { min: 20000000, max: 50000000 },
+        "5cr+": { min: 50000000 },
+      };
+      const range = priceRanges[priceFilter];
+      if (range) {
+        if (range.min !== undefined) params.set("min_price", range.min.toString());
+        if (range.max !== undefined) params.set("max_price", range.max.toString());
+      }
+    }
+
+    const queryString = params.toString();
+    router.push(queryString ? `/properties?${queryString}` : "/properties");
+  };
 
   const formatPrice = (price: number, type: string) => {
     if (type === "For Rent") {
@@ -469,12 +572,13 @@ export default function HomePageClient() {
                     placeholder="Enter city, neighborhood, or ZIP code"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     className="pl-12 h-12 text-gray-900 rounded-full border-gray-200 focus-visible:ring-primary"
                   />
                 </div>
 
                 {/* Search Button */}
-                <Button size="lg" className="h-12 px-10 rounded-full text-base">
+                <Button size="lg" className="h-12 px-10 rounded-full text-base" onClick={handleSearch}>
                   <SearchIcon className="mr-2 h-5 w-5" />
                   Search
                 </Button>
@@ -518,7 +622,11 @@ export default function HomePageClient() {
                   onClick={() => setTypeDialogOpen(true)}
                   className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
                 >
-                  <span>{propertyType === "all" ? "All Types" : propertyType.charAt(0).toUpperCase() + propertyType.slice(1)}</span>
+                  <span>
+                    {propertyType === "all"
+                      ? "All Types"
+                      : propertyTypes.find(pt => pt.$id === propertyType)?.name || propertyType}
+                  </span>
                   <ChevronDownIcon className="h-4 w-4 text-gray-400" />
                 </button>
 
@@ -536,7 +644,14 @@ export default function HomePageClient() {
                   onClick={() => setPriceDialogOpen(true)}
                   className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
                 >
-                  <span>{priceFilter === "any" ? "Any Price" : priceFilter}</span>
+                  <span>
+                    {priceFilter === "any" ? "Any Price" :
+                      priceFilter === "0-50lac" ? "Up to 50 Lac" :
+                        priceFilter === "50lac-1cr" ? "50 Lac - 1 Cr" :
+                          priceFilter === "1cr-2cr" ? "1 - 2 Crore" :
+                            priceFilter === "2cr-5cr" ? "2 - 5 Crore" :
+                              priceFilter === "5cr+" ? "5 Crore+" : priceFilter}
+                  </span>
                   <ChevronDownIcon className="h-4 w-4 text-gray-400" />
                 </button>
               </div>
@@ -547,22 +662,56 @@ export default function HomePageClient() {
                   <DialogHeader>
                     <DialogTitle>Property Type</DialogTitle>
                   </DialogHeader>
-                  <div className="grid grid-cols-2 gap-3 pt-4">
-                    {["all", "residential", "commercial", "land"].map((type) => (
+                  <div className="grid grid-cols-2 gap-3 pt-4 max-h-80 overflow-y-auto">
+                    {/* All Types option */}
+                    <button
+                      onClick={() => {
+                        setPropertyType("all");
+                        setTypeDialogOpen(false);
+                      }}
+                      className={`p-4 rounded-xl border text-sm font-medium transition-all ${propertyType === "all"
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-gray-200 hover:border-gray-300 text-gray-700"
+                        }`}
+                    >
+                      All Types
+                    </button>
+                    {/* Dynamic property types from Appwrite */}
+                    {propertyTypes.map((type) => (
                       <button
-                        key={type}
+                        key={type.$id}
                         onClick={() => {
-                          setPropertyType(type);
+                          setPropertyType(type.$id);
                           setTypeDialogOpen(false);
                         }}
-                        className={`p-4 rounded-xl border text-sm font-medium transition-all ${propertyType === type
+                        className={`p-4 rounded-xl border text-sm font-medium transition-all ${propertyType === type.$id
                           ? "border-primary bg-primary/5 text-primary"
                           : "border-gray-200 hover:border-gray-300 text-gray-700"
                           }`}
                       >
-                        {type === "all" ? "All Types" : type.charAt(0).toUpperCase() + type.slice(1)}
+                        {type.name}
                       </button>
                     ))}
+                    {/* Fallback options if no property types loaded */}
+                    {propertyTypes.length === 0 && (
+                      <>
+                        {["residential", "commercial", "land"].map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              setPropertyType(type);
+                              setTypeDialogOpen(false);
+                            }}
+                            className={`p-4 rounded-xl border text-sm font-medium transition-all ${propertyType === type
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-gray-200 hover:border-gray-300 text-gray-700"
+                              }`}
+                          >
+                            {type.charAt(0).toUpperCase() + type.slice(1)}
+                          </button>
+                        ))}
+                      </>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
@@ -597,16 +746,16 @@ export default function HomePageClient() {
               <Dialog open={priceDialogOpen} onOpenChange={setPriceDialogOpen}>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Price Range</DialogTitle>
+                    <DialogTitle>Price Range (PKR)</DialogTitle>
                   </DialogHeader>
-                  <div className="grid grid-cols-1 gap-2 pt-4">
+                  <div className="grid grid-cols-1 gap-2 pt-4 max-h-80 overflow-y-auto">
                     {[
                       { value: "any", label: "Any Price" },
-                      { value: "0-200k", label: "$0 - $200,000" },
-                      { value: "200k-500k", label: "$200,000 - $500,000" },
-                      { value: "500k-1m", label: "$500,000 - $1,000,000" },
-                      { value: "1m-2m", label: "$1,000,000 - $2,000,000" },
-                      { value: "2m+", label: "$2,000,000+" },
+                      { value: "0-50lac", label: "Up to 50 Lac" },
+                      { value: "50lac-1cr", label: "50 Lac - 1 Crore" },
+                      { value: "1cr-2cr", label: "1 Crore - 2 Crore" },
+                      { value: "2cr-5cr", label: "2 Crore - 5 Crore" },
+                      { value: "5cr+", label: "5 Crore+" },
                     ].map((price) => (
                       <button
                         key={price.value}

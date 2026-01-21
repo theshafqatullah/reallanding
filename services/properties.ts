@@ -115,6 +115,7 @@ export interface PropertyFilters {
   owner_id?: string;
   agent_id?: string;
   status?: string;
+  construction_status?: string;
   is_active?: boolean;
   is_published?: boolean;
   is_featured?: boolean;
@@ -296,6 +297,9 @@ export const propertiesService = {
       }
       if (filters?.bathrooms !== undefined) {
         queries.push(Query.equal("bathrooms", filters.bathrooms));
+      }
+      if (filters?.construction_status) {
+        queries.push(Query.equal("construction_status", filters.construction_status));
       }
       if (filters?.search) {
         queries.push(Query.search("title", filters.search));

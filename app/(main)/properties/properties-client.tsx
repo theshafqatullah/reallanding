@@ -603,6 +603,7 @@ function PropertiesPageContent() {
         const search = searchParams.get("q");
         const page = searchParams.get("page");
         const purpose = searchParams.get("purpose");
+        const status = searchParams.get("status");
 
         if (type) urlFilters.property_type_id = type;
         if (city) urlFilters.city_id = city;
@@ -628,6 +629,10 @@ function PropertiesPageContent() {
         }
         if (purpose) {
             setSelectedPurpose(purpose);
+        }
+        if (status && status !== "all") {
+            urlFilters.construction_status = status;
+            setSelectedStatus(status);
         }
 
         setFilters(urlFilters);
@@ -662,6 +667,7 @@ function PropertiesPageContent() {
         if (newFilters.max_price) params.set("max_price", newFilters.max_price.toString());
         if (newFilters.bedrooms) params.set("beds", newFilters.bedrooms.toString());
         if (newFilters.bathrooms) params.set("baths", newFilters.bathrooms.toString());
+        if (newFilters.construction_status) params.set("status", newFilters.construction_status);
         if (newFilters.search) params.set("q", newFilters.search);
         if (page > 1) params.set("page", page.toString());
         if (selectedPurpose !== "buy") params.set("purpose", selectedPurpose);
