@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth, AuthGuard } from "@/store/auth";
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { usersService } from "@/services/users";
+import { type Users, UserType } from "@/types/appwrite";
 import {
   User,
   Settings,
@@ -296,6 +298,64 @@ function LoadingFallback() {
   );
 }
 
+// Role-based access guard component
+function RoleGuard({ children }: { children: React.ReactNode }) {
+  const { user, isReady } = useAuth();
+  const router = useRouter();
+  const [userProfile, setUserProfile] = useState<Users | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!isReady || !user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch user profile to get user_type
+        const profile = await usersService.getByUserId(user.$id);
+        setUserProfile(profile);
+
+        if (profile) {
+          // Check if user is agent or agency
+          const allowedRoles = [UserType.AGENT, UserType.AGENCY];
+          const hasAccess = allowedRoles.includes(profile.user_type);
+
+          if (!hasAccess) {
+            // Redirect regular users to their public profile
+            router.replace("/u/profile");
+            return;
+          }
+
+          setIsAuthorized(true);
+        } else {
+          // No profile found, redirect to user profile
+          router.replace("/u/profile");
+        }
+      } catch (error) {
+        console.error("Error checking user role:", error);
+        router.replace("/u/profile");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkUserRole();
+  }, [user, isReady, router]);
+
+  if (isLoading) {
+    return <LoadingFallback />;
+  }
+
+  if (!isAuthorized) {
+    return <LoadingFallback />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function ProfileLayout({
   children,
 }: {
@@ -304,25 +364,27 @@ export default function ProfileLayout({
   return (
     <AuthHydrator>
       <AuthGuard redirectTo="/signin" fallback={<LoadingFallback />}>
-        <div className="h-screen flex flex-col">
-          {/* Dashboard Header */}
-          <DashboardHeader />
+        <RoleGuard>
+          <div className="h-screen flex flex-col">
+            {/* Dashboard Header */}
+            <DashboardHeader />
 
-          <div className="flex flex-1 overflow-hidden">
-            {/* Desktop Sidebar */}
-            <ProfileSidebar />
+            <div className="flex flex-1 overflow-hidden">
+              {/* Desktop Sidebar */}
+              <ProfileSidebar />
 
-            {/* Main Content */}
-            <main className="flex-1 min-w-0 overflow-y-auto">
-              {/* Mobile Navigation */}
-              <MobileNav />
+              {/* Main Content */}
+              <main className="flex-1 min-w-0 overflow-y-auto">
+                {/* Mobile Navigation */}
+                <MobileNav />
 
-              <div className="p-6 lg:p-8">
-                {children}
-              </div>
-            </main>
+                <div className="p-6 lg:p-8">
+                  {children}
+                </div>
+              </main>
+            </div>
           </div>
-        </div>
+        </RoleGuard>
       </AuthGuard>
     </AuthHydrator>
   );

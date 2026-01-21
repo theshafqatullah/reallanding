@@ -8,7 +8,7 @@ import { useAuth } from "@/store/auth";
 import { usersService } from "@/services/users";
 import { savedPropertiesService } from "@/services/saved-properties";
 import { inquiriesService } from "@/services/inquiries";
-import { type Users, type UserSavedProperties, type PropertyInquiries, type Properties } from "@/types/appwrite";
+import { type Users, type UserSavedProperties, type PropertyInquiries, type Properties, UserType } from "@/types/appwrite";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -91,6 +91,12 @@ export default function MyProfileClient() {
                 // Fetch user profile
                 const profile = await usersService.getByUserId(authUser.$id);
                 setUserProfile(profile);
+
+                // Check if user is agent or agency - redirect to dashboard
+                if (profile && (profile.user_type === UserType.AGENT || profile.user_type === UserType.AGENCY)) {
+                    router.replace("/profile");
+                    return;
+                }
 
                 // Set form values
                 setName(authUser.name || "");
