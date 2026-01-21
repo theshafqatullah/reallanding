@@ -63,7 +63,7 @@ export default function MediaClient() {
 
     try {
       // Validation
-      if (!basicInfo.title || !basicInfo.property_type_id || !basicInfo.listing_type_id || !basicInfo.property_status_id) {
+      if (!basicInfo.title || !basicInfo.property_type_id || !basicInfo.listing_type_id || !basicInfo.property_status) {
         throw new Error("Please complete the basic information first");
       }
 
@@ -89,7 +89,7 @@ export default function MediaClient() {
         description: basicInfo.description,
         property_type_id: basicInfo.property_type_id,
         listing_type_id: basicInfo.listing_type_id,
-        property_status_id: basicInfo.property_status_id,
+        property_status: basicInfo.property_status,
         location_id: basicInfo.location_id,
         price: basicInfo.price,
         currency: basicInfo.currency || "PKR",
@@ -153,6 +153,11 @@ export default function MediaClient() {
         virtual_tour_url: media.virtual_tour_url,
         youtube_video_id: media.youtube_video_id,
         total_images: uploadedImages.length,
+        // Store images and videos as arrays
+        image_urls: uploadedImages.map(img => img.url),
+        image_ids: uploadedImages.filter(img => img.fileId).map(img => img.fileId),
+        video_urls: uploadedVideos.map(vid => vid.url),
+        video_ids: uploadedVideos.filter(vid => vid.fileId).map(vid => vid.fileId),
 
         // Contact
         contact_person_name: media.contact_person_name,
@@ -171,19 +176,6 @@ export default function MediaClient() {
         is_hot_deal: media.is_hot_deal,
         is_published: media.is_published,
       });
-
-      // Create property_images documents for each uploaded image
-      if (uploadedImages.length > 0) {
-        await propertiesService.createPropertyImages(
-          propertyData.$id,
-          uploadedImages.map((img, index) => ({
-            image_url: img.url,
-            image_title: img.name,
-            display_order: index,
-            is_main: img.isMain,
-          }))
-        );
-      }
 
       toast.success("Property listed successfully!", {
         description: "Your property has been submitted for review.",

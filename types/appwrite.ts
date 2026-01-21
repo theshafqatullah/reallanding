@@ -98,7 +98,17 @@ export enum FinancingStatus {
     PRE_APPROVED = "Pre-Approved",
     NEED_FINANCING = "Need Financing",
     CASH_BUYER = "Cash Buyer",
-    NOT_SURE = "Not Sure"
+}
+
+export enum PropertyStatus {
+    ACTIVE = "active",
+    PENDING = "pending",
+    SOLD = "sold",
+    RENTED = "rented",
+    UNDER_OFFER = "under_offer",
+    OFF_MARKET = "off_market",
+    DRAFT = "draft",
+    EXPIRED = "expired"
 }
 
 export enum Timeline {
@@ -552,21 +562,6 @@ export type ListingTypes = Models.Row & {
     properties: Properties[];
 }
 
-export type PropertyStatuses = Models.Row & {
-    name: string;
-    description: string | null;
-    is_active: boolean;
-    color_code: string | null;
-    show_in_filter: boolean;
-    is_default: boolean;
-    display_order: number;
-    icon_name: string | null;
-    slug: string | null;
-    badge_text: string | null;
-    properties_count: number;
-    properties: Properties[];
-}
-
 export type PropertyTypes = Models.Row & {
     name: string;
     category: string;
@@ -613,7 +608,6 @@ export type Properties = Models.Row & {
     description: string | null;
     property_type_id: string;
     listing_type_id: string;
-    property_status_id: string;
     location_id: string;
     address: string | null;
     bedrooms: number | null;
@@ -751,10 +745,14 @@ export type Properties = Models.Row & {
     approved_by: string | null;
     updated_by: string | null;
     created_by: string | null;
+    image_urls: string[];
+    video_urls: string[];
+    image_ids: string[];
+    video_ids: string[];
     furnishing_type: FurnishingTypes;
     amenities: Amenities[];
     listing_type: ListingTypes;
-    property_status: PropertyStatuses;
+    property_status: PropertyStatus;
     property_type: PropertyTypes;
     price_range: PriceRanges;
     city: Cities;

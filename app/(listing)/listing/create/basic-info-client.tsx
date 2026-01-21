@@ -19,8 +19,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRightIcon, MapPinIcon, DollarSignIcon, HomeIcon, Loader2Icon } from "lucide-react";
-import { lookupsService, type Country, type State, type City, type Location, type PropertyType, type ListingType, type PropertyStatus } from "@/services/lookups";
+import { lookupsService, type Country, type State, type City, type Location, type PropertyType, type ListingType } from "@/services/lookups";
+import { PropertyStatus } from "@/types/appwrite";
 import { toast } from "sonner";
+
+// Property status options derived from the enum
+const PROPERTY_STATUS_OPTIONS = [
+  { value: PropertyStatus.ACTIVE, label: "Active" },
+  { value: PropertyStatus.PENDING, label: "Pending" },
+  { value: PropertyStatus.SOLD, label: "Sold" },
+  { value: PropertyStatus.RENTED, label: "Rented" },
+  { value: PropertyStatus.UNDER_OFFER, label: "Under Offer" },
+  { value: PropertyStatus.OFF_MARKET, label: "Off Market" },
+  { value: PropertyStatus.DRAFT, label: "Draft" },
+  { value: PropertyStatus.EXPIRED, label: "Expired" },
+];
 
 const currencies = [
   { code: "PKR", name: "Pakistani Rupee" },
@@ -48,7 +61,6 @@ export default function BasicInfoClient() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [listingTypes, setListingTypes] = useState<ListingType[]>([]);
-  const [propertyStatuses, setPropertyStatuses] = useState<PropertyStatus[]>([]);
 
   // Fetch initial lookup data
   useEffect(() => {
@@ -59,7 +71,6 @@ export default function BasicInfoClient() {
         setCountries(data.countries);
         setPropertyTypes(data.propertyTypes);
         setListingTypes(data.listingTypes);
-        setPropertyStatuses(data.propertyStatuses);
       } catch (error) {
         console.error("Error fetching lookups:", error);
         toast.error("Failed to load form data. Please refresh the page.");
@@ -159,7 +170,7 @@ export default function BasicInfoClient() {
     e.preventDefault();
 
     // Basic validation
-    if (!basicInfo.title || !basicInfo.property_type_id || !basicInfo.listing_type_id || !basicInfo.property_status_id) {
+    if (!basicInfo.title || !basicInfo.property_type_id || !basicInfo.listing_type_id || !basicInfo.property_status) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -265,16 +276,16 @@ export default function BasicInfoClient() {
             <div className="space-y-2">
               <Label htmlFor="property_status">Property Status *</Label>
               <Select
-                value={basicInfo.property_status_id}
-                onValueChange={(value) => updateBasicInfo({ property_status_id: value })}
+                value={basicInfo.property_status}
+                onValueChange={(value) => updateBasicInfo({ property_status: value as PropertyStatus })}
               >
                 <SelectTrigger id="property_status">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  {propertyStatuses.map((status) => (
-                    <SelectItem key={status.$id} value={status.$id}>
-                      {status.name}
+                  {PROPERTY_STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

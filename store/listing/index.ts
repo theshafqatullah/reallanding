@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { PropertyStatus } from "@/types/appwrite";
 
 // ============================================================================
 // Types
@@ -12,7 +13,7 @@ export interface ListingBasicInfo {
   description: string;
   property_type_id: string;
   listing_type_id: string;
-  property_status_id: string;
+  property_status: PropertyStatus;
   price: number;
   currency: string;
   price_negotiable: boolean;
@@ -149,7 +150,7 @@ const initialBasicInfo: ListingBasicInfo = {
   description: "",
   property_type_id: "",
   listing_type_id: "",
-  property_status_id: "",
+  property_status: PropertyStatus.ACTIVE,
   price: 0,
   currency: "PKR",
   price_negotiable: false,

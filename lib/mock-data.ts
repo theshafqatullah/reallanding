@@ -1,4 +1,5 @@
 // Mock data for property search testing
+// PropertyStatus enum values: active, pending, sold, rented, under_offer, off_market, draft, expired
 
 export const PROPERTY_TYPES = [
   { id: "1", name: "House", slug: "house" },
@@ -20,11 +21,14 @@ export const LISTING_TYPES = [
 ];
 
 export const PROPERTY_STATUSES = [
-  { id: "1", name: "Available", slug: "available", color: "#22c55e" },
-  { id: "2", name: "Under Contract", slug: "under-contract", color: "#f59e0b" },
-  { id: "3", name: "Sold", slug: "sold", color: "#ef4444" },
-  { id: "4", name: "Rented", slug: "rented", color: "#6366f1" },
-  { id: "5", name: "Coming Soon", slug: "coming-soon", color: "#8b5cf6" },
+  { value: "active", name: "Active", color: "#22c55e" },
+  { value: "pending", name: "Pending", color: "#f59e0b" },
+  { value: "sold", name: "Sold", color: "#ef4444" },
+  { value: "rented", name: "Rented", color: "#6366f1" },
+  { value: "under_offer", name: "Under Offer", color: "#8b5cf6" },
+  { value: "off_market", name: "Off Market", color: "#6b7280" },
+  { value: "draft", name: "Draft", color: "#9ca3af" },
+  { value: "expired", name: "Expired", color: "#dc2626" },
 ];
 
 export const CITIES = [

@@ -1,10 +1,9 @@
 import { databases, storage } from "@/services/appwrite";
 import { Query, ID } from "appwrite";
-import { type Properties } from "@/types/appwrite";
+import { type Properties, PropertyStatus } from "@/types/appwrite";
 
 const DATABASE_ID = "main";
 const PROPERTIES_COLLECTION_ID = "properties";
-const PROPERTY_IMAGES_COLLECTION_ID = "property_images";
 const IMAGES_BUCKET_ID = "images";
 const VIDEOS_BUCKET_ID = "videos";
 
@@ -17,7 +16,7 @@ export interface CreatePropertyData {
   description?: string;
   property_type_id: string;
   listing_type_id: string;
-  property_status_id: string;
+  property_status?: PropertyStatus;
   location_id: string;
   price: number;
   owner_id?: string;
@@ -89,6 +88,10 @@ export interface CreateFullPropertyData extends CreatePropertyData {
   virtual_tour_url?: string;
   youtube_video_id?: string;
   total_images?: number;
+  image_urls?: string[];
+  video_urls?: string[];
+  image_ids?: string[];
+  video_ids?: string[];
 
   // Contact
   contact_person_name?: string;
@@ -106,15 +109,6 @@ export interface CreateFullPropertyData extends CreatePropertyData {
   is_urgent_sale?: boolean;
   is_hot_deal?: boolean;
   is_published?: boolean;
-}
-
-export interface PropertyImageData {
-  image_url: string;
-  image_title?: string;
-  image_type?: string;
-  display_order?: number;
-  is_main?: boolean;
-  caption?: string;
 }
 
 export interface PropertyFilters {
@@ -515,57 +509,71 @@ export const propertiesService = {
   },
 
   /**
-   * Create property images documents
+   * Update property with image URLs and IDs
+   * Images are stored as arrays directly on the property document
    */
-  async createPropertyImages(propertyId: string, images: PropertyImageData[]): Promise<void> {
+  async updatePropertyImages(propertyId: string, images: { url: string; id?: string }[]): Promise<void> {
     try {
-      const promises = images.map((image, index) => 
-        databases.createDocument(
-          DATABASE_ID,
-          PROPERTY_IMAGES_COLLECTION_ID,
-          ID.unique(),
-          {
-            property_id: propertyId,
-            image_url: image.image_url,
-            image_title: image.image_title || `Image ${index + 1}`,
-            image_type: image.image_type || "other",
-            display_order: image.display_order ?? index,
-            is_main: image.is_main ?? (index === 0),
-            caption: image.caption || "",
-          }
-        )
-      );
+      const imageUrls = images.map(img => img.url);
+      const imageIds = images.filter(img => img.id).map(img => img.id!);
+      const mainImageUrl = images.length > 0 ? images[0].url : null;
 
-      await Promise.all(promises);
+      await databases.updateDocument(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        propertyId,
+        {
+          image_urls: imageUrls,
+          image_ids: imageIds,
+          main_image_url: mainImageUrl,
+          total_images: images.length,
+        }
+      );
     } catch (error) {
-      console.error("Error creating property images:", error);
+      console.error("Error updating property images:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update property with video URLs and IDs
+   * Videos are stored as arrays directly on the property document
+   */
+  async updatePropertyVideos(propertyId: string, videos: { url: string; id?: string }[]): Promise<void> {
+    try {
+      const videoUrls = videos.map(vid => vid.url);
+      const videoIds = videos.filter(vid => vid.id).map(vid => vid.id!);
+      const mainVideoUrl = videos.length > 0 ? videos[0].url : null;
+
+      await databases.updateDocument(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        propertyId,
+        {
+          video_urls: videoUrls,
+          video_ids: videoIds,
+          video_url: mainVideoUrl,
+        }
+      );
+    } catch (error) {
+      console.error("Error updating property videos:", error);
       throw error;
     }
   },
 
   /**
    * Get property images by property ID
+   * Returns the image_urls array from the property document
    */
-  async getPropertyImages(propertyId: string): Promise<PropertyImageData[]> {
+  async getPropertyImages(propertyId: string): Promise<string[]> {
     try {
-      const response = await databases.listDocuments(
+      const property = await databases.getDocument(
         DATABASE_ID,
-        PROPERTY_IMAGES_COLLECTION_ID,
-        [
-          Query.equal("property_id", propertyId),
-          Query.orderAsc("display_order"),
-          Query.limit(50),
-        ]
+        PROPERTIES_COLLECTION_ID,
+        propertyId
       );
 
-      return response.documents.map((doc) => ({
-        image_url: doc.image_url,
-        image_title: doc.image_title,
-        image_type: doc.image_type,
-        display_order: doc.display_order,
-        is_main: doc.is_main,
-        caption: doc.caption,
-      }));
+      return (property as unknown as Properties).image_urls || [];
     } catch (error) {
       console.error("Error fetching property images:", error);
       throw error;
@@ -573,26 +581,42 @@ export const propertiesService = {
   },
 
   /**
-   * Delete all property images for a property
+   * Get property videos by property ID
+   * Returns the video_urls array from the property document
    */
-  async deletePropertyImages(propertyId: string): Promise<void> {
+  async getPropertyVideos(propertyId: string): Promise<string[]> {
     try {
-      const response = await databases.listDocuments(
+      const property = await databases.getDocument(
         DATABASE_ID,
-        PROPERTY_IMAGES_COLLECTION_ID,
-        [
-          Query.equal("property_id", propertyId),
-          Query.limit(100),
-        ]
+        PROPERTIES_COLLECTION_ID,
+        propertyId
       );
 
-      const deletePromises = response.documents.map((doc) =>
-        databases.deleteDocument(DATABASE_ID, PROPERTY_IMAGES_COLLECTION_ID, doc.$id)
-      );
-
-      await Promise.all(deletePromises);
+      return (property as unknown as Properties).video_urls || [];
     } catch (error) {
-      console.error("Error deleting property images:", error);
+      console.error("Error fetching property videos:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Clear all images from a property
+   */
+  async clearPropertyImages(propertyId: string): Promise<void> {
+    try {
+      await databases.updateDocument(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        propertyId,
+        {
+          image_urls: [],
+          image_ids: [],
+          main_image_url: null,
+          total_images: 0,
+        }
+      );
+    } catch (error) {
+      console.error("Error clearing property images:", error);
       throw error;
     }
   },

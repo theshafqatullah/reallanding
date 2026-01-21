@@ -10,7 +10,6 @@ const CITIES_COLLECTION_ID = "cities";
 const LOCATIONS_COLLECTION_ID = "locations";
 const PROPERTY_TYPES_COLLECTION_ID = "property_types";
 const LISTING_TYPES_COLLECTION_ID = "listing_types";
-const PROPERTY_STATUSES_COLLECTION_ID = "property_statuses";
 const AMENITIES_COLLECTION_ID = "amenities";
 
 // ============================================================================
@@ -73,20 +72,6 @@ export interface ListingType {
   description?: string;
   icon_name?: string;
   is_active: boolean;
-}
-
-export interface PropertyStatus {
-  $id: string;
-  name: string;
-  description?: string;
-  color_code?: string;
-  icon_name?: string;
-  slug?: string;
-  badge_text?: string;
-  display_order: number;
-  is_active: boolean;
-  is_default: boolean;
-  show_in_filter: boolean;
 }
 
 export interface Amenity {
@@ -401,76 +386,6 @@ export const lookupsService = {
   },
 
   // ========================================================================
-  // Property Statuses
-  // ========================================================================
-
-  /**
-   * Get all active property statuses
-   */
-  async getPropertyStatuses(): Promise<PropertyStatus[]> {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PROPERTY_STATUSES_COLLECTION_ID,
-        [
-          Query.equal("is_active", true),
-          Query.orderAsc("display_order"),
-          Query.limit(50),
-        ]
-      );
-      return response.documents as unknown as PropertyStatus[];
-    } catch (error) {
-      console.error("Error fetching property statuses:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get property statuses that show in filter
-   */
-  async getFilterablePropertyStatuses(): Promise<PropertyStatus[]> {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PROPERTY_STATUSES_COLLECTION_ID,
-        [
-          Query.equal("is_active", true),
-          Query.equal("show_in_filter", true),
-          Query.orderAsc("display_order"),
-          Query.limit(50),
-        ]
-      );
-      return response.documents as unknown as PropertyStatus[];
-    } catch (error) {
-      console.error("Error fetching filterable property statuses:", error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get default property status
-   */
-  async getDefaultPropertyStatus(): Promise<PropertyStatus | null> {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PROPERTY_STATUSES_COLLECTION_ID,
-        [
-          Query.equal("is_default", true),
-          Query.limit(1),
-        ]
-      );
-      if (response.documents.length > 0) {
-        return response.documents[0] as unknown as PropertyStatus;
-      }
-      return null;
-    } catch (error) {
-      console.error("Error fetching default property status:", error);
-      return null;
-    }
-  },
-
-  // ========================================================================
   // Amenities
   // ========================================================================
 
@@ -528,15 +443,13 @@ export const lookupsService = {
     countries: Country[];
     propertyTypes: PropertyType[];
     listingTypes: ListingType[];
-    propertyStatuses: PropertyStatus[];
     amenities: Amenity[];
   }> {
     try {
-      const [countries, propertyTypes, listingTypes, propertyStatuses, amenities] = await Promise.all([
+      const [countries, propertyTypes, listingTypes, amenities] = await Promise.all([
         this.getCountries(),
         this.getPropertyTypes(),
         this.getListingTypes(),
-        this.getPropertyStatuses(),
         this.getAmenities(),
       ]);
 
@@ -544,7 +457,6 @@ export const lookupsService = {
         countries,
         propertyTypes,
         listingTypes,
-        propertyStatuses,
         amenities,
       };
     } catch (error) {
