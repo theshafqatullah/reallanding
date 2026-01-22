@@ -16,6 +16,7 @@ export interface CreateInquiryData {
   inquiry_type?: string;
   preferred_contact_method?: string;
   preferred_contact_time?: string;
+  source?: string;
 }
 
 export interface InquiryFilters {

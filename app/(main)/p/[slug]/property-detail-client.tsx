@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { savedPropertiesService } from "@/services/saved-properties";
 import { useAuth } from "@/store/auth";
+import { PropertyInquiryDialog } from "@/components/shared/property-inquiry-dialog";
 import { toast } from "sonner";
 import {
   Bed,
@@ -963,6 +964,14 @@ export default function PropertyDetailClient() {
                 <Separator />
 
                 <div className="space-y-3">
+                  <PropertyInquiryDialog
+                    propertyId={property.$id}
+                    propertyTitle={property.title}
+                    variant="default"
+                    size="lg"
+                    className="w-full"
+                  />
+
                   {property.contact_phone && (
                     <Button variant="outline" className="w-full justify-start gap-3 h-12" asChild>
                       <a href={`tel:${property.contact_phone}`}>

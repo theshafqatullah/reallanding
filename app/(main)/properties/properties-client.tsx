@@ -76,6 +76,7 @@ import { usersService } from "@/services/users";
 import { useAuth } from "@/store/auth";
 import { type Properties, type UserSavedProperties, type Users } from "@/types/appwrite";
 import { toast } from "sonner";
+import { PropertyInquiryDialog } from "@/components/shared/property-inquiry-dialog";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -440,6 +441,13 @@ function PropertyGridCard({
 
                     {/* Quick Contact */}
                     <div className="flex items-center gap-1">
+                        <PropertyInquiryDialog
+                            propertyId={property.$id}
+                            propertyTitle={property.title}
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                        />
                         {property.contact_phone && (
                             <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                                 <a href={`tel:${property.contact_phone}`}>
