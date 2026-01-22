@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, AuthGuard } from "@/store/auth";
-import { useAuth as useAppAuth } from "@/lib/auth-context";
+import { useAuth as useAppAuth, AuthProvider } from "@/lib/auth-context";
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { cn } from "@/lib/utils";
@@ -348,30 +348,32 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthHydrator>
-      <AuthGuard redirectTo="/signin" fallback={<LoadingFallback />}>
-        <RoleGuard>
-          <div className="h-screen flex flex-col">
-            {/* Dashboard Header */}
-            <DashboardHeader />
+    <AuthProvider>
+      <AuthHydrator>
+        <AuthGuard redirectTo="/signin" fallback={<LoadingFallback />}>
+          <RoleGuard>
+            <div className="h-screen flex flex-col">
+              {/* Dashboard Header */}
+              <DashboardHeader />
 
-            <div className="flex flex-1 overflow-hidden">
-              {/* Desktop Sidebar */}
-              <ProfileSidebar />
+              <div className="flex flex-1 overflow-hidden">
+                {/* Desktop Sidebar */}
+                <ProfileSidebar />
 
-              {/* Main Content */}
-              <main className="flex-1 min-w-0 overflow-y-auto">
-                {/* Mobile Navigation */}
-                <MobileNav />
+                {/* Main Content */}
+                <main className="flex-1 min-w-0 overflow-y-auto">
+                  {/* Mobile Navigation */}
+                  <MobileNav />
 
-                <div className="p-6 lg:p-8">
-                  {children}
-                </div>
-              </main>
+                  <div className="p-6 lg:p-8">
+                    {children}
+                  </div>
+                </main>
+              </div>
             </div>
-          </div>
-        </RoleGuard>
-      </AuthGuard>
-    </AuthHydrator>
+          </RoleGuard>
+        </AuthGuard>
+      </AuthHydrator>
+    </AuthProvider>
   );
 }

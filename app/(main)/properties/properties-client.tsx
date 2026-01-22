@@ -1020,38 +1020,44 @@ function PropertiesPageContent() {
                                     <span className="hidden sm:inline">More Filters</span>
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent side="right" className="w-80 overflow-y-auto">
-                                <SheetHeader>
-                                    <SheetTitle>Filters</SheetTitle>
+                            <SheetContent side="right" className="w-full sm:w-96 overflow-y-auto p-0">
+                                <SheetHeader className="border-b px-6 py-4 sticky top-0 bg-white z-10">
+                                    <SheetTitle className="text-lg">Filters</SheetTitle>
                                 </SheetHeader>
-                                <div className="mt-6 space-y-6">
+                                <div className="px-6 py-6 space-y-6">
                                     {/* Price Range */}
                                     <div>
-                                        <Label className="text-sm font-medium mb-3 block">Price Range</Label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <Input
-                                                type="number"
-                                                placeholder="Min"
-                                                value={filters.min_price || ""}
-                                                onChange={(e) => setFilters(prev => ({ ...prev, min_price: e.target.value ? parseInt(e.target.value) : undefined }))}
-                                            />
-                                            <Input
-                                                type="number"
-                                                placeholder="Max"
-                                                value={filters.max_price || ""}
-                                                onChange={(e) => setFilters(prev => ({ ...prev, max_price: e.target.value ? parseInt(e.target.value) : undefined }))}
-                                            />
+                                        <Label className="text-sm font-semibold mb-3 block text-gray-900">Price Range</Label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Min Price"
+                                                    value={filters.min_price || ""}
+                                                    onChange={(e) => setFilters(prev => ({ ...prev, min_price: e.target.value ? parseInt(e.target.value) : undefined }))}
+                                                    className="h-10"
+                                                />
+                                            </div>
+                                            <div>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Max Price"
+                                                    value={filters.max_price || ""}
+                                                    onChange={(e) => setFilters(prev => ({ ...prev, max_price: e.target.value ? parseInt(e.target.value) : undefined }))}
+                                                    className="h-10"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
                                     {/* City */}
                                     <div>
-                                        <Label className="text-sm font-medium mb-3 block">City</Label>
+                                        <Label className="text-sm font-semibold mb-3 block text-gray-900">City</Label>
                                         <Select
                                             value={filters.city_id || "all"}
                                             onValueChange={(value) => setFilters(prev => ({ ...prev, city_id: value === "all" ? undefined : value }))}
                                         >
-                                            <SelectTrigger>
+                                            <SelectTrigger className="h-10">
                                                 <SelectValue placeholder="All Cities" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -1067,28 +1073,32 @@ function PropertiesPageContent() {
 
                                     {/* Features */}
                                     <div>
-                                        <Label className="text-sm font-medium mb-3 block">Features</Label>
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
+                                        <Label className="text-sm font-semibold mb-4 block text-gray-900">Features</Label>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
                                                 <Checkbox
                                                     id="verified"
                                                     checked={filters.is_featured === true}
                                                     onCheckedChange={(checked) => setFilters(prev => ({ ...prev, is_featured: checked ? true : undefined }))}
+                                                    className="h-4 w-4"
                                                 />
-                                                <Label htmlFor="verified" className="text-sm cursor-pointer">
+                                                <Label htmlFor="verified" className="text-sm cursor-pointer font-medium text-gray-700">
                                                     Featured Only
                                                 </Label>
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* Divider */}
+                                    <div className="border-t pt-6" />
+
                                     {/* Actions */}
-                                    <div className="flex gap-2 pt-4 border-t">
-                                        <Button variant="outline" onClick={handleResetFilters} className="flex-1">
+                                    <div className="flex gap-3">
+                                        <Button variant="outline" onClick={handleResetFilters} className="flex-1 h-10">
                                             Reset
                                         </Button>
                                         <SheetClose asChild>
-                                            <Button onClick={handleSearch} className="flex-1">
+                                            <Button onClick={handleSearch} className="flex-1 h-10">
                                                 Apply
                                             </Button>
                                         </SheetClose>

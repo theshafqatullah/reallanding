@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { UserType } from '@/types/appwrite';
+
+const STORAGE_KEY = 'reallanding_apply_form';
 
 export interface ApplyFormData {
     userType: UserType | null;
@@ -54,6 +56,8 @@ interface ApplyContextType {
     goToStep: (step: number) => void;
     resetForm: () => void;
     isStepValid: (step: number) => boolean;
+    saveToStorage: () => void;
+    loadFromStorage: () => void;
 }
 
 const defaultFormData: ApplyFormData = {
@@ -96,29 +100,90 @@ const ApplyContext = createContext<ApplyContextType | undefined>(undefined);
 export function ApplyProvider({ children }: { children: React.ReactNode }) {
     const [currentStep, setCurrentStep] = useState(1);
     const [formData, setFormData] = useState<ApplyFormData>(defaultFormData);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        setIsMounted(true);
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                setFormData(parsed.formData || defaultFormData);
+                setCurrentStep(parsed.currentStep || 1);
+            }
+        } catch (error) {
+            console.error('Failed to load form data from storage:', error);
+        }
+    }, []);
+
+    const saveToStorage = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ formData, currentStep }));
+        }
+    }, [formData, currentStep]);
+
+    const loadFromStorage = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    setFormData(parsed.formData || defaultFormData);
+                    setCurrentStep(parsed.currentStep || 1);
+                }
+            } catch (error) {
+                console.error('Failed to load form data from storage:', error);
+            }
+        }
+    }, []);
 
     const updateFormData = useCallback((data: Partial<ApplyFormData>) => {
-        setFormData(prev => ({ ...prev, ...data }));
-    }, []);
+        setFormData(prev => {
+            const updated = { ...prev, ...data };
+            if (isMounted && typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ formData: updated, currentStep }));
+            }
+            return updated;
+        });
+    }, [isMounted, currentStep]);
 
     const nextStep = useCallback(() => {
-        setCurrentStep(prev => Math.min(prev + 1, 3));
-    }, []);
+        setCurrentStep(prev => {
+            const next = Math.min(prev + 1, 3);
+            if (isMounted && typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ formData, currentStep: next }));
+            }
+            return next;
+        });
+    }, [isMounted, formData]);
 
     const previousStep = useCallback(() => {
-        setCurrentStep(prev => Math.max(prev - 1, 1));
-    }, []);
+        setCurrentStep(prev => {
+            const next = Math.max(prev - 1, 1);
+            if (isMounted && typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ formData, currentStep: next }));
+            }
+            return next;
+        });
+    }, [isMounted, formData]);
 
     const goToStep = useCallback((step: number) => {
         if (step >= 1 && step <= 3) {
             setCurrentStep(step);
+            if (isMounted && typeof window !== 'undefined') {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify({ formData, currentStep: step }));
+            }
         }
-    }, []);
+    }, [isMounted, formData]);
 
     const resetForm = useCallback(() => {
         setCurrentStep(1);
         setFormData(defaultFormData);
-    }, []);
+        if (isMounted && typeof window !== 'undefined') {
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }, [isMounted]);
 
     const isStepValid = useCallback((step: number): boolean => {
         switch (step) {
@@ -173,6 +238,8 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
                 goToStep,
                 resetForm,
                 isStepValid,
+                saveToStorage,
+                loadFromStorage,
             }}
         >
             {children}

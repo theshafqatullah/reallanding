@@ -3,6 +3,7 @@
 import React from "react";
 import { Header, Footer } from "@/components/shared";
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
+import { AuthProvider } from "@/lib/auth-context";
 
 export default function MainLayout({
   children,
@@ -10,12 +11,14 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthHydrator>
-      <div className="min-h-screen bg-white flex flex-col">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </div>
-    </AuthHydrator>
+    <AuthProvider>
+      <AuthHydrator>
+        <div className="min-h-screen bg-white flex flex-col">
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
+      </AuthHydrator>
+    </AuthProvider>
   );
 }

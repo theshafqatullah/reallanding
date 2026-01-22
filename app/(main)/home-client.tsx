@@ -345,6 +345,7 @@ export default function HomePageClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [propertyType, setPropertyType] = useState("all");
   const [listingType, setListingType] = useState("buy");
+  const [cityFilter, setCityFilter] = useState("all");
   // State for new hero filters
   const [propertyStatus, setPropertyStatus] = useState("all");
   const [bedsFilter, setBedsFilter] = useState("any");
@@ -354,6 +355,7 @@ export default function HomePageClient() {
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
   const [bedsDialogOpen, setBedsDialogOpen] = useState(false);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
+  const [cityDialogOpen, setCityDialogOpen] = useState(false);
 
   // Lookup data from Appwrite
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
@@ -387,6 +389,11 @@ export default function HomePageClient() {
   // Handle search and navigate to properties page with filters
   const handleSearch = async () => {
     const params = new URLSearchParams();
+
+    // Add city filter if selected
+    if (cityFilter && cityFilter !== "all") {
+      params.set("city", cityFilter);
+    }
 
     // Search for matching city or location by name
     if (searchQuery.trim()) {
@@ -613,9 +620,9 @@ export default function HomePageClient() {
               </div>
 
               {/* Second Row - Filters */}
-              <div className="flex gap-3 items-center w-full">
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full">
                 {/* Property Status Toggle */}
-                <div className="flex rounded-full border border-gray-200 overflow-hidden h-11">
+                <div className="flex rounded-full border border-gray-200 overflow-hidden h-11 flex-shrink-0">
                   <button
                     onClick={() => setPropertyStatus("all")}
                     className={`px-5 text-sm font-medium transition-all h-full ${propertyStatus === "all"
@@ -645,10 +652,23 @@ export default function HomePageClient() {
                   </button>
                 </div>
 
+                {/* City Button */}
+                <button
+                  onClick={() => setCityDialogOpen(true)}
+                  className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                >
+                  <span>
+                    {cityFilter === "all"
+                      ? "All Cities"
+                      : cities.find(c => c.$id === cityFilter)?.name || cityFilter}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                </button>
+
                 {/* Property Type Button */}
                 <button
                   onClick={() => setTypeDialogOpen(true)}
-                  className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                  className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
                 >
                   <span>
                     {propertyType === "all"
@@ -661,7 +681,7 @@ export default function HomePageClient() {
                 {/* Beds Button */}
                 <button
                   onClick={() => setBedsDialogOpen(true)}
-                  className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                  className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
                 >
                   <span>{bedsFilter === "any" ? "Any Beds" : bedsFilter === "4" ? "4+ Beds" : `${bedsFilter} Bed${bedsFilter !== "1" ? "s" : ""}`}</span>
                   <ChevronDownIcon className="h-4 w-4 text-gray-400" />
@@ -683,6 +703,46 @@ export default function HomePageClient() {
                   <ChevronDownIcon className="h-4 w-4 text-gray-400" />
                 </button>
               </div>
+
+              {/* City Dialog */}
+              <Dialog open={cityDialogOpen} onOpenChange={setCityDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Select City</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-2 pt-4 max-h-80 overflow-y-auto">
+                    {/* All Cities option */}
+                    <button
+                      onClick={() => {
+                        setCityFilter("all");
+                        setCityDialogOpen(false);
+                      }}
+                      className={`p-3 rounded-lg border text-sm font-medium transition-all ${cityFilter === "all"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                        }`}
+                    >
+                      All Cities
+                    </button>
+                    {/* City options */}
+                    {cities.map((city) => (
+                      <button
+                        key={city.$id}
+                        onClick={() => {
+                          setCityFilter(city.$id);
+                          setCityDialogOpen(false);
+                        }}
+                        className={`p-3 rounded-lg border text-sm font-medium transition-all ${cityFilter === city.$id
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                          }`}
+                      >
+                        {city.name}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               {/* Property Type Dialog */}
               <Dialog open={typeDialogOpen} onOpenChange={setTypeDialogOpen}>
