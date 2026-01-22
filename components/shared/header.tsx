@@ -152,6 +152,12 @@ export function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/u/saved" className="flex items-center">
+                    <HeartIcon className="mr-2 h-4 w-4" />
+                    <span>Saved Properties</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link href="/profile/settings" className="flex items-center">
                     <SettingsIcon className="mr-2 h-4 w-4" />
                     <span>Settings</span>
