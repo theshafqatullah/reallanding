@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 import { useApplyForm } from '@/lib/apply-context';
 import { ApplyStep1 } from '@/components/apply/steps/apply-step1';
 
+export const dynamic = 'force-dynamic';
+
 export default function Step1Page() {
     const { currentStep, goToStep } = useApplyForm();
 

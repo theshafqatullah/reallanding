@@ -15,7 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ArrowLeft } from 'lucide-react';
 
-// Shared validation schema for all fields
+// Shared validation schema for all fields - keep everything as strings
 const detailsSchema = z.object({
     firstName: z.string().min(2, 'First name must be at least 2 characters'),
     lastName: z.string().min(2, 'Last name must be at least 2 characters'),
@@ -29,20 +29,20 @@ const detailsSchema = z.object({
     specializations: z.string().min(10, 'Specializations are required'),
     languagesSpoken: z.string().min(1, 'At least one language is required'),
     preferredContactMethod: z.enum(['email', 'phone', 'whatsapp']),
-    responseTimeHours: z.string().min(1, 'Response time must be at least 1 hour').transform(v => Number(v) || 24).refine(n => n >= 1, 'Response time must be at least 1 hour'),
+    responseTimeHours: z.string().min(1, 'Response time must be at least 1 hour'),
 
     // Agent fields
     licenseNumber: z.string().optional(),
     designation: z.string().optional(),
-    experienceYears: z.string().optional().transform(v => v ? Number(v) : undefined).refine(n => !n || n > 0, 'Years of experience must be valid'),
+    experienceYears: z.string().optional(),
     companyName: z.string().optional(),
     certifications: z.string().optional(),
 
     // Agency fields
     companyNameAgency: z.string().optional(),
     registrationNumber: z.string().optional(),
-    establishedYear: z.string().optional().transform(v => v ? Number(v) : undefined).refine(n => !n || n > 1900, 'Established year must be valid'),
-    teamSize: z.string().optional().transform(v => v ? Number(v) : undefined).refine(n => !n || n > 0, 'Team size must be valid'),
+    establishedYear: z.string().optional(),
+    teamSize: z.string().optional(),
     brokerName: z.string().optional(),
     brokerLicense: z.string().optional(),
     reraRegistration: z.string().optional(),
@@ -55,8 +55,7 @@ export function ApplyStep2() {
     const { formData, updateFormData, nextStep, previousStep, isStepValid } = useApplyForm();
     const { user } = useAuth();
 
-    const form = useForm<DetailsFormValues>({
-        // @ts-ignore - Zod schema transformation type compatibility
+    const form = useForm<any>({
         resolver: zodResolver(detailsSchema),
         mode: 'onBlur',
         defaultValues: {
@@ -90,7 +89,15 @@ export function ApplyStep2() {
     });
 
     const onSubmit = (data: DetailsFormValues) => {
-        updateFormData(data);
+        // Convert numeric string fields to numbers where needed
+        const processedData = {
+            ...data,
+            responseTimeHours: data.responseTimeHours ? Number(data.responseTimeHours) : 24,
+            experienceYears: data.experienceYears ? Number(data.experienceYears) : undefined,
+            establishedYear: data.establishedYear ? Number(data.establishedYear) : undefined,
+            teamSize: data.teamSize ? Number(data.teamSize) : undefined,
+        };
+        updateFormData(processedData);
         nextStep();
     };
 

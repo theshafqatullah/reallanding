@@ -260,9 +260,6 @@ function PropertyListCard({
                             {property.is_corner && (
                                 <Badge variant="secondary" className="text-xs">Corner Plot</Badge>
                             )}
-                            {property.has_parking && (
-                                <Badge variant="secondary" className="text-xs">Parking</Badge>
-                            )}
                             {property.bank_loan_available && (
                                 <Badge variant="secondary" className="text-xs">Bank Loan</Badge>
                             )}

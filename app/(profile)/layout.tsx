@@ -4,14 +4,13 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, AuthGuard } from "@/store/auth";
+import { useAuth as useAppAuth } from "@/lib/auth-context";
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
-import { usersService } from "@/services/users";
-import { type Users, UserType } from "@/types/appwrite";
 import {
   User,
   Settings,
@@ -300,52 +299,39 @@ function LoadingFallback() {
 
 // Role-based access guard component
 function RoleGuard({ children }: { children: React.ReactNode }) {
-  const { user, isReady } = useAuth();
+  const { user, isLoading: authLoading } = useAppAuth();
   const router = useRouter();
-  const [userProfile, setUserProfile] = useState<Users | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const checkUserRole = async () => {
-      if (!isReady || !user) {
-        setIsLoading(false);
+    const checkUserRole = () => {
+      if (authLoading) return;
+
+      if (!user) {
+        setIsChecking(false);
         return;
       }
 
-      try {
-        // Fetch user profile to get user_type
-        const profile = await usersService.getByUserId(user.$id);
-        setUserProfile(profile);
+      // Get user label (role) from Appwrite user preferences
+      const userLabel = user.labels?.[0]; // Labels come from auth
+      const allowedRoles = ["agent", "agency"];
+      const hasAccess = allowedRoles.includes(userLabel);
 
-        if (profile) {
-          // Check if user is agent or agency
-          const allowedRoles = [UserType.AGENT, UserType.AGENCY];
-          const hasAccess = allowedRoles.includes(profile.user_type);
-
-          if (!hasAccess) {
-            // Redirect regular users to their public profile
-            router.replace("/u/profile");
-            return;
-          }
-
-          setIsAuthorized(true);
-        } else {
-          // No profile found, redirect to user profile
-          router.replace("/u/profile");
-        }
-      } catch (error) {
-        console.error("Error checking user role:", error);
+      if (!hasAccess) {
+        // Redirect regular users to their public profile
         router.replace("/u/profile");
-      } finally {
-        setIsLoading(false);
+        return;
       }
+
+      setIsAuthorized(true);
+      setIsChecking(false);
     };
 
     checkUserRole();
-  }, [user, isReady, router]);
+  }, [user, authLoading, router]);
 
-  if (isLoading) {
+  if (isChecking || authLoading) {
     return <LoadingFallback />;
   }
 

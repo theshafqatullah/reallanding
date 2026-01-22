@@ -697,7 +697,7 @@ export default function PropertyDetailClient() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       <DetailItem label="Property Type" value={property.property_type?.name} />
                       <DetailItem label="Listing Type" value={property.listing_type?.name} />
-                      <DetailItem label="Status" value={property.property_status?.name} />
+                      <DetailItem label="Status" value={property.property_status} />
                       <DetailItem label="Purpose" value={property.purpose} />
                       <DetailItem label="Condition" value={property.condition_type} />
                       <DetailItem label="Furnished" value={property.furnished_status} />

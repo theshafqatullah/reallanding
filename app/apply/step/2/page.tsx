@@ -2,20 +2,22 @@
 
 import { useEffect } from 'react';
 import { useApplyForm } from '@/lib/apply-context';
-import { ApplyStep3 } from '@/components/apply/steps/apply-step3';
+import { ApplyStep2 } from '@/components/apply/steps/apply-step2';
 
-export default function Step3Page() {
+export const dynamic = 'force-dynamic';
+
+export default function Step2Page() {
     const { currentStep, goToStep } = useApplyForm();
 
     useEffect(() => {
-        if (currentStep !== 3) {
-            goToStep(3);
+        if (currentStep !== 2) {
+            goToStep(2);
         }
     }, [currentStep, goToStep]);
 
     return (
         <div className="container max-w-4xl mx-auto py-8 px-4">
-            <ApplyStep3 />
+            <ApplyStep2 />
         </div>
     );
 }

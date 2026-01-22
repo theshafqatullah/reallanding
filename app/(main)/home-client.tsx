@@ -419,8 +419,7 @@ export default function HomePageClient() {
     // Add listing type (buy/rent) - find the matching listing type ID
     if (listingType) {
       const matchingListingType = listingTypes.find(
-        (lt) => lt.name?.toLowerCase() === listingType.toLowerCase() ||
-          lt.slug?.toLowerCase() === listingType.toLowerCase()
+        (lt) => lt.name?.toLowerCase() === listingType.toLowerCase()
       );
       if (matchingListingType) {
         params.set("listing", matchingListingType.$id);

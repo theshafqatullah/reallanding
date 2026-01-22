@@ -155,9 +155,9 @@ export default function MediaClient() {
         total_images: uploadedImages.length,
         // Store images and videos as arrays
         image_urls: uploadedImages.map(img => img.url),
-        image_ids: uploadedImages.filter(img => img.fileId).map(img => img.fileId),
+        image_ids: uploadedImages.filter(img => img.id).map(img => img.id),
         video_urls: uploadedVideos.map(vid => vid.url),
-        video_ids: uploadedVideos.filter(vid => vid.fileId).map(vid => vid.fileId),
+        video_ids: uploadedVideos.filter(vid => vid.id).map(vid => vid.id),
 
         // Contact
         contact_person_name: media.contact_person_name,
