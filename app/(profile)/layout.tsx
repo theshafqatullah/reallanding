@@ -7,6 +7,8 @@ import { useAuth, AuthGuard } from "@/store/auth";
 import { useAuth as useAppAuth, AuthProvider } from "@/lib/auth-context";
 import { AuthHydrator } from "@/components/auth/auth-hydrator";
 import { DashboardHeader } from "@/components/shared/dashboard-header";
+import { KycBanner } from "@/components/shared/kyc-banner";
+import { kycService, type KycStatusSummary } from "@/services/kyc";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -27,6 +29,7 @@ import {
   LogIn,
   PlusIcon,
   Inbox,
+  FileCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -72,6 +75,12 @@ const navItems: NavItem[] = [
     href: "/analytics",
     icon: BarChart3,
     description: "Views and performance",
+  },
+  {
+    title: "KYC Verification",
+    href: "/kyc",
+    icon: FileCheck,
+    description: "Identity verification",
   },
 ];
 
@@ -342,6 +351,48 @@ function RoleGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// KYC Banner wrapper component
+function KycBannerWrapper() {
+  const pathname = usePathname();
+  const { user } = useAppAuth();
+  const [kycStatus, setKycStatus] = useState<KycStatusSummary | null>(null);
+
+  useEffect(() => {
+    const loadKycStatus = async () => {
+      if (!user?.$id) return;
+
+      try {
+        const status = await kycService.getVerificationStatus(user.$id);
+        setKycStatus(status);
+      } catch (error) {
+        console.error("Failed to load KYC status:", error);
+      }
+    };
+
+    loadKycStatus();
+  }, [user?.$id]);
+
+  // Don't show banner on KYC pages themselves
+  if (pathname?.startsWith("/kyc")) {
+    return null;
+  }
+
+  // Don't show if status not loaded or verified
+  if (!kycStatus || kycStatus.overallStatus === "verified") {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <KycBanner
+        status={kycStatus.overallStatus}
+        missingCount={kycStatus.missingDocuments.length}
+        rejectedCount={kycStatus.rejected}
+      />
+    </div>
+  );
+}
+
 export default function ProfileLayout({
   children,
 }: {
@@ -366,6 +417,9 @@ export default function ProfileLayout({
                   <MobileNav />
 
                   <div className="p-6 lg:p-8">
+                    {/* KYC Status Banner */}
+                    <KycBannerWrapper />
+
                     {children}
                   </div>
                 </main>

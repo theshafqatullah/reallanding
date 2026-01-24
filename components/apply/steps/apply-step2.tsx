@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApplyForm } from '@/lib/apply-context';
 import { useAuth } from '@/lib/auth-context';
+import { lookupsService, type Country, type State, type City } from '@/services/lookups';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ import { UserType } from '@/types/appwrite';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 
 // Shared validation schema for all fields - keep everything as strings
 const detailsSchema = z.object({
@@ -57,6 +58,16 @@ export function ApplyStep2() {
     const { formData, updateFormData, nextStep, previousStep, isStepValid } = useApplyForm();
     const { user } = useAuth();
 
+    // Location lookup state
+    const [countries, setCountries] = useState<Country[]>([]);
+    const [states, setStates] = useState<State[]>([]);
+    const [cities, setCities] = useState<City[]>([]);
+    const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+    const [isLoadingStates, setIsLoadingStates] = useState(false);
+    const [isLoadingCities, setIsLoadingCities] = useState(false);
+    const [selectedCountryId, setSelectedCountryId] = useState<string>('');
+    const [selectedStateId, setSelectedStateId] = useState<string>('');
+
     const form = useForm<any>({
         resolver: zodResolver(detailsSchema),
         mode: 'onBlur',
@@ -89,6 +100,96 @@ export function ApplyStep2() {
             propertyTypesHandled: formData.propertyTypesHandled,
         },
     });
+
+    // Load countries on mount
+    useEffect(() => {
+        const loadCountries = async () => {
+            try {
+                setIsLoadingCountries(true);
+                const data = await lookupsService.getCountries();
+                setCountries(data);
+            } catch (error) {
+                console.error('Failed to load countries:', error);
+            } finally {
+                setIsLoadingCountries(false);
+            }
+        };
+        loadCountries();
+    }, []);
+
+    // Load states when country changes
+    useEffect(() => {
+        const loadStates = async () => {
+            if (!selectedCountryId) {
+                setStates([]);
+                setCities([]);
+                return;
+            }
+            try {
+                setIsLoadingStates(true);
+                const data = await lookupsService.getStatesByCountry(selectedCountryId);
+                setStates(data);
+                // Reset state and city selection when country changes
+                setSelectedStateId('');
+                setCities([]);
+                form.setValue('state', '');
+                form.setValue('city', '');
+            } catch (error) {
+                console.error('Failed to load states:', error);
+            } finally {
+                setIsLoadingStates(false);
+            }
+        };
+        loadStates();
+    }, [selectedCountryId, form]);
+
+    // Load cities when state changes
+    useEffect(() => {
+        const loadCities = async () => {
+            if (!selectedStateId) {
+                setCities([]);
+                return;
+            }
+            try {
+                setIsLoadingCities(true);
+                const data = await lookupsService.getCitiesByState(selectedStateId);
+                setCities(data);
+                // Reset city selection when state changes
+                form.setValue('city', '');
+            } catch (error) {
+                console.error('Failed to load cities:', error);
+            } finally {
+                setIsLoadingCities(false);
+            }
+        };
+        loadCities();
+    }, [selectedStateId, form]);
+
+    // Handle country selection
+    const handleCountryChange = (countryId: string) => {
+        const country = countries.find(c => c.$id === countryId);
+        if (country) {
+            setSelectedCountryId(countryId);
+            form.setValue('country', country.name);
+        }
+    };
+
+    // Handle state selection
+    const handleStateChange = (stateId: string) => {
+        const state = states.find(s => s.$id === stateId);
+        if (state) {
+            setSelectedStateId(stateId);
+            form.setValue('state', state.name);
+        }
+    };
+
+    // Handle city selection
+    const handleCityChange = (cityId: string) => {
+        const city = cities.find(c => c.$id === cityId);
+        if (city) {
+            form.setValue('city', city.name);
+        }
+    };
 
     const onSubmit = (data: DetailsFormValues) => {
         // Convert numeric string fields to numbers where needed
@@ -487,13 +588,35 @@ export function ApplyStep2() {
                             <div className="grid md:grid-cols-3 gap-4">
                                 <FormField
                                     control={form.control}
-                                    name="city"
+                                    name="country"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>City *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="City" {...field} />
-                                            </FormControl>
+                                            <FormLabel>Country *</FormLabel>
+                                            <Select
+                                                onValueChange={handleCountryChange}
+                                                value={selectedCountryId}
+                                                disabled={isLoadingCountries}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        {isLoadingCountries ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                <span>Loading...</span>
+                                                            </div>
+                                                        ) : (
+                                                            <SelectValue placeholder="Select country" />
+                                                        )}
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {countries.map((country) => (
+                                                        <SelectItem key={country.$id} value={country.$id}>
+                                                            {country.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -504,22 +627,65 @@ export function ApplyStep2() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>State/Province *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="State" {...field} />
-                                            </FormControl>
+                                            <Select
+                                                onValueChange={handleStateChange}
+                                                value={selectedStateId}
+                                                disabled={!selectedCountryId || isLoadingStates}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        {isLoadingStates ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                <span>Loading...</span>
+                                                            </div>
+                                                        ) : (
+                                                            <SelectValue placeholder={selectedCountryId ? "Select state" : "Select country first"} />
+                                                        )}
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {states.map((state) => (
+                                                        <SelectItem key={state.$id} value={state.$id}>
+                                                            {state.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
-                                    name="country"
+                                    name="city"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Country *</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Country" {...field} />
-                                            </FormControl>
+                                            <FormLabel>City *</FormLabel>
+                                            <Select
+                                                onValueChange={handleCityChange}
+                                                disabled={!selectedStateId || isLoadingCities}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        {isLoadingCities ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                                <span>Loading...</span>
+                                                            </div>
+                                                        ) : (
+                                                            <SelectValue placeholder={selectedStateId ? "Select city" : "Select state first"} />
+                                                        )}
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {cities.map((city) => (
+                                                        <SelectItem key={city.$id} value={city.$id}>
+                                                            {city.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
