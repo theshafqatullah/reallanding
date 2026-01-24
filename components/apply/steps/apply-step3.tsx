@@ -22,6 +22,11 @@ export function ApplyStep3() {
     const isAgent = formData.userType === UserType.AGENT;
     const isAgency = formData.userType === UserType.AGENCY;
 
+    const handleBack = () => {
+        previousStep();
+        router.push('/apply/step/2');
+    };
+
     const handleSubmit = useCallback(async () => {
         if (!user) {
             toast.error('You must be logged in to submit');
@@ -315,7 +320,7 @@ export function ApplyStep3() {
             <div className="flex gap-4 pt-6">
                 <Button
                     variant="outline"
-                    onClick={previousStep}
+                    onClick={handleBack}
                     disabled={isSubmitting}
                     className="gap-2"
                 >

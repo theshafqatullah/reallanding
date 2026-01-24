@@ -1,18 +1,37 @@
 'use client';
 
 import React from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useApplyForm } from '@/lib/apply-context';
 import { CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function ApplyProgressBar() {
-    const { currentStep, totalSteps, goToStep, isStepValid } = useApplyForm();
+    const router = useRouter();
+    const pathname = usePathname();
+    const { totalSteps, goToStep, isStepValid } = useApplyForm();
+
+    // Derive current step from URL
+    const currentStep = pathname?.includes('/step/3') ? 3
+        : pathname?.includes('/step/2') ? 2
+            : pathname?.includes('/step/1') ? 1
+                : 0;
 
     const steps = [
         { number: 1, label: 'Select Role' },
         { number: 2, label: 'Enter Details' },
         { number: 3, label: 'Review & Submit' },
     ];
+
+    const handleStepClick = (stepNumber: number) => {
+        goToStep(stepNumber);
+        router.push(`/apply/step/${stepNumber}`);
+    };
+
+    // Don't show progress bar on main apply page
+    if (currentStep === 0) {
+        return null;
+    }
 
     return (
         <div className="sticky top-0 z-40 bg-white border-b">
@@ -37,7 +56,7 @@ export function ApplyProgressBar() {
                         return (
                             <div key={step.number} className="flex-1 flex items-center">
                                 <button
-                                    onClick={() => goToStep(step.number)}
+                                    onClick={() => handleStepClick(step.number)}
                                     disabled={!isValid && step.number > currentStep}
                                     className={cn(
                                         'flex items-center gap-3 transition-all duration-200',

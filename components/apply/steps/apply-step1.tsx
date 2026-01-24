@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useApplyForm } from '@/lib/apply-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import { Building2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function ApplyStep1() {
+    const router = useRouter();
     const { formData, updateFormData, nextStep, isStepValid } = useApplyForm();
 
     const handleSelectRole = (role: UserType) => {
@@ -18,6 +20,7 @@ export function ApplyStep1() {
     const handleContinue = () => {
         if (isStepValid(1)) {
             nextStep();
+            router.push('/apply/step/2');
         }
     };
 

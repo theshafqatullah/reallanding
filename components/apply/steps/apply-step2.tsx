@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { useApplyForm } from '@/lib/apply-context';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
@@ -52,6 +53,7 @@ const detailsSchema = z.object({
 type DetailsFormValues = z.infer<typeof detailsSchema>;
 
 export function ApplyStep2() {
+    const router = useRouter();
     const { formData, updateFormData, nextStep, previousStep, isStepValid } = useApplyForm();
     const { user } = useAuth();
 
@@ -99,6 +101,12 @@ export function ApplyStep2() {
         };
         updateFormData(processedData);
         nextStep();
+        router.push('/apply/step/3');
+    };
+
+    const handleBack = () => {
+        previousStep();
+        router.push('/apply/step/1');
     };
 
     const isAgent = formData.userType === UserType.AGENT;
@@ -570,7 +578,7 @@ export function ApplyStep2() {
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={previousStep}
+                            onClick={handleBack}
                             className="gap-2"
                         >
                             <ArrowLeft className="w-4 h-4" />

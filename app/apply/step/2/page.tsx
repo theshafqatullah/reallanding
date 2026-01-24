@@ -7,13 +7,12 @@ import { ApplyStep2 } from '@/components/apply/steps/apply-step2';
 export const dynamic = 'force-dynamic';
 
 export default function Step2Page() {
-    const { currentStep, goToStep } = useApplyForm();
+    const { goToStep } = useApplyForm();
 
+    // Sync context state with URL on mount
     useEffect(() => {
-        if (currentStep !== 2) {
-            goToStep(2);
-        }
-    }, [currentStep, goToStep]);
+        goToStep(2);
+    }, [goToStep]);
 
     return (
         <div className="container max-w-4xl mx-auto py-8 px-4">
