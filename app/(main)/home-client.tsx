@@ -356,12 +356,18 @@ export default function HomePageClient() {
   const [bedsDialogOpen, setBedsDialogOpen] = useState(false);
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
   const [cityDialogOpen, setCityDialogOpen] = useState(false);
+  const [citySearchQuery, setCitySearchQuery] = useState("");
 
   // Lookup data from Appwrite
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
   const [listingTypes, setListingTypes] = useState<ListingType[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+
+  // Filtered cities based on search query
+  const filteredCities = cities.filter((city) =>
+    city.name.toLowerCase().includes(citySearchQuery.toLowerCase())
+  );
 
   // Load lookup data on mount
   useEffect(() => {
@@ -705,41 +711,67 @@ export default function HomePageClient() {
               </div>
 
               {/* City Dialog */}
-              <Dialog open={cityDialogOpen} onOpenChange={setCityDialogOpen}>
+              <Dialog open={cityDialogOpen} onOpenChange={(open) => {
+                setCityDialogOpen(open);
+                if (!open) setCitySearchQuery("");
+              }}>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>Select City</DialogTitle>
                   </DialogHeader>
-                  <div className="grid grid-cols-2 gap-2 pt-4 max-h-80 overflow-y-auto">
+                  {/* Search Bar */}
+                  <div className="relative pt-2">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 mt-1 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search cities..."
+                      value={citySearchQuery}
+                      onChange={(e) => setCitySearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  {/* City List */}
+                  <div className="flex flex-col gap-1 pt-2 max-h-80 overflow-y-auto">
                     {/* All Cities option */}
-                    <button
-                      onClick={() => {
-                        setCityFilter("all");
-                        setCityDialogOpen(false);
-                      }}
-                      className={`p-3 rounded-lg border text-sm font-medium transition-all ${cityFilter === "all"
+                    {citySearchQuery === "" && (
+                      <button
+                        onClick={() => {
+                          setCityFilter("all");
+                          setCityDialogOpen(false);
+                          setCitySearchQuery("");
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-sm font-medium transition-all text-left ${cityFilter === "all"
                           ? "border-primary bg-primary/10 text-primary"
-                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
-                        }`}
-                    >
-                      All Cities
-                    </button>
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                        <span>All Cities</span>
+                      </button>
+                    )}
                     {/* City options */}
-                    {cities.map((city) => (
+                    {filteredCities.map((city) => (
                       <button
                         key={city.$id}
                         onClick={() => {
                           setCityFilter(city.$id);
                           setCityDialogOpen(false);
+                          setCitySearchQuery("");
                         }}
-                        className={`p-3 rounded-lg border text-sm font-medium transition-all ${cityFilter === city.$id
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-sm font-medium transition-all text-left ${cityFilter === city.$id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                           }`}
                       >
-                        {city.name}
+                        <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                        <span>{city.name}</span>
                       </button>
                     ))}
+                    {/* No results message */}
+                    {filteredCities.length === 0 && citySearchQuery !== "" && (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        No cities found matching &quot;{citySearchQuery}&quot;
+                      </div>
+                    )}
                   </div>
                 </DialogContent>
               </Dialog>
