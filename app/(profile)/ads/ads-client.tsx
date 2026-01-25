@@ -122,7 +122,7 @@ function getStatusBadge(status: string) {
 // Helper to get package badge
 function getPackageBadge(packageType: string) {
     const packageConfig: Record<string, { className: string; icon: React.ReactNode }> = {
-        basic: { className: "bg-blue-100 text-blue-700 hover:bg-blue-100", icon: <Zap className="h-3 w-3 mr-1" /> },
+        basic: { className: "bg-primary/20 text-primary hover:bg-primary/20", icon: <Zap className="h-3 w-3 mr-1" /> },
         standard: { className: "bg-green-100 text-green-700 hover:bg-green-100", icon: <Star className="h-3 w-3 mr-1" /> },
         premium: { className: "bg-purple-100 text-purple-700 hover:bg-purple-100", icon: <Crown className="h-3 w-3 mr-1" /> },
         spotlight: { className: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100", icon: <Sparkles className="h-3 w-3 mr-1" /> },
@@ -160,7 +160,7 @@ function PackageCard({
     };
 
     const colors: Record<PackageType, { bg: string; border: string; text: string }> = {
-        basic: { bg: "bg-blue-50", border: "border-blue-200", text: "text-blue-600" },
+        basic: { bg: "bg-primary/10", border: "border-primary/30", text: "text-primary" },
         standard: { bg: "bg-green-50", border: "border-green-200", text: "text-green-600" },
         premium: { bg: "bg-purple-50", border: "border-purple-200", text: "text-purple-600" },
         spotlight: { bg: "bg-yellow-50", border: "border-yellow-200", text: "text-yellow-600" },
@@ -698,15 +698,15 @@ export default function AdsClient() {
 
             {/* Non-agent/agency info banner */}
             {!isAgentOrAgency && (
-                <Card className="bg-blue-50 border-blue-200">
+                <Card className="bg-primary/10 border-primary/30">
                     <CardContent className="p-4 flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                        <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                         <div>
-                            <p className="text-sm text-blue-800">
+                            <p className="text-sm text-primary">
                                 <strong>Note:</strong> Property promotions are primarily designed for agents and agencies.
                                 As a regular user, you can promote your listings, but some features may be limited.
                             </p>
-                            <Button variant="link" size="sm" className="p-0 h-auto text-blue-600" asChild>
+                            <Button variant="link" size="sm" className="p-0 h-auto text-primary" asChild>
                                 <Link href="/apply">
                                     Become an Agent <ChevronRight className="h-4 w-4 ml-1" />
                                 </Link>
@@ -735,8 +735,8 @@ export default function AdsClient() {
                     <Card>
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                    <Megaphone className="h-5 w-5 text-blue-600" />
+                                <div className="p-2 bg-primary/20 rounded-lg">
+                                    <Megaphone className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
                                     <p className="text-xl font-bold">{analytics.activeAds}</p>
@@ -891,8 +891,8 @@ export default function AdsClient() {
                                     <CardHeader>
                                         <div className={cn(
                                             "w-12 h-12 rounded-lg flex items-center justify-center mb-3",
-                                            type === "basic" && "bg-blue-100 text-blue-600",
-                                            type === "standard" && "bg-green-100 text-green-600",
+                                            type === "basic" && "bg-primary/20 text-primary",
+                                            type === "standard" && "bg-secondary text-secondary-foreground",
                                             type === "premium" && "bg-purple-100 text-purple-600",
                                             type === "spotlight" && "bg-yellow-100 text-yellow-600",
                                         )}>

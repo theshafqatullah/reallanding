@@ -130,10 +130,10 @@ export function ApplyStep1() {
             </div>
 
             {/* Info Box */}
-            <Card className="bg-blue-50 border-blue-200 mt-8">
+            <Card className="bg-primary/10 border-primary/30 mt-8">
                 <CardContent className="pt-6">
-                    <h3 className="font-semibold text-blue-900 mb-2">About the Application Process</h3>
-                    <ul className="space-y-2 text-sm text-blue-800">
+                    <h3 className="font-semibold text-primary mb-2">About the Application Process</h3>
+                    <ul className="space-y-2 text-sm text-primary/80">
                         <li className="flex gap-2">
                             <span className="flex-shrink-0">•</span>
                             <span>The process takes about 5-10 minutes to complete</span>

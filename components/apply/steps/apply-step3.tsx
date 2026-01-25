@@ -287,13 +287,13 @@ export function ApplyStep3() {
             </Card>
 
             {/* Info Box */}
-            <Card className="bg-blue-50 border-blue-200">
+            <Card className="bg-primary/10 border-primary/30">
                 <CardContent className="pt-6">
                     <div className="flex gap-3">
-                        <CheckCircle2 className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                         <div>
-                            <h3 className="font-semibold text-blue-900 mb-2">Before you submit</h3>
-                            <ul className="space-y-1 text-sm text-blue-800">
+                            <h3 className="font-semibold text-primary mb-2">Before you submit</h3>
+                            <ul className="space-y-1 text-sm text-primary/80">
                                 <li className="flex gap-2">
                                     <span className="flex-shrink-0">•</span>
                                     <span>Please review all information carefully</span>

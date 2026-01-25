@@ -38,8 +38,8 @@ export function KycBanner({
         not_submitted: {
             icon: Shield,
             variant: "default" as const,
-            bgColor: "bg-blue-50 border-blue-200",
-            iconColor: "text-blue-600",
+            bgColor: "bg-primary/10 border-primary/30",
+            iconColor: "text-primary",
             title: "Complete Your KYC Verification",
             description: "Verify your identity to unlock all features and build trust with clients. This helps ensure the safety and security of our platform.",
             action: "Start Verification",
@@ -106,7 +106,7 @@ export function KycBanner({
     return (
         <div className={`rounded-lg border p-4 ${config.bgColor}`}>
             <div className="flex items-start gap-4">
-                <div className={`p-2 rounded-full ${status === "not_submitted" ? "bg-blue-100" : status === "pending" ? "bg-yellow-100" : "bg-red-100"}`}>
+                <div className={`p-2 rounded-full ${status === "not_submitted" ? "bg-primary/20" : status === "pending" ? "bg-yellow-100" : "bg-red-100"}`}>
                     <Icon className={`h-5 w-5 ${config.iconColor}`} />
                 </div>
                 <div className="flex-1">
@@ -134,10 +134,10 @@ export function KycAlertBanner({ status, missingCount = 0, rejectedCount = 0 }: 
 
     if (status === "not_submitted") {
         return (
-            <Alert className="border-blue-200 bg-blue-50">
-                <Shield className="h-4 w-4 text-blue-600" />
-                <AlertTitle className="text-blue-800">Complete Your KYC Verification</AlertTitle>
-                <AlertDescription className="text-blue-700">
+            <Alert className="border-primary/30 bg-primary/10">
+                <Shield className="h-4 w-4 text-primary" />
+                <AlertTitle className="text-primary">Complete Your KYC Verification</AlertTitle>
+                <AlertDescription className="text-primary/80">
                     <span>Verify your identity to unlock all features. </span>
                     <Link href="/kyc" className="font-medium underline hover:no-underline">
                         Start verification →

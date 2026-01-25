@@ -42,7 +42,7 @@ const supportCategories = [
         icon: BookOpen,
         description: "New to Real Landing? Start here",
         articles: 12,
-        color: "bg-blue-100 text-blue-600",
+        color: "bg-primary/20 text-primary",
     },
     {
         id: "account",
@@ -74,7 +74,7 @@ const supportCategories = [
         icon: Building2,
         description: "Agent-specific features",
         articles: 20,
-        color: "bg-indigo-100 text-indigo-600",
+        color: "bg-primary/20 text-primary",
     },
     {
         id: "security",

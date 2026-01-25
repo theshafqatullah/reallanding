@@ -7,11 +7,11 @@ import { ArrowRight, Building2, Users, CheckCircle2 } from 'lucide-react';
 
 export default function ApplyPage() {
     return (
-        <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center">
+        <div className="h-screen bg-gradient-to-br from-primary/10 via-white to-secondary/30 flex items-center justify-center">
             <div className="container max-w-4xl mx-auto px-4">
                 <div className="text-center space-y-8">
                     {/* Badge */}
-                    <Badge className="bg-blue-500/20 text-blue-700 border-blue-300 px-4 py-1.5">
+                    <Badge className="bg-primary/20 text-primary border-primary/30 px-4 py-1.5">
                         Join 10,000+ Partners
                     </Badge>
 
@@ -28,7 +28,7 @@ export default function ApplyPage() {
                     {/* Stats Row */}
                     <div className="flex items-center justify-center gap-8 py-4">
                         <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                                 <Users className="w-5 h-5 text-white" />
                             </div>
                             <div className="text-left">

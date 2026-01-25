@@ -181,7 +181,7 @@ export default function ProfileCompletionPage() {
                         </div>
                         <div>
                             <p className="text-sm text-muted-foreground">Status</p>
-                            <p className="font-semibold capitalize text-blue-600">{profile.account_status}</p>
+                            <p className="font-semibold capitalize text-primary">{profile.account_status}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -220,7 +220,7 @@ export default function ProfileCompletionPage() {
                                     </div>
                                     {index === 1 && (
                                         <div className="flex-shrink-0">
-                                            <span className="inline-block bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">
+                                            <span className="inline-block bg-primary/20 text-primary text-xs px-3 py-1 rounded-full font-medium">
                                                 Next
                                             </span>
                                         </div>
@@ -233,10 +233,10 @@ export default function ProfileCompletionPage() {
             </Card>
 
             {/* Information Box */}
-            <Card className="mb-8 bg-blue-50 border-blue-200">
+            <Card className="mb-8 bg-primary/10 border-primary/30">
                 <CardContent className="pt-6">
-                    <h3 className="font-semibold text-blue-900 mb-2">What happens next?</h3>
-                    <ul className="space-y-2 text-sm text-blue-800">
+                    <h3 className="font-semibold text-primary mb-2">What happens next?</h3>
+                    <ul className="space-y-2 text-sm text-primary/80">
                         <li className="flex gap-2">
                             <span className="flex-shrink-0">•</span>
                             <span>You will need to upload verification documents (ID, license, etc.)</span>

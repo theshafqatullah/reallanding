@@ -87,8 +87,8 @@ function NotSubmittedState() {
                 </Card>
                 <Card>
                     <CardContent className="pt-6">
-                        <div className="p-3 bg-blue-100 rounded-full w-fit mb-4">
-                            <Shield className="h-6 w-6 text-blue-600" />
+                        <div className="p-3 bg-primary/20 rounded-full w-fit mb-4">
+                            <Shield className="h-6 w-6 text-primary" />
                         </div>
                         <h3 className="font-semibold mb-2">Unlock Features</h3>
                         <p className="text-sm text-muted-foreground">
@@ -202,13 +202,13 @@ function PendingState({
 
             {/* Missing Documents Alert */}
             {hasMissingDocs && (
-                <Alert className="border-blue-200 bg-blue-50">
-                    <Upload className="h-4 w-4 text-blue-600" />
-                    <AlertTitle className="text-blue-800">Additional Documents Required</AlertTitle>
-                    <AlertDescription className="text-blue-700">
+                <Alert className="border-primary/30 bg-primary/10">
+                    <Upload className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-primary">Additional Documents Required</AlertTitle>
+                    <AlertDescription className="text-primary/80">
                         <div className="flex flex-wrap gap-2 mt-2">
                             {status.missingDocuments.map(doc => (
-                                <Badge key={doc} variant="outline" className="border-blue-300 text-blue-700">
+                                <Badge key={doc} variant="outline" className="border-primary/30 text-primary">
                                     {getDocumentTypeLabel(doc)}
                                 </Badge>
                             ))}
@@ -517,7 +517,7 @@ function DocumentsList({
                             <div className="flex items-start justify-between">
                                 <div className="flex items-start gap-4">
                                     <div className={`p-2 rounded-lg ${doc.status === "verified" ? "bg-green-100" :
-                                            doc.status === "rejected" ? "bg-red-100" : "bg-muted"
+                                        doc.status === "rejected" ? "bg-red-100" : "bg-muted"
                                         }`}>
                                         {doc.status === "verified" ? (
                                             <CheckCircle2 className="h-5 w-5 text-green-600" />

@@ -397,7 +397,7 @@ export default function AnalyticsPage() {
             <div className="hidden sm:flex items-center gap-4">
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">Weekly Views</p>
-                <MiniBarChart data={derivedMetrics.weeklyViewsTrend} color="bg-blue-500" />
+                <MiniBarChart data={derivedMetrics.weeklyViewsTrend} color="bg-primary" />
               </div>
               <div className="text-center">
                 <p className="text-xs text-muted-foreground">Weekly Inquiries</p>
@@ -415,7 +415,7 @@ export default function AnalyticsPage() {
           value={(overview?.totalViews || 0).toLocaleString()}
           trend={overview?.viewsTrend}
           icon={Eye}
-          iconColor="bg-blue-100 text-blue-600"
+          iconColor="bg-primary/20 text-primary"
           description="Total number of times your listings were viewed"
         />
         <StatCard

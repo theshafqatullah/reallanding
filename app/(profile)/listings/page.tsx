@@ -130,7 +130,7 @@ function getAvailabilityBadge(availability: string) {
   switch (availability) {
     case "sold":
       return (
-        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+        <Badge className="bg-primary/20 text-primary hover:bg-primary/20">
           <CheckCircle className="h-3 w-3 mr-1" />
           Sold
         </Badge>
@@ -497,7 +497,7 @@ export default function MyListingsPage() {
             label="Total Listings"
             value={stats.total}
             icon={Building2}
-            iconBg="bg-blue-100 text-blue-600"
+            iconBg="bg-primary/20 text-primary"
           />
           <QuickStatCard
             label="Active"

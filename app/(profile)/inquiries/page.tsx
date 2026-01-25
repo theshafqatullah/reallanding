@@ -43,7 +43,7 @@ interface InquiryWithProperty extends PropertyInquiries {
 function getStatusBadge(status: string, isRead: boolean) {
   if (!isRead) {
     return (
-      <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
+      <Badge className="bg-primary/20 text-primary hover:bg-primary/20">
         <AlertCircle className="h-3 w-3 mr-1" />
         New
       </Badge>
@@ -223,7 +223,7 @@ export default function InquiriesPage() {
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Unread</p>
-          <p className="text-2xl font-bold text-blue-600">{stats.unread}</p>
+          <p className="text-2xl font-bold text-primary">{stats.unread}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-muted-foreground">Replied</p>

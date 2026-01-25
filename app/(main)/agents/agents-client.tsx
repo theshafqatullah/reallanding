@@ -886,7 +886,7 @@ export default function AgentsPageClient() {
                                                 </div>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <BadgeCheck className="h-4 w-4 text-blue-500" />
+                                                        <BadgeCheck className="h-4 w-4 text-primary" />
                                                         <Label htmlFor="verified">Verified Only</Label>
                                                     </div>
                                                     <Checkbox
@@ -1079,7 +1079,7 @@ export default function AgentsPageClient() {
                                                         {getAgentDisplayName(agent)}
                                                     </h3>
                                                     {agent.is_verified && (
-                                                        <BadgeCheck className="h-4 w-4 text-blue-500 shrink-0" />
+                                                        <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
                                                     )}
                                                 </div>
                                                 <p className="text-sm text-primary truncate">{getAgentRole(agent)}</p>
@@ -1154,7 +1154,7 @@ export default function AgentsPageClient() {
                                                         {getAgentDisplayName(agent)}
                                                     </h3>
                                                     {agent.is_verified && (
-                                                        <BadgeCheck className="h-4 w-4 text-blue-500" />
+                                                        <BadgeCheck className="h-4 w-4 text-primary" />
                                                     )}
                                                     {agent.rating > 0 && (
                                                         <div className="flex items-center gap-1">

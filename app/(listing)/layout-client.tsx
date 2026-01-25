@@ -195,9 +195,9 @@ function ListingSidebar() {
                 </div>
 
                 {/* Tips Card */}
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <h4 className="font-medium text-blue-900 text-sm mb-2">💡 Pro Tip</h4>
-                    <p className="text-xs text-blue-700">
+                <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                    <h4 className="font-medium text-primary text-sm mb-2">💡 Pro Tip</h4>
+                    <p className="text-xs text-primary/80">
                         Properties with high-quality photos get 3x more views. Make sure to upload clear, well-lit images.
                     </p>
                 </div>

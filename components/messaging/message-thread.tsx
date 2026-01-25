@@ -359,7 +359,7 @@ function MessageBubble({
                     {isOwnMessage && (
                         <span className="text-muted-foreground">
                             {message.status === "read" ? (
-                                <CheckCheck className="h-3 w-3 text-blue-500" />
+                                <CheckCheck className="h-3 w-3 text-primary" />
                             ) : message.status === "delivered" ? (
                                 <CheckCheck className="h-3 w-3" />
                             ) : (

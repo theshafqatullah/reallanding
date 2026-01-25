@@ -294,9 +294,9 @@ export function PropertyInquiryDialog({
                     </div>
 
                     {/* Info Message */}
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg flex gap-3">
-                        <AlertCircleIcon className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-blue-800">
+                    <div className="p-3 bg-primary/10 border border-primary/30 rounded-lg flex gap-3">
+                        <AlertCircleIcon className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-primary">
                             Your contact information will be shared with the property owner to
                             help them respond to your inquiry.
                         </p>
