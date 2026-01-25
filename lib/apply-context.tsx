@@ -190,35 +190,41 @@ export function ApplyProvider({ children }: { children: React.ReactNode }) {
             case 1:
                 return formData.userType !== null;
             case 2:
-                const requiredFields = [
-                    formData.firstName,
-                    formData.lastName,
-                    formData.phone,
-                    formData.timezone,
-                    formData.bio,
-                    formData.serviceAreas,
-                    formData.specializations,
-                    formData.languagesSpoken,
-                    formData.city,
-                    formData.state,
-                    formData.country,
-                ];
+                // Check common required fields
+                const commonFieldsValid = Boolean(
+                    formData.firstName?.trim() &&
+                    formData.lastName?.trim() &&
+                    formData.phone?.trim() &&
+                    formData.timezone?.trim() &&
+                    formData.bio?.trim() && formData.bio.length >= 50 &&
+                    formData.serviceAreas?.trim() && formData.serviceAreas.length >= 10 &&
+                    formData.specializations?.trim() && formData.specializations.length >= 10 &&
+                    formData.languagesSpoken?.trim() &&
+                    formData.city?.trim() &&
+                    formData.state?.trim() &&
+                    formData.country?.trim() &&
+                    formData.responseTimeHours >= 1
+                );
 
+                if (!commonFieldsValid) return false;
+
+                // Check type-specific fields
                 if (formData.userType === UserType.AGENT) {
-                    requiredFields.push(
-                        formData.licenseNumber,
-                        formData.designation,
-                        String(formData.experienceYears)
+                    return Boolean(
+                        formData.licenseNumber?.trim() &&
+                        formData.designation?.trim() &&
+                        formData.experienceYears >= 0
                     );
                 } else if (formData.userType === UserType.AGENCY) {
-                    requiredFields.push(
-                        formData.companyNameAgency,
-                        formData.registrationNumber,
-                        String(formData.teamSize)
+                    return Boolean(
+                        formData.companyNameAgency?.trim() &&
+                        formData.registrationNumber?.trim() &&
+                        formData.teamSize >= 1 &&
+                        formData.establishedYear >= 1900
                     );
                 }
 
-                return requiredFields.every(field => String(field).trim() !== '');
+                return commonFieldsValid;
             case 3:
                 return true; // Review step is always valid
             default:

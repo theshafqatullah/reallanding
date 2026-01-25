@@ -17,8 +17,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
-// Shared validation schema for all fields - keep everything as strings
-const detailsSchema = z.object({
+// Base schema for common fields
+const baseSchema = z.object({
     firstName: z.string().min(2, 'First name must be at least 2 characters'),
     lastName: z.string().min(2, 'Last name must be at least 2 characters'),
     phone: z.string().regex(/^[\d\s\-\+\(\)]+$/, 'Valid phone number required'),
@@ -31,32 +31,53 @@ const detailsSchema = z.object({
     specializations: z.string().min(10, 'Specializations are required'),
     languagesSpoken: z.string().min(1, 'At least one language is required'),
     preferredContactMethod: z.enum(['email', 'phone', 'whatsapp']),
-    responseTimeHours: z.string().min(1, 'Response time must be at least 1 hour'),
+    responseTimeHours: z.coerce.number().min(1, 'Response time must be at least 1 hour'),
 
-    // Agent fields
+    // Agent fields (optional by default, refined based on userType)
     licenseNumber: z.string().optional(),
     designation: z.string().optional(),
-    experienceYears: z.string().optional(),
+    experienceYears: z.coerce.number().optional(),
     companyName: z.string().optional(),
     certifications: z.string().optional(),
 
-    // Agency fields
+    // Agency fields (optional by default, refined based on userType)
     companyNameAgency: z.string().optional(),
     registrationNumber: z.string().optional(),
-    establishedYear: z.string().optional(),
-    teamSize: z.string().optional(),
+    establishedYear: z.coerce.number().optional(),
+    teamSize: z.coerce.number().optional(),
     brokerName: z.string().optional(),
     brokerLicense: z.string().optional(),
     reraRegistration: z.string().optional(),
     propertyTypesHandled: z.string().optional(),
 });
 
-type DetailsFormValues = z.infer<typeof detailsSchema>;
+// Agent-specific schema with required fields
+const agentSchema = baseSchema.extend({
+    licenseNumber: z.string().min(1, 'License number is required'),
+    designation: z.string().min(1, 'Designation is required'),
+    experienceYears: z.coerce.number().min(0, 'Experience years is required'),
+});
+
+// Agency-specific schema with required fields
+const agencySchema = baseSchema.extend({
+    companyNameAgency: z.string().min(1, 'Company name is required'),
+    registrationNumber: z.string().min(1, 'Registration number is required'),
+    teamSize: z.coerce.number().min(1, 'Team size must be at least 1'),
+    establishedYear: z.coerce.number().min(1900, 'Valid established year is required'),
+});
+
+type DetailsFormValues = z.infer<typeof baseSchema>;
 
 export function ApplyStep2() {
     const router = useRouter();
     const { formData, updateFormData, nextStep, previousStep, isStepValid } = useApplyForm();
     const { user } = useAuth();
+
+    const isAgent = formData.userType === UserType.AGENT;
+    const isAgency = formData.userType === UserType.AGENCY;
+
+    // Select the appropriate schema based on user type
+    const detailsSchema = isAgent ? agentSchema : isAgency ? agencySchema : baseSchema;
 
     // Location lookup state
     const [countries, setCountries] = useState<Country[]>([]);
@@ -68,36 +89,36 @@ export function ApplyStep2() {
     const [selectedCountryId, setSelectedCountryId] = useState<string>('');
     const [selectedStateId, setSelectedStateId] = useState<string>('');
 
-    const form = useForm<any>({
+    const form = useForm<DetailsFormValues>({
         resolver: zodResolver(detailsSchema),
         mode: 'onBlur',
         defaultValues: {
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phone: formData.phone,
-            timezone: formData.timezone,
-            city: formData.city,
-            state: formData.state,
-            country: formData.country,
-            bio: formData.bio,
-            serviceAreas: formData.serviceAreas,
-            specializations: formData.specializations,
-            languagesSpoken: formData.languagesSpoken,
-            preferredContactMethod: formData.preferredContactMethod,
-            responseTimeHours: formData.responseTimeHours,
-            licenseNumber: formData.licenseNumber,
-            designation: formData.designation,
-            experienceYears: formData.experienceYears,
-            companyName: formData.companyName,
-            certifications: formData.certifications,
-            companyNameAgency: formData.companyNameAgency,
-            registrationNumber: formData.registrationNumber,
-            establishedYear: formData.establishedYear,
-            teamSize: formData.teamSize,
-            brokerName: formData.brokerName,
-            brokerLicense: formData.brokerLicense,
-            reraRegistration: formData.reraRegistration,
-            propertyTypesHandled: formData.propertyTypesHandled,
+            firstName: formData.firstName || '',
+            lastName: formData.lastName || '',
+            phone: formData.phone || '',
+            timezone: formData.timezone || '',
+            city: formData.city || '',
+            state: formData.state || '',
+            country: formData.country || '',
+            bio: formData.bio || '',
+            serviceAreas: formData.serviceAreas || '',
+            specializations: formData.specializations || '',
+            languagesSpoken: formData.languagesSpoken || '',
+            preferredContactMethod: formData.preferredContactMethod || 'email',
+            responseTimeHours: formData.responseTimeHours || 24,
+            licenseNumber: formData.licenseNumber || '',
+            designation: formData.designation || '',
+            experienceYears: formData.experienceYears || 0,
+            companyName: formData.companyName || '',
+            certifications: formData.certifications || '',
+            companyNameAgency: formData.companyNameAgency || '',
+            registrationNumber: formData.registrationNumber || '',
+            establishedYear: formData.establishedYear || new Date().getFullYear(),
+            teamSize: formData.teamSize || 1,
+            brokerName: formData.brokerName || '',
+            brokerLicense: formData.brokerLicense || '',
+            reraRegistration: formData.reraRegistration || '',
+            propertyTypesHandled: formData.propertyTypesHandled || '',
         },
     });
 
@@ -192,15 +213,20 @@ export function ApplyStep2() {
     };
 
     const onSubmit = (data: DetailsFormValues) => {
-        // Convert numeric string fields to numbers where needed
+        // Data is already properly typed thanks to zod coerce
         const processedData = {
             ...data,
-            responseTimeHours: data.responseTimeHours ? Number(data.responseTimeHours) : 24,
-            experienceYears: data.experienceYears ? Number(data.experienceYears) : undefined,
-            establishedYear: data.establishedYear ? Number(data.establishedYear) : undefined,
-            teamSize: data.teamSize ? Number(data.teamSize) : undefined,
+            // Ensure numbers are properly handled (z.coerce already converts them)
+            responseTimeHours: data.responseTimeHours || 24,
+            experienceYears: data.experienceYears || 0,
+            establishedYear: data.establishedYear || new Date().getFullYear(),
+            teamSize: data.teamSize || 1,
         };
+
+        // Update form data in context
         updateFormData(processedData);
+
+        // Navigate to step 3
         nextStep();
         router.push('/apply/step/3');
     };
@@ -209,9 +235,6 @@ export function ApplyStep2() {
         previousStep();
         router.push('/apply/step/1');
     };
-
-    const isAgent = formData.userType === UserType.AGENT;
-    const isAgency = formData.userType === UserType.AGENCY;
 
     return (
         <div className="space-y-6">
