@@ -83,7 +83,7 @@ export const savedPropertiesService = {
   },
 
   /**
-   * Get saved properties with full property details
+   * Get saved properties with full property details - optimized batch fetch
    */
   async getUserSavedPropertiesWithDetails(
     userId: string,
@@ -100,22 +100,33 @@ export const savedPropertiesService = {
     try {
       const { savedProperties, total } = await this.getUserSavedProperties(userId, options);
 
-      // Fetch property details for each saved property
-      const savedWithDetails = await Promise.all(
-        savedProperties.map(async (saved) => {
-          try {
-            const property = await databases.getDocument(
-              DATABASE_ID,
-              PROPERTIES_COLLECTION_ID,
-              saved.property_id
-            );
-            return { ...saved, property: property as unknown as Properties };
-          } catch {
-            // Property might have been deleted
-            return { ...saved, property: undefined };
-          }
-        })
+      if (savedProperties.length === 0) {
+        return { savedProperties: [], total: 0 };
+      }
+
+      // Batch fetch all properties in one query instead of N+1
+      const propertyIds = savedProperties.map((sp) => sp.property_id);
+      
+      const propertiesResponse = await databases.listDocuments(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        [
+          Query.equal("$id", propertyIds),
+          Query.limit(propertyIds.length),
+        ]
       );
+
+      // Create a map for O(1) lookup
+      const propertiesMap = new Map<string, Properties>();
+      (propertiesResponse.documents as unknown as Properties[]).forEach((p) => {
+        propertiesMap.set(p.$id, p);
+      });
+
+      // Merge saved properties with property details
+      const savedWithDetails = savedProperties.map((saved) => ({
+        ...saved,
+        property: propertiesMap.get(saved.property_id),
+      }));
 
       return {
         savedProperties: savedWithDetails,

@@ -93,7 +93,8 @@ export const notificationsService = {
         [
           Query.equal("user_id", userId),
           Query.equal("is_read", false),
-          Query.limit(100),
+          Query.select(["$id"]), // Only fetch IDs for count
+          Query.limit(1), // We only need the total count
         ]
       );
 
@@ -146,25 +147,41 @@ export const notificationsService = {
   },
 
   /**
-   * Mark all notifications as read
+   * Mark all notifications as read - with batching for performance
    */
   async markAllAsRead(userId: string): Promise<void> {
     try {
-      const { notifications } = await this.getUserNotifications(userId, {
-        is_read: false,
-        limit: 100,
-      });
-
-      await Promise.all(
-        notifications.map((notification) =>
-          databases.updateDocument(
-            DATABASE_ID,
-            NOTIFICATIONS_COLLECTION_ID,
-            notification.$id,
-            { is_read: true }
-          )
-        )
+      // Only fetch IDs for better performance
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        NOTIFICATIONS_COLLECTION_ID,
+        [
+          Query.equal("user_id", userId),
+          Query.equal("is_read", false),
+          Query.select(["$id"]),
+          Query.limit(100),
+        ]
       );
+
+      if (response.documents.length === 0) return;
+
+      // Batch updates in chunks of 10 to avoid rate limiting
+      const BATCH_SIZE = 10;
+      const notifications = response.documents;
+      
+      for (let i = 0; i < notifications.length; i += BATCH_SIZE) {
+        const batch = notifications.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((notification) =>
+            databases.updateDocument(
+              DATABASE_ID,
+              NOTIFICATIONS_COLLECTION_ID,
+              notification.$id,
+              { is_read: true }
+            )
+          )
+        );
+      }
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
       throw error;
@@ -188,23 +205,38 @@ export const notificationsService = {
   },
 
   /**
-   * Delete all notifications for a user
+   * Delete all notifications for a user - with batching
    */
   async deleteAll(userId: string): Promise<void> {
     try {
-      const { notifications } = await this.getUserNotifications(userId, {
-        limit: 100,
-      });
-
-      await Promise.all(
-        notifications.map((notification) =>
-          databases.deleteDocument(
-            DATABASE_ID,
-            NOTIFICATIONS_COLLECTION_ID,
-            notification.$id
-          )
-        )
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        NOTIFICATIONS_COLLECTION_ID,
+        [
+          Query.equal("user_id", userId),
+          Query.select(["$id"]),
+          Query.limit(100),
+        ]
       );
+
+      if (response.documents.length === 0) return;
+
+      // Batch deletes in chunks of 10
+      const BATCH_SIZE = 10;
+      const notifications = response.documents;
+
+      for (let i = 0; i < notifications.length; i += BATCH_SIZE) {
+        const batch = notifications.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map((notification) =>
+            databases.deleteDocument(
+              DATABASE_ID,
+              NOTIFICATIONS_COLLECTION_ID,
+              notification.$id
+            )
+          )
+        );
+      }
     } catch (error) {
       console.error("Error deleting all notifications:", error);
       throw error;

@@ -63,11 +63,15 @@ export const inquiriesService = {
     }
   ): Promise<{ inquiries: PropertyInquiries[]; total: number }> {
     try {
-      // First get all property IDs owned by the user
+      // First get all property IDs owned by the user - only fetch $id for performance
       const propertiesResponse = await databases.listDocuments(
         DATABASE_ID,
         "properties",
-        [Query.equal("owner_id", userId), Query.limit(100)]
+        [
+          Query.equal("owner_id", userId),
+          Query.select(["$id"]),
+          Query.limit(100)
+        ]
       );
 
       if (propertiesResponse.documents.length === 0) {

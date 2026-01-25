@@ -84,21 +84,70 @@ export interface Amenity {
 }
 
 // ============================================================================
+// In-Memory Cache for Lookups (reduces API calls for static data)
+// ============================================================================
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+
+const cache: {
+  countries?: CacheEntry<Country[]>;
+  states?: Map<string, CacheEntry<State[]>>;
+  cities?: Map<string, CacheEntry<City[]>>;
+  locations?: Map<string, CacheEntry<Location[]>>;
+  propertyTypes?: CacheEntry<PropertyType[]>;
+  listingTypes?: CacheEntry<ListingType[]>;
+  amenities?: CacheEntry<Amenity[]>;
+} = {
+  states: new Map(),
+  cities: new Map(),
+  locations: new Map(),
+};
+
+function isCacheValid<T>(entry?: CacheEntry<T>): boolean {
+  if (!entry) return false;
+  return Date.now() - entry.timestamp < CACHE_TTL;
+}
+
+// ============================================================================
 // Lookup Service
 // ============================================================================
 
 /**
  * Lookup service for fetching related/reference data collections
+ * Includes in-memory caching for better performance
  */
 export const lookupsService = {
+  /**
+   * Clear all cache entries
+   */
+  clearCache(): void {
+    cache.countries = undefined;
+    cache.states?.clear();
+    cache.cities?.clear();
+    cache.locations?.clear();
+    cache.propertyTypes = undefined;
+    cache.listingTypes = undefined;
+    cache.amenities = undefined;
+  },
+
   // ========================================================================
   // Countries
   // ========================================================================
   
   /**
-   * Get all active countries
+   * Get all active countries (cached)
    */
   async getCountries(): Promise<Country[]> {
+    // Return cached data if valid
+    if (isCacheValid(cache.countries)) {
+      return cache.countries!.data;
+    }
+
     try {
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -109,7 +158,12 @@ export const lookupsService = {
           Query.limit(250),
         ]
       );
-      return response.documents as unknown as Country[];
+      const data = response.documents as unknown as Country[];
+      
+      // Update cache
+      cache.countries = { data, timestamp: Date.now() };
+      
+      return data;
     } catch (error) {
       console.error("Error fetching countries:", error);
       throw error;
@@ -380,9 +434,14 @@ export const lookupsService = {
   // ========================================================================
 
   /**
-   * Get all active property types
+   * Get all active property types (cached)
    */
   async getPropertyTypes(): Promise<PropertyType[]> {
+    // Return cached data if valid
+    if (isCacheValid(cache.propertyTypes)) {
+      return cache.propertyTypes!.data;
+    }
+
     try {
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -393,7 +452,12 @@ export const lookupsService = {
           Query.limit(100),
         ]
       );
-      return response.documents as unknown as PropertyType[];
+      const data = response.documents as unknown as PropertyType[];
+      
+      // Update cache
+      cache.propertyTypes = { data, timestamp: Date.now() };
+      
+      return data;
     } catch (error) {
       console.error("Error fetching property types:", error);
       throw error;
@@ -449,9 +513,14 @@ export const lookupsService = {
   // ========================================================================
 
   /**
-   * Get all active listing types
+   * Get all active listing types (cached)
    */
   async getListingTypes(): Promise<ListingType[]> {
+    // Return cached data if valid
+    if (isCacheValid(cache.listingTypes)) {
+      return cache.listingTypes!.data;
+    }
+
     try {
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -461,7 +530,12 @@ export const lookupsService = {
           Query.limit(50),
         ]
       );
-      return response.documents as unknown as ListingType[];
+      const data = response.documents as unknown as ListingType[];
+      
+      // Update cache
+      cache.listingTypes = { data, timestamp: Date.now() };
+      
+      return data;
     } catch (error) {
       console.error("Error fetching listing types:", error);
       throw error;
@@ -473,9 +547,14 @@ export const lookupsService = {
   // ========================================================================
 
   /**
-   * Get all active amenities
+   * Get all active amenities (cached)
    */
   async getAmenities(): Promise<Amenity[]> {
+    // Return cached data if valid
+    if (isCacheValid(cache.amenities)) {
+      return cache.amenities!.data;
+    }
+
     try {
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -486,7 +565,12 @@ export const lookupsService = {
           Query.limit(200),
         ]
       );
-      return response.documents as unknown as Amenity[];
+      const data = response.documents as unknown as Amenity[];
+      
+      // Update cache
+      cache.amenities = { data, timestamp: Date.now() };
+      
+      return data;
     } catch (error) {
       console.error("Error fetching amenities:", error);
       throw error;

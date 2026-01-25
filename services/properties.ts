@@ -338,7 +338,7 @@ export const propertiesService = {
   },
 
   /**
-   * Get property count by city ID
+   * Get property count by city ID - optimized with select
    */
   async getCountByCity(cityId: string): Promise<number> {
     try {
@@ -349,6 +349,7 @@ export const propertiesService = {
           Query.equal("city_id", cityId),
           Query.equal("is_active", true),
           Query.equal("is_published", true),
+          Query.select(["$id"]),
           Query.limit(1),
         ]
       );
@@ -360,16 +361,38 @@ export const propertiesService = {
   },
 
   /**
-   * Get property counts for multiple cities
+   * Get property counts for multiple cities - optimized single query
    */
   async getCountsByCities(cityIds: string[]): Promise<Record<string, number>> {
     try {
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        cityIds.map(async (cityId) => {
-          counts[cityId] = await this.getCountByCity(cityId);
-        })
+      if (cityIds.length === 0) return {};
+
+      // Single query to get all properties with city_id in the list
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        [
+          Query.equal("city_id", cityIds),
+          Query.equal("is_active", true),
+          Query.equal("is_published", true),
+          Query.select(["$id", "city_id"]),
+          Query.limit(5000), // Increase limit to get more accurate counts
+        ]
       );
+
+      // Count properties per city using reduce
+      const counts = cityIds.reduce((acc, cityId) => {
+        acc[cityId] = 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      response.documents.forEach((doc) => {
+        const cityId = (doc as unknown as { city_id: string }).city_id;
+        if (cityId && counts.hasOwnProperty(cityId)) {
+          counts[cityId]++;
+        }
+      });
+
       return counts;
     } catch (error) {
       console.error("Error getting property counts by cities:", error);

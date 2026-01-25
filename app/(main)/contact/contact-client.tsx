@@ -31,7 +31,10 @@ import {
     SparklesIcon,
     Zap,
     Video,
+    Loader2,
 } from "lucide-react";
+import { contactService } from "@/services/contact";
+import { toast } from "sonner";
 
 const contactMethods = [
     {
@@ -143,10 +146,29 @@ export default function ContactPageClient() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate form submission
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setIsSubmitting(false);
-        setIsSubmitted(true);
+
+        try {
+            await contactService.createInquiry({
+                name: `${formData.firstName} ${formData.lastName}`.trim(),
+                email: formData.email,
+                phone: formData.phone || undefined,
+                subject: formData.subject || undefined,
+                message: formData.message,
+                inquiry_type: "general",
+            });
+
+            setIsSubmitted(true);
+            toast.success("Message sent successfully!", {
+                description: "We'll get back to you within 24 hours.",
+            });
+        } catch (error) {
+            console.error("Error submitting contact form:", error);
+            toast.error("Failed to send message", {
+                description: error instanceof Error ? error.message : "Please try again later.",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleChange = (
@@ -196,8 +218,8 @@ export default function ContactPageClient() {
                             <Card
                                 key={method.title}
                                 className={`p-6 bg-white border shadow-none hover:-translate-y-1 transition-all duration-300 relative overflow-hidden ${'featured' in method && method.featured
-                                        ? 'border-violet-200 ring-2 ring-violet-100'
-                                        : 'border-border'
+                                    ? 'border-violet-200 ring-2 ring-violet-100'
+                                    : 'border-border'
                                     }`}
                             >
                                 {'featured' in method && method.featured && (
@@ -205,8 +227,8 @@ export default function ContactPageClient() {
                                 )}
                                 <div className="flex flex-col items-center text-center">
                                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${'featured' in method && method.featured
-                                            ? 'bg-gradient-to-br from-violet-500 to-blue-600'
-                                            : 'bg-secondary'
+                                        ? 'bg-gradient-to-br from-violet-500 to-blue-600'
+                                        : 'bg-secondary'
                                         }`}>
                                         <method.icon className={`h-7 w-7 ${'featured' in method && method.featured ? 'text-white' : 'text-primary'
                                             }`} />
@@ -229,8 +251,8 @@ export default function ContactPageClient() {
                                     <Button
                                         variant={'featured' in method && method.featured ? "default" : "outline"}
                                         className={`rounded-full ${'featured' in method && method.featured
-                                                ? 'bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700'
-                                                : ''
+                                            ? 'bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700'
+                                            : ''
                                             }`}
                                         asChild
                                     >

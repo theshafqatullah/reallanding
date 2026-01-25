@@ -22,6 +22,8 @@ import { propertyReviewsService, type CreatePropertyReviewData } from "@/service
 import { usersService } from "@/services/users";
 import { useAuth } from "@/store/auth";
 import { PropertyInquiryDialog } from "@/components/shared/property-inquiry-dialog";
+import { ScheduleViewingDialog } from "@/components/shared/schedule-viewing-dialog";
+import { ReportListingDialog } from "@/components/shared/report-listing-dialog";
 import { toast } from "sonner";
 import {
   Bed,
@@ -1278,15 +1280,28 @@ export default function PropertyDetailClient() {
                   </Button>
                 </div>
 
-                <Button className="w-full h-12" size="lg">
-                  <Calendar className="mr-2 h-5 w-5" />
-                  Schedule a Visit
-                </Button>
+                <ScheduleViewingDialog
+                  propertyId={property.$id}
+                  propertyTitle={property.title}
+                  agentId={property.agent_id || property.owner_id || undefined}
+                  trigger={
+                    <Button className="w-full h-12" size="lg">
+                      <Calendar className="mr-2 h-5 w-5" />
+                      Schedule a Visit
+                    </Button>
+                  }
+                />
 
-                <Button variant="outline" className="w-full gap-2">
-                  <Flag className="h-4 w-4" />
-                  Report Listing
-                </Button>
+                <ReportListingDialog
+                  propertyId={property.$id}
+                  propertyTitle={property.title}
+                  trigger={
+                    <Button variant="outline" className="w-full gap-2">
+                      <Flag className="h-4 w-4" />
+                      Report Listing
+                    </Button>
+                  }
+                />
               </CardContent>
             </Card>
 

@@ -44,18 +44,22 @@ export interface DailyAnalytics {
  */
 export const analyticsService = {
   /**
-   * Get analytics overview for a user
+   * Get analytics overview for a user - optimized with select fields
    */
   async getUserAnalyticsOverview(
     userId: string,
     timeRange?: AnalyticsTimeRange
   ): Promise<UserAnalyticsOverview> {
     try {
-      // Get user's properties
+      // Get user's properties - only fetch needed fields for performance
       const propertiesResponse = await databases.listDocuments(
         DATABASE_ID,
         PROPERTIES_COLLECTION_ID,
-        [Query.equal("owner_id", userId), Query.limit(100)]
+        [
+          Query.equal("owner_id", userId),
+          Query.select(["$id", "view_count", "inquiry_count", "favorite_count", "call_count"]),
+          Query.limit(100)
+        ]
       );
 
       if (propertiesResponse.documents.length === 0) {
@@ -72,33 +76,30 @@ export const analyticsService = {
       }
 
       const properties = propertiesResponse.documents as unknown as Properties[];
-      const propertyIds = properties.map((p) => p.$id);
 
-      // Calculate totals from properties
-      let totalViews = 0;
-      let totalInquiries = 0;
-      let totalSaves = 0;
-      let totalCalls = 0;
-
-      properties.forEach((property) => {
-        totalViews += property.view_count || 0;
-        totalInquiries += property.inquiry_count || 0;
-        totalSaves += property.favorite_count || 0;
-        totalCalls += property.call_count || 0;
-      });
+      // Calculate totals from properties using reduce for efficiency
+      const totals = properties.reduce(
+        (acc, property) => ({
+          views: acc.views + (property.view_count || 0),
+          inquiries: acc.inquiries + (property.inquiry_count || 0),
+          saves: acc.saves + (property.favorite_count || 0),
+          calls: acc.calls + (property.call_count || 0),
+        }),
+        { views: 0, inquiries: 0, saves: 0, calls: 0 }
+      );
 
       // For trend calculation, we'd need historical data
       // For now, return simulated trends based on recent activity
-      const viewsTrend = this.calculateTrend(totalViews);
-      const inquiriesTrend = this.calculateTrend(totalInquiries);
-      const savesTrend = this.calculateTrend(totalSaves);
-      const callsTrend = this.calculateTrend(totalCalls);
+      const viewsTrend = this.calculateTrend(totals.views);
+      const inquiriesTrend = this.calculateTrend(totals.inquiries);
+      const savesTrend = this.calculateTrend(totals.saves);
+      const callsTrend = this.calculateTrend(totals.calls);
 
       return {
-        totalViews,
-        totalInquiries,
-        totalSaves,
-        totalCalls,
+        totalViews: totals.views,
+        totalInquiries: totals.inquiries,
+        totalSaves: totals.saves,
+        totalCalls: totals.calls,
         viewsTrend,
         inquiriesTrend,
         savesTrend,
