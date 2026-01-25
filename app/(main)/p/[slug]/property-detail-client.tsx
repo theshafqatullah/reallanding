@@ -4,14 +4,22 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { databases } from "@/services/appwrite";
 import { Query } from "appwrite";
-import type { Properties, UserSavedProperties } from "@/types/appwrite";
+import type { Properties, UserSavedProperties, PropertyReviews } from "@/types/appwrite";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { savedPropertiesService } from "@/services/saved-properties";
+import { propertyReviewsService, type CreatePropertyReviewData } from "@/services/property-reviews";
+import { usersService } from "@/services/users";
 import { useAuth } from "@/store/auth";
 import { PropertyInquiryDialog } from "@/components/shared/property-inquiry-dialog";
 import { toast } from "sonner";
@@ -58,6 +66,9 @@ import {
   Flag,
   Calculator,
   TrendingUp,
+  ThumbsUp,
+  PenLine,
+  MessageSquareText,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -79,6 +90,24 @@ export default function PropertyDetailClient() {
   const [showGallery, setShowGallery] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [savingProperty, setSavingProperty] = useState(false);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<PropertyReviews[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState<{
+    totalReviews: number;
+    averageRating: number;
+    ratingDistribution: Record<number, number>;
+    verifiedBuyerCount: number;
+  }>({
+    totalReviews: 0,
+    averageRating: 0,
+    ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    verifiedBuyerCount: 0,
+  });
+  const [userExistingReview, setUserExistingReview] = useState<PropertyReviews | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [currentUserProfile, setCurrentUserProfile] = useState<{ first_name?: string; last_name?: string; email?: string } | null>(null);
 
   // Fetch similar properties
   const fetchSimilarProperties = useCallback(async (prop: Properties) => {
@@ -171,6 +200,88 @@ export default function PropertyDetailClient() {
     };
     checkIfSaved();
   }, [user, property]);
+
+  // Fetch reviews for the property
+  const fetchReviews = useCallback(async () => {
+    if (!property?.$id) return;
+
+    setReviewsLoading(true);
+    try {
+      const [reviewsResult, statsResult] = await Promise.all([
+        propertyReviewsService.getPropertyReviews(property.$id, { limit: 50 }),
+        propertyReviewsService.getPropertyReviewStats(property.$id),
+      ]);
+
+      setReviews(reviewsResult.reviews);
+      setReviewStats(statsResult);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [property?.$id]);
+
+  // Check if user has existing review
+  const checkExistingReview = useCallback(async () => {
+    if (!user?.$id || !property?.$id) return;
+
+    try {
+      const existingReview = await propertyReviewsService.getUserReviewForProperty(property.$id, user.$id);
+      setUserExistingReview(existingReview);
+    } catch (err) {
+      console.error("Error checking existing review:", err);
+    }
+  }, [user?.$id, property?.$id]);
+
+  // Fetch current user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.$id) return;
+      try {
+        const profile = await usersService.getByUserId(user.$id);
+        if (profile) {
+          setCurrentUserProfile({
+            first_name: profile.first_name || undefined,
+            last_name: profile.last_name || undefined,
+            email: profile.email || undefined,
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      }
+    };
+    fetchUserProfile();
+  }, [user?.$id]);
+
+  // Fetch reviews when property loads
+  useEffect(() => {
+    if (property?.$id) {
+      fetchReviews();
+      checkExistingReview();
+    }
+  }, [property?.$id, fetchReviews, checkExistingReview]);
+
+  // Handle helpful click
+  const handleHelpfulClick = async (reviewId: string) => {
+    try {
+      await propertyReviewsService.markHelpful(reviewId);
+      setReviews(prev => prev.map(r =>
+        r.$id === reviewId
+          ? { ...r, helpful_count: (r.helpful_count || 0) + 1 }
+          : r
+      ));
+      toast.success("Marked as helpful");
+    } catch (err) {
+      console.error("Error marking helpful:", err);
+      toast.error("Failed to mark as helpful");
+    }
+  };
+
+  // Handle review submitted
+  const handleReviewSubmitted = () => {
+    fetchReviews();
+    checkExistingReview();
+  };
 
   // Handle save toggle
   const handleSaveToggle = async () => {
@@ -662,6 +773,12 @@ export default function PropertyDetailClient() {
                 >
                   Pricing
                 </TabsTrigger>
+                <TabsTrigger
+                  value="reviews"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                >
+                  Reviews {reviewStats.totalReviews > 0 && `(${reviewStats.totalReviews})`}
+                </TabsTrigger>
               </TabsList>
 
               {/* Overview Tab */}
@@ -942,6 +1059,145 @@ export default function PropertyDetailClient() {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {/* Reviews Tab */}
+              <TabsContent value="reviews" className="space-y-6 pt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MessageSquareText className="h-5 w-5 text-primary" />
+                        Reviews & Ratings
+                      </div>
+                      {user && (
+                        <WritePropertyReviewDialog
+                          propertyId={property.$id}
+                          propertyTitle={property.title}
+                          existingReview={userExistingReview}
+                          onReviewSubmitted={handleReviewSubmitted}
+                          currentUser={{
+                            id: user.$id,
+                            email: user.email || currentUserProfile?.email || "",
+                            name: currentUserProfile?.first_name && currentUserProfile?.last_name
+                              ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+                              : user.name || user.email?.split("@")[0] || "User",
+                          }}
+                        />
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Rating Summary */}
+                    {reviewStats.totalReviews > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Overall Rating */}
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <div className="text-5xl font-bold text-foreground">
+                              {reviewStats.averageRating.toFixed(1)}
+                            </div>
+                            <div className="flex items-center justify-center gap-1 mt-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-4 w-4 ${star <= Math.round(reviewStats.averageRating)
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-muted-foreground"
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Rating Distribution */}
+                        <div className="space-y-2">
+                          {[5, 4, 3, 2, 1].map((rating) => {
+                            const count = reviewStats.ratingDistribution[rating] || 0;
+                            const percentage = reviewStats.totalReviews > 0
+                              ? (count / reviewStats.totalReviews) * 100
+                              : 0;
+                            return (
+                              <div key={rating} className="flex items-center gap-2">
+                                <span className="text-sm w-3">{rating}</span>
+                                <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                                <Progress value={percentage} className="h-2 flex-1" />
+                                <span className="text-sm text-muted-foreground w-8">
+                                  {count}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageSquareText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="font-semibold text-lg mb-2">No Reviews Yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                          Be the first to share your thoughts about this property.
+                        </p>
+                        {!user && (
+                          <Button variant="outline" asChild>
+                            <Link href={`/signin?redirect=/p/${slug}`}>Sign in to write a review</Link>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {reviewStats.verifiedBuyerCount > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 p-3 rounded-lg">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>{reviewStats.verifiedBuyerCount} verified buyer review{reviewStats.verifiedBuyerCount !== 1 ? "s" : ""}</span>
+                      </div>
+                    )}
+
+                    {/* Reviews List */}
+                    {reviewsLoading ? (
+                      <div className="space-y-4">
+                        {[1, 2].map((i) => (
+                          <Skeleton key={i} className="h-32 w-full" />
+                        ))}
+                      </div>
+                    ) : reviews.length > 0 ? (
+                      <div className="space-y-4">
+                        {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
+                          <PropertyReviewCard
+                            key={review.$id}
+                            review={review}
+                            onHelpfulClick={handleHelpfulClick}
+                            isOwn={review.reviewer_id === user?.$id}
+                          />
+                        ))}
+                        {reviews.length > 3 && !showAllReviews && (
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => setShowAllReviews(true)}
+                          >
+                            Show All {reviews.length} Reviews
+                          </Button>
+                        )}
+                      </div>
+                    ) : null}
+
+                    {/* Write Review CTA for non-logged in users */}
+                    {!user && reviewStats.totalReviews > 0 && (
+                      <div className="pt-4 border-t">
+                        <p className="text-muted-foreground text-center">
+                          <Link href={`/signin?redirect=/p/${slug}`} className="text-primary hover:underline">
+                            Sign in
+                          </Link>{" "}
+                          to write a review
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
 
@@ -1137,5 +1393,410 @@ function FeatureBadge({ icon: Icon, label }: { icon: React.ElementType; label: s
       <Icon className="h-4 w-4 text-primary" />
       <span className="text-sm text-foreground">{label}</span>
     </div>
+  );
+}
+
+// Star Rating Component
+function StarRating({
+  rating,
+  onRatingChange,
+  readonly = false,
+  size = "default",
+}: {
+  rating: number;
+  onRatingChange?: (rating: number) => void;
+  readonly?: boolean;
+  size?: "sm" | "default" | "lg";
+}) {
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const sizeClasses = {
+    sm: "h-4 w-4",
+    default: "h-5 w-5",
+    lg: "h-6 w-6",
+  };
+
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={() => onRatingChange?.(star)}
+          onMouseEnter={() => !readonly && setHoverRating(star)}
+          onMouseLeave={() => !readonly && setHoverRating(0)}
+          className={`${readonly ? "cursor-default" : "cursor-pointer"} transition-colors`}
+        >
+          <Star
+            className={`${sizeClasses[size]} ${star <= (hoverRating || rating)
+              ? "text-yellow-400 fill-yellow-400"
+              : "text-muted-foreground"
+              }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Property Review Card Component
+function PropertyReviewCard({
+  review,
+  onHelpfulClick,
+  isOwn,
+}: {
+  review: PropertyReviews;
+  onHelpfulClick: (reviewId: string) => void;
+  isOwn: boolean;
+}) {
+  const initials = review.reviewer_name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase() || "U";
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  return (
+    <div className="border rounded-lg p-4 space-y-3">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-primary/10 text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="font-medium text-foreground">{review.reviewer_name}</p>
+              {review.is_verified_buyer && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Verified Buyer
+                </Badge>
+              )}
+              {isOwn && (
+                <Badge variant="outline" className="text-xs">
+                  Your Review
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {formatDate(review.$createdAt)}
+            </p>
+          </div>
+        </div>
+        <StarRating rating={review.rating} readonly size="sm" />
+      </div>
+
+      {review.title && (
+        <h4 className="font-medium text-foreground">{review.title}</h4>
+      )}
+
+      {review.review_text && (
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          {review.review_text}
+        </p>
+      )}
+
+      {(review.pros || review.cons) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          {review.pros && (
+            <div className="space-y-1">
+              <p className="font-medium text-green-600">Pros</p>
+              <p className="text-muted-foreground">{review.pros}</p>
+            </div>
+          )}
+          {review.cons && (
+            <div className="space-y-1">
+              <p className="font-medium text-red-600">Cons</p>
+              <p className="text-muted-foreground">{review.cons}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(review.admin_response || review.response_text) && (
+        <div className="mt-3 p-3 bg-muted rounded-lg">
+          <p className="text-sm font-medium text-foreground mb-1">Response from Property Manager</p>
+          <p className="text-sm text-muted-foreground">
+            {review.admin_response || review.response_text}
+          </p>
+          {review.response_date && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {formatDate(review.response_date)}
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-2 border-t">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground"
+          onClick={() => onHelpfulClick(review.$id)}
+        >
+          <ThumbsUp className="h-4 w-4 mr-1" />
+          Helpful {review.helpful_count > 0 && `(${review.helpful_count})`}
+        </Button>
+        {review.review_type && review.review_type !== "general" && (
+          <Badge variant="outline" className="text-xs capitalize">
+            {review.review_type}
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Write Property Review Dialog Component
+function WritePropertyReviewDialog({
+  propertyId,
+  propertyTitle,
+  existingReview,
+  onReviewSubmitted,
+  currentUser,
+}: {
+  propertyId: string;
+  propertyTitle: string;
+  existingReview: PropertyReviews | null;
+  onReviewSubmitted: () => void;
+  currentUser: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}) {
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(existingReview?.rating || 0);
+  const [title, setTitle] = useState(existingReview?.title || "");
+  const [reviewText, setReviewText] = useState(existingReview?.review_text || "");
+  const [pros, setPros] = useState(existingReview?.pros || "");
+  const [cons, setCons] = useState(existingReview?.cons || "");
+  const [submitting, setSubmitting] = useState(false);
+  const [checkingExisting, setCheckingExisting] = useState(false);
+  const [serverExistingReview, setServerExistingReview] = useState<PropertyReviews | null>(existingReview);
+
+  // Sync existingReview prop to local state
+  useEffect(() => {
+    setServerExistingReview(existingReview);
+  }, [existingReview]);
+
+  // Reset form when dialog opens and verify existing review
+  useEffect(() => {
+    const verifyAndLoadReview = async () => {
+      if (open) {
+        setCheckingExisting(true);
+        try {
+          // Double-check with server if user has already reviewed
+          const serverReview = await propertyReviewsService.getUserReviewForProperty(propertyId, currentUser.id);
+          setServerExistingReview(serverReview);
+
+          // Set form values based on server response
+          if (serverReview) {
+            setRating(serverReview.rating || 0);
+            setTitle(serverReview.title || "");
+            setReviewText(serverReview.review_text || "");
+            setPros(serverReview.pros || "");
+            setCons(serverReview.cons || "");
+          } else {
+            setRating(0);
+            setTitle("");
+            setReviewText("");
+            setPros("");
+            setCons("");
+          }
+        } catch (err) {
+          console.error("Error verifying existing review:", err);
+          // Fall back to prop values
+          setRating(existingReview?.rating || 0);
+          setTitle(existingReview?.title || "");
+          setReviewText(existingReview?.review_text || "");
+          setPros(existingReview?.pros || "");
+          setCons(existingReview?.cons || "");
+        } finally {
+          setCheckingExisting(false);
+        }
+      }
+    };
+
+    verifyAndLoadReview();
+  }, [open, propertyId, currentUser.id, existingReview]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+    if (!title.trim()) {
+      toast.error("Please enter a review title");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Final server-side check before creating new review
+      if (!serverExistingReview) {
+        const hasReview = await propertyReviewsService.hasUserReviewedProperty(propertyId, currentUser.id);
+        if (hasReview) {
+          toast.error("You have already reviewed this property. Please refresh to edit your existing review.");
+          setOpen(false);
+          onReviewSubmitted(); // Refresh to show the existing review
+          return;
+        }
+      }
+
+      const reviewData: CreatePropertyReviewData = {
+        property_id: propertyId,
+        reviewer_id: currentUser.id,
+        reviewer_email: currentUser.email,
+        reviewer_name: currentUser.name,
+        title: title.trim(),
+        review_text: reviewText.trim() || null,
+        rating,
+        pros: pros.trim() || undefined,
+        cons: cons.trim() || undefined,
+      };
+
+      if (serverExistingReview) {
+        await propertyReviewsService.update(serverExistingReview.$id, reviewData);
+        toast.success("Review updated successfully!");
+      } else {
+        await propertyReviewsService.create(reviewData);
+        toast.success("Review submitted successfully! It will be visible after moderation.");
+      }
+
+      setOpen(false);
+      onReviewSubmitted();
+    } catch (error: unknown) {
+      console.error("Error submitting review:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit review";
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant={existingReview ? "outline" : "default"} size="sm" className="gap-2">
+          <PenLine className="h-4 w-4" />
+          {existingReview ? "Edit Review" : "Write Review"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {serverExistingReview ? "Edit Your Review" : "Write a Review"}
+          </DialogTitle>
+          <DialogDescription>
+            Share your experience with {propertyTitle}
+          </DialogDescription>
+        </DialogHeader>
+
+        {checkingExisting ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center space-y-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="text-sm text-muted-foreground">Checking review status...</p>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {serverExistingReview && (
+              <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                <CheckCircle className="h-4 w-4" />
+                <span>You have already reviewed this property. You can update your review below.</span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Your Rating *</Label>
+              <StarRating rating={rating} onRatingChange={setRating} size="lg" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="title">Review Title *</Label>
+              <Input
+                id="title"
+                placeholder="Summarize your experience"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="review">Your Review</Label>
+              <Textarea
+                id="review"
+                placeholder="Share details of your experience with this property..."
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={4}
+                maxLength={2000}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="pros" className="text-green-600">
+                  Pros (Optional)
+                </Label>
+                <Textarea
+                  id="pros"
+                  placeholder="What did you like?"
+                  value={pros}
+                  onChange={(e) => setPros(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cons" className="text-red-600">
+                  Cons (Optional)
+                </Label>
+                <Textarea
+                  id="cons"
+                  placeholder="What could be better?"
+                  value={cons}
+                  onChange={(e) => setCons(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting
+                  ? "Submitting..."
+                  : serverExistingReview
+                    ? "Update Review"
+                    : "Submit Review"}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

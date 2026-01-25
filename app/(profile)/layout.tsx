@@ -30,6 +30,7 @@ import {
   PlusIcon,
   Inbox,
   FileCheck,
+  Megaphone,
 } from "lucide-react";
 
 interface NavItem {
@@ -75,6 +76,12 @@ const navItems: NavItem[] = [
     href: "/analytics",
     icon: BarChart3,
     description: "Views and performance",
+  },
+  {
+    title: "Ads & Promotions",
+    href: "/ads",
+    icon: Megaphone,
+    description: "Boost your listings",
   },
   {
     title: "KYC Verification",

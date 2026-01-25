@@ -238,7 +238,7 @@ export default function SavedPropertiesClient() {
     // Not authenticated
     if (!isAuthenticated) {
         return (
-            <div className="container mx-auto max-w-4xl px-4 py-16">
+            <div className="container mx-auto max-w-7xl px-4 py-16">
                 <div className="text-center">
                     <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
                         <Heart className="h-12 w-12 text-primary" />
@@ -271,7 +271,7 @@ export default function SavedPropertiesClient() {
 
     return (
         <div className="min-h-screen bg-gray-50/50">
-            <div className="container mx-auto max-w-6xl px-4 py-8">
+            <div className="container mx-auto max-w-7xl px-4 py-8">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

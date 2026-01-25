@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     CalendarIcon,
     UserIcon,
@@ -25,8 +26,11 @@ import {
     ChevronLeftIcon,
     ChevronRightIcon,
 } from "lucide-react";
+import { blogsService } from "@/services/blogs";
+import type { BlogPosts, Category } from "@/types/appwrite";
 
-const featuredPost = {
+// Mock data for fallback
+const mockFeaturedPost = {
     id: 1,
     title: "2026 Real Estate Market Trends: What Buyers and Sellers Need to Know",
     excerpt:
@@ -42,7 +46,7 @@ const featuredPost = {
     image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=500&fit=crop",
 };
 
-const blogPosts = [
+const mockBlogPosts = [
     {
         id: 2,
         title: "First-Time Homebuyer's Complete Guide for 2026",
@@ -149,15 +153,15 @@ const blogPosts = [
     },
 ];
 
-const categories = [
+const mockCategories = [
     { name: "All Posts", count: 45, icon: BookOpenIcon, slug: "all" },
-    { name: "Market Analysis", count: 12, icon: TrendingUpIcon, slug: "market" },
-    { name: "Buying Tips", count: 18, icon: KeyIcon, slug: "buying" },
-    { name: "Selling Tips", count: 15, icon: DollarSignIcon, slug: "selling" },
+    { name: "Market Analysis", count: 12, icon: TrendingUpIcon, slug: "market_analysis" },
+    { name: "Buying Tips", count: 18, icon: KeyIcon, slug: "buying_tips" },
+    { name: "Selling Tips", count: 15, icon: DollarSignIcon, slug: "selling_tips" },
     { name: "Investment", count: 9, icon: TrendingUpIcon, slug: "investment" },
     { name: "Financing", count: 7, icon: DollarSignIcon, slug: "financing" },
     { name: "Luxury", count: 5, icon: SparklesIcon, slug: "luxury" },
-    { name: "Property Management", count: 8, icon: BuildingIcon, slug: "management" },
+    { name: "Property Management", count: 8, icon: BuildingIcon, slug: "property_management" },
 ];
 
 const popularTags = [
@@ -171,9 +175,103 @@ const popularTags = [
     "Real Estate Tips",
 ];
 
+// Helper function to format category name
+const formatCategoryName = (category: string | undefined) => {
+    if (!category) return "Article";
+    return category.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+};
+
+// Helper function to format date
+const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "Recent";
+    return new Date(dateStr).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+    });
+};
+
 export default function BlogPageClient() {
     const [activeCategory, setActiveCategory] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [blogPosts, setBlogPosts] = useState<BlogPosts[]>([]);
+    const [featuredPost, setFeaturedPost] = useState<BlogPosts | null>(null);
+    const [popularPosts, setPopularPosts] = useState<BlogPosts[]>([]);
+    const [categories, setCategories] = useState(mockCategories);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPosts, setTotalPosts] = useState(0);
+    const postsPerPage = 8;
+
+    // Fetch blog posts
+    useEffect(() => {
+        const fetchBlogs = async () => {
+            setLoading(true);
+            try {
+                // Fetch featured post
+                const featuredResult = await blogsService.getFeatured(1);
+                if (featuredResult.length > 0) {
+                    setFeaturedPost(featuredResult[0]);
+                }
+
+                // Fetch blog posts based on category
+                let postsResult;
+                if (activeCategory === "all") {
+                    postsResult = await blogsService.getPublished({
+                        limit: postsPerPage,
+                        offset: (currentPage - 1) * postsPerPage
+                    });
+                } else {
+                    postsResult = await blogsService.getByCategory(activeCategory as Category, {
+                        limit: postsPerPage,
+                        offset: (currentPage - 1) * postsPerPage
+                    });
+                }
+                setBlogPosts(postsResult.posts);
+                setTotalPosts(postsResult.total);
+
+                // Fetch popular posts for sidebar
+                const popularResult = await blogsService.getPopular(4);
+                setPopularPosts(popularResult);
+
+                // Fetch category counts
+                const categoryCounts = await blogsService.getCategoryCounts();
+                const totalCount = categoryCounts.reduce((sum, item) => sum + item.count, 0);
+
+                const updatedCategories = mockCategories.map(cat => {
+                    if (cat.slug === "all") {
+                        return { ...cat, count: totalCount };
+                    }
+                    const categoryData = categoryCounts.find(c => c.category === cat.slug);
+                    return { ...cat, count: categoryData?.count || 0 };
+                });
+                setCategories(updatedCategories);
+            } catch (error) {
+                console.error("Error fetching blogs:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBlogs();
+    }, [activeCategory, currentPage]);
+
+    // Handle search
+    const handleSearch = async () => {
+        if (!searchQuery.trim()) return;
+        setLoading(true);
+        try {
+            const result = await blogsService.search(searchQuery);
+            setBlogPosts(result.posts);
+            setTotalPosts(result.total);
+        } catch (error) {
+            console.error("Error searching blogs:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const totalPages = Math.ceil(totalPosts / postsPerPage);
 
     return (
         <div className="min-h-screen bg-background">
@@ -213,9 +311,13 @@ export default function BlogPageClient() {
                                     placeholder="Search articles..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                                     className="w-full pl-12 pr-4 py-6 rounded-full bg-white text-foreground border-0 shadow-none"
                                 />
-                                <Button className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-6">
+                                <Button
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-6"
+                                    onClick={handleSearch}
+                                >
                                     Search
                                 </Button>
                             </div>
@@ -258,57 +360,132 @@ export default function BlogPageClient() {
                         <h2 className="text-2xl font-bold text-foreground">Featured Article</h2>
                     </div>
 
-                    <Card className="overflow-hidden border border-border shadow-none p-0 gap-0">
-                        <div className="grid grid-cols-1 lg:grid-cols-2">
-                            <div className="relative h-64 lg:h-auto overflow-hidden">
-                                <Image
-                                    src={featuredPost.image}
-                                    alt={featuredPost.title}
-                                    fill
-                                    className="object-cover"
-                                />
-                                <Badge className="absolute top-4 left-4 bg-primary">
-                                    {featuredPost.category}
-                                </Badge>
+                    {loading ? (
+                        <Card className="overflow-hidden border border-border shadow-none p-0 gap-0">
+                            <div className="grid grid-cols-1 lg:grid-cols-2">
+                                <Skeleton className="h-64 lg:h-80 w-full" />
+                                <div className="p-8 lg:p-10 space-y-4">
+                                    <Skeleton className="h-8 w-3/4" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-2/3" />
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton className="h-12 w-12 rounded-full" />
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-4 w-24" />
+                                            <Skeleton className="h-3 w-20" />
+                                        </div>
+                                    </div>
+                                    <Skeleton className="h-10 w-40 rounded-full" />
+                                </div>
                             </div>
-                            <div className="p-8 lg:p-10 flex flex-col justify-center">
-                                <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4 leading-tight">
-                                    {featuredPost.title}
-                                </h2>
-                                <p className="text-muted-foreground mb-6 text-lg">{featuredPost.excerpt}</p>
-
-                                <div className="flex items-center gap-4 mb-6">
+                        </Card>
+                    ) : featuredPost ? (
+                        <Card className="overflow-hidden border border-border shadow-none p-0 gap-0">
+                            <div className="grid grid-cols-1 lg:grid-cols-2">
+                                <div className="relative h-64 lg:h-auto overflow-hidden">
                                     <Image
-                                        src={featuredPost.author.avatar}
-                                        alt={featuredPost.author.name}
-                                        width={48}
-                                        height={48}
-                                        className="rounded-full"
+                                        src={featuredPost.featured_image || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=500&fit=crop"}
+                                        alt={featuredPost.title}
+                                        fill
+                                        className="object-cover"
                                     />
-                                    <div>
-                                        <div className="font-medium text-foreground">{featuredPost.author.name}</div>
-                                        <div className="text-sm text-muted-foreground">{featuredPost.author.role}</div>
-                                    </div>
+                                    <Badge className="absolute top-4 left-4 bg-primary">
+                                        {formatCategoryName(featuredPost.category)}
+                                    </Badge>
                                 </div>
+                                <div className="p-8 lg:p-10 flex flex-col justify-center">
+                                    <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4 leading-tight">
+                                        {featuredPost.title}
+                                    </h2>
+                                    <p className="text-muted-foreground mb-6 text-lg">{featuredPost.excerpt}</p>
 
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
-                                    <div className="flex items-center gap-1">
-                                        <CalendarIcon className="h-4 w-4" />
-                                        <span>{featuredPost.date}</span>
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <Image
+                                            src={featuredPost.author_avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"}
+                                            alt={featuredPost.author_name || "Author"}
+                                            width={48}
+                                            height={48}
+                                            className="rounded-full"
+                                        />
+                                        <div>
+                                            <div className="font-medium text-foreground">{featuredPost.author_name || "Real Landing Team"}</div>
+                                            <div className="text-sm text-muted-foreground">Content Writer</div>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <ClockIcon className="h-4 w-4" />
-                                        <span>{featuredPost.readTime}</span>
+
+                                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
+                                        <div className="flex items-center gap-1">
+                                            <CalendarIcon className="h-4 w-4" />
+                                            <span>{formatDate(featuredPost.published_at)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <ClockIcon className="h-4 w-4" />
+                                            <span>{featuredPost.reading_time ? `${featuredPost.reading_time} min read` : "5 min read"}</span>
+                                        </div>
                                     </div>
+
+                                    <Link href={`/blogs/${featuredPost.slug || featuredPost.$id}`}>
+                                        <Button className="rounded-full self-start px-6">
+                                            Read Full Article
+                                            <ArrowRightIcon className="h-4 w-4 ml-2" />
+                                        </Button>
+                                    </Link>
                                 </div>
-
-                                <Button className="rounded-full self-start px-6">
-                                    Read Full Article
-                                    <ArrowRightIcon className="h-4 w-4 ml-2" />
-                                </Button>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    ) : (
+                        <Card className="overflow-hidden border border-border shadow-none p-0 gap-0">
+                            <div className="grid grid-cols-1 lg:grid-cols-2">
+                                <div className="relative h-64 lg:h-auto overflow-hidden">
+                                    <Image
+                                        src={mockFeaturedPost.image}
+                                        alt={mockFeaturedPost.title}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                    <Badge className="absolute top-4 left-4 bg-primary">
+                                        {mockFeaturedPost.category}
+                                    </Badge>
+                                </div>
+                                <div className="p-8 lg:p-10 flex flex-col justify-center">
+                                    <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4 leading-tight">
+                                        {mockFeaturedPost.title}
+                                    </h2>
+                                    <p className="text-muted-foreground mb-6 text-lg">{mockFeaturedPost.excerpt}</p>
+
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <Image
+                                            src={mockFeaturedPost.author.avatar}
+                                            alt={mockFeaturedPost.author.name}
+                                            width={48}
+                                            height={48}
+                                            className="rounded-full"
+                                        />
+                                        <div>
+                                            <div className="font-medium text-foreground">{mockFeaturedPost.author.name}</div>
+                                            <div className="text-sm text-muted-foreground">{mockFeaturedPost.author.role}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
+                                        <div className="flex items-center gap-1">
+                                            <CalendarIcon className="h-4 w-4" />
+                                            <span>{mockFeaturedPost.date}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <ClockIcon className="h-4 w-4" />
+                                            <span>{mockFeaturedPost.readTime}</span>
+                                        </div>
+                                    </div>
+
+                                    <Button className="rounded-full self-start px-6">
+                                        Read Full Article
+                                        <ArrowRightIcon className="h-4 w-4 ml-2" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </Card>
+                    )}
                 </div>
             </section>
 
@@ -320,79 +497,182 @@ export default function BlogPageClient() {
                         <div className="lg:col-span-2">
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-2xl font-bold text-foreground">Latest Articles</h2>
-                                <p className="text-muted-foreground text-sm">Showing {blogPosts.length} articles</p>
+                                <p className="text-muted-foreground text-sm">
+                                    Showing {blogPosts.length > 0 ? blogPosts.length : mockBlogPosts.length} articles
+                                </p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {blogPosts.map((post) => (
-                                    <Card
-                                        key={post.id}
-                                        className="overflow-hidden border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group p-0 gap-0"
-                                    >
-                                        <div className="relative h-48 overflow-hidden">
-                                            <Image
-                                                src={post.image}
-                                                alt={post.title}
-                                                fill
-                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                            <Badge className="absolute top-3 left-3 bg-primary/90">{post.category}</Badge>
-                                        </div>
-                                        <div className="p-5">
-                                            <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                                                {post.title}
-                                            </h3>
-                                            <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{post.excerpt}</p>
-
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <Image
-                                                    src={post.author.avatar}
-                                                    alt={post.author.name}
-                                                    width={32}
-                                                    height={32}
-                                                    className="rounded-full"
-                                                />
-                                                <div className="flex-1">
-                                                    <div className="text-sm font-medium text-foreground">{post.author.name}</div>
-                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                        <span>{post.date}</span>
-                                                        <span>•</span>
-                                                        <span>{post.readTime}</span>
+                                {loading ? (
+                                    // Loading skeletons
+                                    Array.from({ length: 6 }).map((_, i) => (
+                                        <Card key={i} className="overflow-hidden border border-border shadow-none p-0 gap-0">
+                                            <Skeleton className="h-48 w-full" />
+                                            <div className="p-5 space-y-3">
+                                                <Skeleton className="h-5 w-full" />
+                                                <Skeleton className="h-4 w-3/4" />
+                                                <div className="flex items-center gap-3">
+                                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                                    <div className="space-y-1 flex-1">
+                                                        <Skeleton className="h-3 w-24" />
+                                                        <Skeleton className="h-3 w-16" />
                                                     </div>
                                                 </div>
+                                                <Skeleton className="h-8 w-full rounded-full" />
                                             </div>
+                                        </Card>
+                                    ))
+                                ) : blogPosts.length > 0 ? (
+                                    blogPosts.map((post) => (
+                                        <Link href={`/blogs/${post.slug || post.$id}`} key={post.$id}>
+                                            <Card
+                                                className="overflow-hidden border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group p-0 gap-0 cursor-pointer h-full"
+                                            >
+                                                <div className="relative h-48 overflow-hidden">
+                                                    <Image
+                                                        src={post.featured_image || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop"}
+                                                        alt={post.title}
+                                                        fill
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    />
+                                                    <Badge className="absolute top-3 left-3 bg-primary/90">
+                                                        {formatCategoryName(post.category)}
+                                                    </Badge>
+                                                </div>
+                                                <div className="p-5">
+                                                    <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                                                        {post.title}
+                                                    </h3>
+                                                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{post.excerpt}</p>
 
-                                            <Button variant="outline" size="sm" className="w-full rounded-full">
-                                                Read More
-                                                <ArrowRightIcon className="h-4 w-4 ml-2" />
-                                            </Button>
-                                        </div>
-                                    </Card>
-                                ))}
+                                                    <div className="flex items-center gap-3 mb-4">
+                                                        <Image
+                                                            src={post.author_avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"}
+                                                            alt={post.author_name || "Author"}
+                                                            width={32}
+                                                            height={32}
+                                                            className="rounded-full"
+                                                        />
+                                                        <div className="flex-1">
+                                                            <div className="text-sm font-medium text-foreground">
+                                                                {post.author_name || "Real Landing Team"}
+                                                            </div>
+                                                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                                <span>{formatDate(post.published_at)}</span>
+                                                                <span>•</span>
+                                                                <span>{post.reading_time ? `${post.reading_time} min read` : "5 min read"}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <Button variant="outline" size="sm" className="w-full rounded-full">
+                                                        Read More
+                                                        <ArrowRightIcon className="h-4 w-4 ml-2" />
+                                                    </Button>
+                                                </div>
+                                            </Card>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    // Fallback to mock data
+                                    mockBlogPosts.map((post) => (
+                                        <Card
+                                            key={post.id}
+                                            className="overflow-hidden border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group p-0 gap-0"
+                                        >
+                                            <div className="relative h-48 overflow-hidden">
+                                                <Image
+                                                    src={post.image}
+                                                    alt={post.title}
+                                                    fill
+                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                                <Badge className="absolute top-3 left-3 bg-primary/90">{post.category}</Badge>
+                                            </div>
+                                            <div className="p-5">
+                                                <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                                                    {post.title}
+                                                </h3>
+                                                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{post.excerpt}</p>
+
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <Image
+                                                        src={post.author.avatar}
+                                                        alt={post.author.name}
+                                                        width={32}
+                                                        height={32}
+                                                        className="rounded-full"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium text-foreground">{post.author.name}</div>
+                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                            <span>{post.date}</span>
+                                                            <span>•</span>
+                                                            <span>{post.readTime}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Button variant="outline" size="sm" className="w-full rounded-full">
+                                                    Read More
+                                                    <ArrowRightIcon className="h-4 w-4 ml-2" />
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    ))
+                                )}
                             </div>
 
                             {/* Pagination */}
-                            <div className="flex items-center justify-center gap-2 mt-10">
-                                <Button variant="outline" size="icon" className="rounded-full">
-                                    <ChevronLeftIcon className="h-4 w-4" />
-                                </Button>
-                                <Button variant="default" size="icon" className="rounded-full">
-                                    1
-                                </Button>
-                                <Button variant="outline" size="icon" className="rounded-full">
-                                    2
-                                </Button>
-                                <Button variant="outline" size="icon" className="rounded-full">
-                                    3
-                                </Button>
-                                <span className="px-2 text-muted-foreground">...</span>
-                                <Button variant="outline" size="icon" className="rounded-full">
-                                    8
-                                </Button>
-                                <Button variant="outline" size="icon" className="rounded-full">
-                                    <ChevronRightIcon className="h-4 w-4" />
-                                </Button>
-                            </div>
+                            {totalPages > 1 && (
+                                <div className="flex items-center justify-center gap-2 mt-10">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="rounded-full"
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(p => p - 1)}
+                                    >
+                                        <ChevronLeftIcon className="h-4 w-4" />
+                                    </Button>
+                                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                                        const pageNum = i + 1;
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={currentPage === pageNum ? "default" : "outline"}
+                                                size="icon"
+                                                className="rounded-full"
+                                                onClick={() => setCurrentPage(pageNum)}
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                    {totalPages > 5 && (
+                                        <>
+                                            <span className="px-2 text-muted-foreground">...</span>
+                                            <Button
+                                                variant={currentPage === totalPages ? "default" : "outline"}
+                                                size="icon"
+                                                className="rounded-full"
+                                                onClick={() => setCurrentPage(totalPages)}
+                                            >
+                                                {totalPages}
+                                            </Button>
+                                        </>
+                                    )}
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="rounded-full"
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(p => p + 1)}
+                                    >
+                                        <ChevronRightIcon className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Sidebar */}
@@ -426,25 +706,63 @@ export default function BlogPageClient() {
                                     Popular Articles
                                 </h3>
                                 <div className="space-y-4">
-                                    {blogPosts.slice(0, 4).map((post, index) => (
-                                        <div
-                                            key={post.id}
-                                            className="flex gap-3 p-2 rounded-lg hover:bg-secondary transition-colors cursor-pointer"
-                                        >
-                                            <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                                                <Image src={post.image} alt={post.title} fill className="object-cover" />
-                                                <div className="absolute inset-0 bg-primary/60 flex items-center justify-center">
-                                                    <span className="text-white font-bold text-lg">{index + 1}</span>
+                                    {loading ? (
+                                        Array.from({ length: 4 }).map((_, i) => (
+                                            <div key={i} className="flex gap-3 p-2">
+                                                <Skeleton className="w-16 h-16 rounded-lg flex-shrink-0" />
+                                                <div className="flex-1 space-y-2">
+                                                    <Skeleton className="h-4 w-full" />
+                                                    <Skeleton className="h-3 w-20" />
                                                 </div>
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
-                                                    {post.title}
-                                                </h4>
-                                                <p className="text-xs text-muted-foreground">{post.date}</p>
+                                        ))
+                                    ) : popularPosts.length > 0 ? (
+                                        popularPosts.map((post, index) => (
+                                            <Link
+                                                href={`/blogs/${post.slug || post.$id}`}
+                                                key={post.$id}
+                                                className="flex gap-3 p-2 rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                            >
+                                                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                                                    <Image
+                                                        src={post.featured_image || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=100&h=100&fit=crop"}
+                                                        alt={post.title}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 bg-primary/60 flex items-center justify-center">
+                                                        <span className="text-white font-bold text-lg">{index + 1}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
+                                                        {post.title}
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground">{formatDate(post.published_at)}</p>
+                                                </div>
+                                            </Link>
+                                        ))
+                                    ) : (
+                                        mockBlogPosts.slice(0, 4).map((post, index) => (
+                                            <div
+                                                key={post.id}
+                                                className="flex gap-3 p-2 rounded-lg hover:bg-secondary transition-colors cursor-pointer"
+                                            >
+                                                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                                                    <Image src={post.image} alt={post.title} fill className="object-cover" />
+                                                    <div className="absolute inset-0 bg-primary/60 flex items-center justify-center">
+                                                        <span className="text-white font-bold text-lg">{index + 1}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
+                                                        {post.title}
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground">{post.date}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    )}
                                 </div>
                             </Card>
 
@@ -529,21 +847,41 @@ export default function BlogPageClient() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                        {[...new Map(blogPosts.map((post) => [post.author.name, post.author])).values()].map(
-                            (author) => (
-                                <Card
-                                    key={author.name}
-                                    className="p-4 text-center border border-border shadow-none hover:-translate-y-1 transition-all duration-300"
-                                >
-                                    <Image
-                                        src={author.avatar}
-                                        alt={author.name}
-                                        width={64}
-                                        height={64}
-                                        className="rounded-full mx-auto mb-3"
-                                    />
-                                    <h4 className="font-medium text-foreground text-sm">{author.name}</h4>
-                                </Card>
+                        {blogPosts.length > 0 ? (
+                            [...new Map(blogPosts.map((post) => [post.author_name, { name: post.author_name, avatar: post.author_avatar }])).values()].map(
+                                (author) => (
+                                    <Card
+                                        key={author.name}
+                                        className="p-4 text-center border border-border shadow-none hover:-translate-y-1 transition-all duration-300"
+                                    >
+                                        <Image
+                                            src={author.avatar || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop"}
+                                            alt={author.name || "Author"}
+                                            width={64}
+                                            height={64}
+                                            className="rounded-full mx-auto mb-3"
+                                        />
+                                        <h4 className="font-medium text-foreground text-sm">{author.name || "Anonymous"}</h4>
+                                    </Card>
+                                )
+                            )
+                        ) : (
+                            [...new Map(mockBlogPosts.map((post) => [post.author.name, post.author])).values()].map(
+                                (author) => (
+                                    <Card
+                                        key={author.name}
+                                        className="p-4 text-center border border-border shadow-none hover:-translate-y-1 transition-all duration-300"
+                                    >
+                                        <Image
+                                            src={author.avatar}
+                                            alt={author.name}
+                                            width={64}
+                                            height={64}
+                                            className="rounded-full mx-auto mb-3"
+                                        />
+                                        <h4 className="font-medium text-foreground text-sm">{author.name}</h4>
+                                    </Card>
+                                )
                             )
                         )}
                     </div>

@@ -6,10 +6,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/store/auth";
 import { lookupsService, type PropertyType, type ListingType, type City, type Location } from "@/services/lookups";
+import { propertiesService } from "@/services/properties";
+import { usersService } from "@/services/users";
+import { blogsService } from "@/services/blogs";
+import { type Properties, type Users, type BlogPosts } from "@/types/appwrite";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -46,15 +51,27 @@ import {
   EyeIcon,
   MessageSquareIcon,
   ChevronDownIcon,
+  SparklesIcon,
+  BrainIcon,
+  ScanIcon,
+  Glasses,
+  MousePointerClickIcon,
+  Cpu,
+  Zap,
+  Globe,
+  Video,
+  Mic,
+  Camera,
+  Box,
 } from "lucide-react";
 
-// Mock featured properties data
-const featuredProperties = [
+// Mock featured properties data - will be replaced with real data
+const mockFeaturedProperties = [
   {
     id: 1,
     title: "Modern Luxury Villa",
-    location: "Beverly Hills, CA",
-    price: 2850000,
+    location: "DHA, Lahore",
+    price: 35000000,
     beds: 5,
     baths: 4,
     sqft: 4500,
@@ -65,8 +82,8 @@ const featuredProperties = [
   {
     id: 2,
     title: "Downtown Penthouse",
-    location: "Manhattan, NY",
-    price: 8500,
+    location: "Gulberg, Lahore",
+    price: 85000,
     beds: 3,
     baths: 2,
     sqft: 2200,
@@ -77,8 +94,8 @@ const featuredProperties = [
   {
     id: 3,
     title: "Cozy Family Home",
-    location: "Austin, TX",
-    price: 675000,
+    location: "Bahria Town, Islamabad",
+    price: 67500000,
     beds: 4,
     baths: 3,
     sqft: 2800,
@@ -89,8 +106,8 @@ const featuredProperties = [
   {
     id: 4,
     title: "Beachfront Condo",
-    location: "Miami, FL",
-    price: 1250000,
+    location: "Clifton, Karachi",
+    price: 125000000,
     beds: 2,
     baths: 2,
     sqft: 1800,
@@ -101,8 +118,8 @@ const featuredProperties = [
   {
     id: 5,
     title: "Mountain Retreat",
-    location: "Aspen, CO",
-    price: 3200000,
+    location: "Murree, Punjab",
+    price: 32000000,
     beds: 6,
     baths: 5,
     sqft: 5200,
@@ -113,8 +130,8 @@ const featuredProperties = [
   {
     id: 6,
     title: "Urban Studio Loft",
-    location: "San Francisco, CA",
-    price: 3200,
+    location: "F-7, Islamabad",
+    price: 45000,
     beds: 1,
     baths: 1,
     sqft: 850,
@@ -162,66 +179,66 @@ const stats = [
   { label: "Expert Agents", value: "1K+", icon: ShieldCheckIcon },
 ];
 
-// Popular cities data
-const popularCities = [
+// Popular cities data - will be populated with real data
+const mockPopularCities = [
   {
-    name: "New York",
+    name: "Lahore",
     properties: 2456,
-    image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&h=400&fit=crop",
-    avgPrice: "$850K",
+    image: "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=600&h=400&fit=crop",
+    avgPrice: "1.5 Cr",
   },
   {
-    name: "Los Angeles",
+    name: "Karachi",
     properties: 1832,
-    image: "https://images.unsplash.com/photo-1580655653885-65763b2597d0?w=600&h=400&fit=crop",
-    avgPrice: "$920K",
+    image: "https://images.unsplash.com/photo-1567501155-f5c0c5e45ff7?w=600&h=400&fit=crop",
+    avgPrice: "2.2 Cr",
   },
   {
-    name: "Miami",
+    name: "Islamabad",
     properties: 1245,
-    image: "https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=600&h=400&fit=crop",
-    avgPrice: "$680K",
+    image: "https://images.unsplash.com/photo-1603490834571-1a9b4b9b3c01?w=600&h=400&fit=crop",
+    avgPrice: "2.8 Cr",
   },
   {
-    name: "Chicago",
+    name: "Rawalpindi",
     properties: 987,
     image: "https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=600&h=400&fit=crop",
-    avgPrice: "$425K",
+    avgPrice: "85 Lac",
   },
   {
-    name: "San Francisco",
-    properties: 1567,
+    name: "Faisalabad",
+    properties: 756,
     image: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&h=400&fit=crop",
-    avgPrice: "$1.2M",
+    avgPrice: "65 Lac",
   },
   {
-    name: "Austin",
-    properties: 876,
+    name: "Multan",
+    properties: 654,
     image: "https://images.unsplash.com/photo-1531218150217-54595bc2b934?w=600&h=400&fit=crop",
-    avgPrice: "$520K",
+    avgPrice: "55 Lac",
   },
 ];
 
-// Featured agents data
-const featuredAgents = [
+// Featured agents data - will be replaced with real data
+const mockFeaturedAgents = [
   {
-    name: "Jennifer Martinez",
+    name: "Ahmed Hassan",
     title: "Senior Real Estate Agent",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop",
     deals: 156,
     rating: 4.9,
     specialization: "Luxury Homes",
   },
   {
-    name: "David Thompson",
+    name: "Sarah Ahmed",
     title: "Commercial Property Specialist",
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop",
+    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&h=300&fit=crop",
     deals: 203,
     rating: 4.8,
     specialization: "Commercial",
   },
   {
-    name: "Sarah Williams",
+    name: "Fatima Khan",
     title: "Residential Expert",
     image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=300&fit=crop",
     deals: 189,
@@ -229,19 +246,19 @@ const featuredAgents = [
     specialization: "Family Homes",
   },
   {
-    name: "Michael Chen",
+    name: "Ali Raza",
     title: "Investment Advisor",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop",
     deals: 134,
     rating: 4.9,
     specialization: "Investment",
   },
 ];
 
-// Blog posts data
-const blogPosts = [
+// Blog posts data - will be replaced with real data
+const mockBlogPosts = [
   {
-    title: "10 Tips for First-Time Home Buyers in 2026",
+    title: "10 Tips for First-Time Home Buyers in Pakistan",
     excerpt: "Navigate the real estate market with confidence using these expert tips for buying your first home.",
     image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop",
     category: "Buying Tips",
@@ -297,6 +314,76 @@ const whyChooseUs = [
     icon: AwardIcon,
     title: "Award Winning",
     description: "Recognized as the leading property platform for three consecutive years.",
+  },
+];
+
+// AI & Technology Innovation Features
+const aiInnovations = [
+  {
+    icon: BrainIcon,
+    title: "AI-Powered Property Matching",
+    description: "Our intelligent algorithm learns your preferences and suggests properties that perfectly match your lifestyle, budget, and needs.",
+    badge: "AI Powered",
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    icon: Glasses,
+    title: "Virtual Reality Tours",
+    description: "Experience immersive 3D walkthroughs of properties from anywhere in the world. No need to travel for initial viewings.",
+    badge: "VR Ready",
+    gradient: "from-blue-500 to-cyan-500",
+  },
+  {
+    icon: Box,
+    title: "Augmented Reality Staging",
+    description: "Visualize how your furniture fits in any space. See empty rooms transformed with virtual staging in real-time.",
+    badge: "AR Tech",
+    gradient: "from-pink-500 to-rose-500",
+  },
+  {
+    icon: Mic,
+    title: "AI Voice Assistant",
+    description: "Search properties, schedule viewings, and get answers using natural voice commands. Your personal real estate concierge.",
+    badge: "Voice AI",
+    gradient: "from-amber-500 to-orange-500",
+  },
+  {
+    icon: ScanIcon,
+    title: "Smart Document Analysis",
+    description: "AI-powered document scanning extracts and verifies property documents, legal papers, and ownership records instantly.",
+    badge: "DocAI",
+    gradient: "from-emerald-500 to-teal-500",
+  },
+  {
+    icon: Cpu,
+    title: "Predictive Price Analytics",
+    description: "Machine learning models analyze market trends to predict future property values and investment potential.",
+    badge: "ML Analytics",
+    gradient: "from-indigo-500 to-blue-600",
+  },
+];
+
+// Smart Features for property exploration
+const smartFeatures = [
+  {
+    icon: Camera,
+    title: "360° Virtual Tours",
+    description: "Explore every corner of a property with immersive 360-degree photography",
+  },
+  {
+    icon: Video,
+    title: "Live Video Calls",
+    description: "Connect with agents and sellers through instant video consultations",
+  },
+  {
+    icon: Globe,
+    title: "Neighborhood AI",
+    description: "AI-analyzed insights on schools, crime rates, amenities, and lifestyle fit",
+  },
+  {
+    icon: Zap,
+    title: "Instant Valuations",
+    description: "Get accurate property valuations in seconds using our AI valuation model",
   },
 ];
 
@@ -364,12 +451,19 @@ export default function HomePageClient() {
   const [cities, setCities] = useState<City[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
 
+  // Real data states
+  const [featuredProperties, setFeaturedProperties] = useState<Properties[]>([]);
+  const [featuredAgents, setFeaturedAgents] = useState<Users[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPosts[]>([]);
+  const [popularCities, setPopularCities] = useState(mockPopularCities);
+  const [dataLoading, setDataLoading] = useState(true);
+
   // Filtered cities based on search query
   const filteredCities = cities.filter((city) =>
     city.name.toLowerCase().includes(citySearchQuery.toLowerCase())
   );
 
-  // Load lookup data on mount
+  // Load lookup data and real data on mount
   useEffect(() => {
     setMounted(true);
 
@@ -385,11 +479,69 @@ export default function HomePageClient() {
         setListingTypes(listTypes);
         setCities(allCities);
         setLocations(allLocations);
+
+        // Update popular cities with real data
+        if (allCities.length > 0) {
+          const cityImages = [
+            "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=600&h=400&fit=crop",
+            "https://images.unsplash.com/photo-1567501155-f5c0c5e45ff7?w=600&h=400&fit=crop",
+            "https://images.unsplash.com/photo-1603490834571-1a9b4b9b3c01?w=600&h=400&fit=crop",
+            "https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=600&h=400&fit=crop",
+            "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&h=400&fit=crop",
+            "https://images.unsplash.com/photo-1531218150217-54595bc2b934?w=600&h=400&fit=crop",
+          ];
+
+          // Get actual property counts for cities
+          const cityIds = allCities.slice(0, 6).map(c => c.$id);
+          const cityCounts = await propertiesService.getCountsByCities(cityIds);
+
+          const updatedCities = allCities.slice(0, 6).map((city, index) => ({
+            id: city.$id,
+            name: city.name,
+            properties: cityCounts[city.$id] || 0,
+            image: cityImages[index] || cityImages[0],
+            avgPrice: "Contact for price",
+          }));
+          setPopularCities(updatedCities);
+        }
       } catch (error) {
         console.error("Error loading lookups:", error);
       }
     };
+
+    const loadFeaturedData = async () => {
+      setDataLoading(true);
+      try {
+        // Fetch featured properties
+        const { properties: featuredProps } = await propertiesService.list({
+          is_featured: true,
+          is_published: true,
+          limit: 6,
+        });
+        if (featuredProps.length > 0) {
+          setFeaturedProperties(featuredProps);
+        }
+
+        // Fetch featured agents
+        const agents = await usersService.getFeaturedAgents(4);
+        if (agents.length > 0) {
+          setFeaturedAgents(agents);
+        }
+
+        // Fetch latest blog posts
+        const posts = await blogsService.getLatest(3);
+        if (posts.length > 0) {
+          setBlogPosts(posts);
+        }
+      } catch (error) {
+        console.error("Error loading featured data:", error);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
     loadLookups();
+    loadFeaturedData();
   }, []);
 
   // Handle search and navigate to properties page with filters
@@ -498,6 +650,23 @@ export default function HomePageClient() {
 
     const queryString = params.toString();
     router.push(queryString ? `/properties?${queryString}` : "/properties");
+  };
+
+  // Format price for display (PKR with Lac/Crore)
+  const formatPricePKR = (price: number, currency: string = "PKR") => {
+    if (currency === "PKR") {
+      if (price >= 10000000) {
+        return `PKR ${(price / 10000000).toFixed(2)} Cr`;
+      } else if (price >= 100000) {
+        return `PKR ${(price / 100000).toFixed(2)} Lac`;
+      }
+      return `PKR ${price.toLocaleString()}`;
+    }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+      maximumFractionDigits: 0,
+    }).format(price);
   };
 
   const formatPrice = (price: number, type: string) => {
@@ -943,6 +1112,117 @@ export default function HomePageClient() {
         </div>
       </section>
 
+      {/* AI & Technology Innovation Section */}
+      <section className="py-20 bg-gradient-to-b from-background via-primary/5 to-background overflow-hidden">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-4 bg-primary/10 text-primary border-primary/20">
+              <SparklesIcon className="h-4 w-4 mr-2" />
+              Powered by AI & Emerging Tech
+            </Badge>
+            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
+              The Future of Real Estate is{" "}
+              <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent">
+                Here
+              </span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Experience property search like never before with cutting-edge AI, Virtual Reality tours,
+              Augmented Reality staging, and smart analytics that put you years ahead.
+            </p>
+          </div>
+
+          {/* Main AI Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {aiInnovations.map((feature, index) => (
+              <Card
+                key={index}
+                className="group relative overflow-hidden border-0 bg-card hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
+              >
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+                <div className="p-6 relative z-10">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg`}>
+                      <feature.icon className="h-7 w-7 text-white" />
+                    </div>
+                    <Badge variant="outline" className="text-xs font-medium">
+                      {feature.badge}
+                    </Badge>
+                  </div>
+                  <h3 className="text-xl font-semibold text-foreground mb-2 group-hover:text-primary transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Interactive Demo CTA */}
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-primary via-violet-600 to-primary p-1">
+            <div className="bg-card rounded-[22px] p-8 md:p-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                  <Badge className="mb-4 bg-primary/10 text-primary border-0">
+                    <Glasses className="h-4 w-4 mr-2" />
+                    Try VR Experience
+                  </Badge>
+                  <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                    Walk Through Properties<br />
+                    <span className="text-primary">Without Leaving Home</span>
+                  </h3>
+                  <p className="text-muted-foreground mb-6">
+                    Our immersive VR tours let you explore properties in stunning detail. Walk through rooms,
+                    check finishes, measure spaces, and feel the ambiance - all from your device.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <Button size="lg" className="rounded-full px-8">
+                      <Glasses className="mr-2 h-5 w-5" />
+                      Try VR Tour
+                    </Button>
+                    <Button size="lg" variant="outline" className="rounded-full px-8">
+                      <Video className="mr-2 h-5 w-5" />
+                      Watch Demo
+                    </Button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="aspect-video rounded-2xl bg-gradient-to-br from-violet-500/20 via-primary/20 to-pink-500/20 border border-border overflow-hidden">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
+                          <PlayCircleIcon className="h-10 w-10 text-primary" />
+                        </div>
+                        <p className="text-muted-foreground">Click to experience VR Tour</p>
+                      </div>
+                    </div>
+                    {/* Decorative elements */}
+                    <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-violet-500/20 animate-bounce" style={{ animationDelay: "0s" }} />
+                    <div className="absolute top-8 right-8 w-8 h-8 rounded-full bg-primary/20 animate-bounce" style={{ animationDelay: "0.2s" }} />
+                    <div className="absolute bottom-8 left-8 w-10 h-10 rounded-lg bg-pink-500/20 animate-bounce" style={{ animationDelay: "0.4s" }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Smart Features Row */}
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {smartFeatures.map((feature, index) => (
+              <div key={index} className="text-center group">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-secondary flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
+                  <feature.icon className="h-8 w-8 text-primary group-hover:text-primary-foreground transition-colors" />
+                </div>
+                <h4 className="font-semibold text-foreground mb-1">{feature.title}</h4>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Featured Properties - Show Product Right Away */}
       <section className="py-20">
         <div className="container mx-auto max-w-7xl px-4">
@@ -964,68 +1244,177 @@ export default function HomePageClient() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map((property) => (
-              <Card key={property.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 p-0 gap-0">
-                <div className="relative overflow-hidden">
-                  <Image
-                    src={property.image}
-                    alt={property.title}
-                    width={800}
-                    height={600}
-                    className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <Badge className={property.type === "For Sale" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}>
-                      {property.type}
-                    </Badge>
-                    {property.featured && (
-                      <Badge variant="secondary" className="bg-chart-4 text-foreground">
-                        Featured
+            {dataLoading ? (
+              // Loading skeletons
+              Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden p-0 gap-0">
+                  <Skeleton className="h-64 w-full" />
+                  <div className="p-6 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <div className="flex gap-4">
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                </Card>
+              ))
+            ) : featuredProperties.length > 0 ? (
+              featuredProperties.map((property) => {
+                const imageUrl = property.main_image_url || property.cover_image_url || "https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800&h=600&fit=crop";
+                const listingType = property.listing_type?.name || "For Sale";
+                const cityName = property.city?.name || property.location?.name || "";
+                const locationName = property.location?.name || "";
+                const fullLocation = [locationName, cityName].filter(Boolean).join(", ");
+                const currency = property.currency || "PKR";
+
+                return (
+                  <Card key={property.$id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 p-0 gap-0">
+                    <div className="relative overflow-hidden">
+                      <Link href={`/p/${property.slug || property.$id}`}>
+                        <Image
+                          src={imageUrl}
+                          alt={property.title}
+                          width={800}
+                          height={600}
+                          className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      </Link>
+                      <div className="absolute top-4 left-4 flex gap-2">
+                        <Badge className={listingType.toLowerCase().includes("rent") ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"}>
+                          {listingType}
+                        </Badge>
+                        {property.is_featured && (
+                          <Badge variant="secondary" className="bg-chart-4 text-foreground">
+                            Featured
+                          </Badge>
+                        )}
+                        {property.is_verified && (
+                          <Badge className="bg-green-500 text-white">
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
+                      <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+                        <HeartIcon className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors" />
+                      </button>
+                    </div>
+
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-2">
+                        <Link href={`/p/${property.slug || property.$id}`}>
+                          <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                            {property.title}
+                          </h3>
+                        </Link>
+                      </div>
+                      <div className="flex items-center text-muted-foreground mb-4">
+                        <MapPinIcon className="h-4 w-4 mr-1 flex-shrink-0" />
+                        <span className="text-sm line-clamp-1">{fullLocation || "Location not specified"}</span>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                        {property.bedrooms && property.bedrooms > 0 && (
+                          <div className="flex items-center gap-1">
+                            <BedDoubleIcon className="h-4 w-4" />
+                            <span>{property.bedrooms} Beds</span>
+                          </div>
+                        )}
+                        {property.bathrooms && property.bathrooms > 0 && (
+                          <div className="flex items-center gap-1">
+                            <BathIcon className="h-4 w-4" />
+                            <span>{property.bathrooms} Baths</span>
+                          </div>
+                        )}
+                        {property.total_area && (
+                          <div className="flex items-center gap-1">
+                            <RulerIcon className="h-4 w-4" />
+                            <span>{property.total_area.toLocaleString()} {property.area_unit || "sqft"}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                        <span className="text-2xl font-bold text-primary">
+                          {formatPricePKR(property.price, currency)}
+                        </span>
+                        <Button size="sm" variant="outline" className="rounded-full" asChild>
+                          <Link href={`/p/${property.slug || property.$id}`}>
+                            View Details
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+            ) : (
+              // Fallback to mock data if no real properties
+              mockFeaturedProperties.map((property) => (
+                <Card key={property.id} className="overflow-hidden group hover:shadow-xl transition-all duration-300 p-0 gap-0">
+                  <div className="relative overflow-hidden">
+                    <Image
+                      src={property.image}
+                      alt={property.title}
+                      width={800}
+                      height={600}
+                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <Badge className={property.type === "For Sale" ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}>
+                        {property.type}
                       </Badge>
-                    )}
-                  </div>
-                  <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
-                    <HeartIcon className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors" />
-                  </button>
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors">
-                      {property.title}
-                    </h3>
-                  </div>
-                  <div className="flex items-center text-muted-foreground mb-4">
-                    <MapPinIcon className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{property.location}</span>
+                      {property.featured && (
+                        <Badge variant="secondary" className="bg-chart-4 text-foreground">
+                          Featured
+                        </Badge>
+                      )}
+                    </div>
+                    <button className="absolute top-4 right-4 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+                      <HeartIcon className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors" />
+                    </button>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <div className="flex items-center gap-1">
-                      <BedDoubleIcon className="h-4 w-4" />
-                      <span>{property.beds} Beds</span>
+                  <div className="p-6">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-xl text-foreground group-hover:text-primary transition-colors">
+                        {property.title}
+                      </h3>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <BathIcon className="h-4 w-4" />
-                      <span>{property.baths} Baths</span>
+                    <div className="flex items-center text-muted-foreground mb-4">
+                      <MapPinIcon className="h-4 w-4 mr-1" />
+                      <span className="text-sm">{property.location}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <RulerIcon className="h-4 w-4" />
-                      <span>{property.sqft.toLocaleString()} sqft</span>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <span className="text-2xl font-bold text-primary">
-                      {formatPrice(property.price, property.type)}
-                    </span>
-                    <Button size="sm" variant="outline" className="rounded-full">
-                      View Details
-                    </Button>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center gap-1">
+                        <BedDoubleIcon className="h-4 w-4" />
+                        <span>{property.beds} Beds</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <BathIcon className="h-4 w-4" />
+                        <span>{property.baths} Baths</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <RulerIcon className="h-4 w-4" />
+                        <span>{property.sqft.toLocaleString()} sqft</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <span className="text-2xl font-bold text-primary">
+                        {formatPricePKR(property.price, "PKR")}
+                      </span>
+                      <Button size="sm" variant="outline" className="rounded-full">
+                        View Details
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -1306,29 +1695,83 @@ export default function HomePageClient() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredAgents.map((agent) => (
-              <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0">
-                <div className="relative h-64 overflow-hidden">
-                  <Image
-                    src={agent.image}
-                    alt={agent.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-lg text-foreground">{agent.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{agent.title}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1">
-                      <StarIcon className="h-4 w-4 fill-chart-4 text-chart-4" />
-                      <span className="font-medium">{agent.rating}</span>
-                    </div>
-                    <Badge variant="secondary">{agent.deals} Deals</Badge>
+            {dataLoading ? (
+              // Loading skeletons
+              Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden p-0 gap-0">
+                  <Skeleton className="h-64 w-full" />
+                  <div className="p-5 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-6 w-full" />
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            ) : featuredAgents.length > 0 ? (
+              featuredAgents.map((agent) => {
+                const agentName = agent.first_name && agent.last_name
+                  ? `${agent.first_name} ${agent.last_name}`
+                  : agent.company_name || agent.username;
+                const agentImage = agent.profile_image_url || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop";
+                const agentTitle = agent.designation || (agent.user_type === "agency" ? "Real Estate Agency" : "Real Estate Agent");
+
+                return (
+                  <Link href={`/u/${agent.username}`} key={agent.$id}>
+                    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0 cursor-pointer">
+                      <div className="relative h-64 overflow-hidden">
+                        <Image
+                          src={agentImage}
+                          alt={agentName}
+                          fill
+                          className="object-cover"
+                        />
+                        {agent.is_verified && (
+                          <Badge className="absolute top-3 right-3 bg-green-500 text-white">
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors">{agentName}</h3>
+                        <p className="text-sm text-muted-foreground mb-3">{agentTitle}</p>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-1">
+                            <StarIcon className="h-4 w-4 fill-chart-4 text-chart-4" />
+                            <span className="font-medium">{agent.rating?.toFixed(1) || "5.0"}</span>
+                          </div>
+                          <Badge variant="secondary">{agent.total_sales || 0} Deals</Badge>
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })
+            ) : (
+              // Fallback to mock data
+              mockFeaturedAgents.map((agent) => (
+                <Card key={agent.name} className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0">
+                  <div className="relative h-64 overflow-hidden">
+                    <Image
+                      src={agent.image}
+                      alt={agent.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-semibold text-lg text-foreground">{agent.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{agent.title}</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1">
+                        <StarIcon className="h-4 w-4 fill-chart-4 text-chart-4" />
+                        <span className="font-medium">{agent.rating}</span>
+                      </div>
+                      <Badge variant="secondary">{agent.deals} Deals</Badge>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -1403,37 +1846,95 @@ export default function HomePageClient() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {blogPosts.map((post, index) => (
-              <Card key={index} className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0">
-                <div className="relative h-48 overflow-hidden">
-                  <Image
-                    src={post.image}
-                    alt={post.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <Badge className="absolute top-4 left-4 bg-white/90 text-foreground hover:bg-white">
-                    {post.category}
-                  </Badge>
-                </div>
-                <div className="p-5">
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <div className="flex items-center gap-1">
-                      <CalendarIcon className="h-4 w-4" />
-                      {post.date}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <ClockIcon className="h-4 w-4" />
-                      {post.readTime}
-                    </div>
+            {dataLoading ? (
+              // Loading skeletons
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="overflow-hidden p-0 gap-0">
+                  <Skeleton className="h-48 w-full" />
+                  <div className="p-5 space-y-2">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-5 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
                   </div>
-                  <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm line-clamp-2">{post.excerpt}</p>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            ) : blogPosts.length > 0 ? (
+              blogPosts.map((post) => {
+                const postImage = post.featured_image || "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&h=400&fit=crop";
+                const postDate = post.published_at
+                  ? new Date(post.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                  : "Recent";
+                const readTime = post.reading_time ? `${post.reading_time} min read` : "5 min read";
+                const categoryLabel = post.category?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) || "Article";
+
+                return (
+                  <Link href={`/blogs/${post.slug || post.$id}`} key={post.$id}>
+                    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0 cursor-pointer h-full">
+                      <div className="relative h-48 overflow-hidden">
+                        <Image
+                          src={postImage}
+                          alt={post.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <Badge className="absolute top-4 left-4 bg-white/90 text-foreground hover:bg-white">
+                          {categoryLabel}
+                        </Badge>
+                      </div>
+                      <div className="p-5">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                          <div className="flex items-center gap-1">
+                            <CalendarIcon className="h-4 w-4" />
+                            {postDate}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <ClockIcon className="h-4 w-4" />
+                            {readTime}
+                          </div>
+                        </div>
+                        <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-muted-foreground text-sm line-clamp-2">{post.excerpt}</p>
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })
+            ) : (
+              // Fallback to mock data
+              mockBlogPosts.map((post, index) => (
+                <Card key={index} className="overflow-hidden group hover:shadow-lg transition-all duration-300 p-0 gap-0">
+                  <div className="relative h-48 overflow-hidden">
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <Badge className="absolute top-4 left-4 bg-white/90 text-foreground hover:bg-white">
+                      {post.category}
+                    </Badge>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon className="h-4 w-4" />
+                        {post.date}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ClockIcon className="h-4 w-4" />
+                        {post.readTime}
+                      </div>
+                    </div>
+                    <h3 className="font-semibold text-lg text-foreground mb-2 group-hover:text-primary transition-colors">
+                      {post.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm line-clamp-2">{post.excerpt}</p>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>

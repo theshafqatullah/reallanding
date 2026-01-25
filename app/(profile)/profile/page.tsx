@@ -449,7 +449,7 @@ export default function ProfilePage() {
         )}
       </div>
 
-      <div className="container mx-auto px-4 max-w-6xl">
+      <div className="container mx-auto px-4 max-w-7xl">
         {/* Profile Header */}
         <div className="relative -mt-16 md:-mt-20 mb-6">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
@@ -1391,15 +1391,15 @@ function VerificationCard({
   return (
     <div
       className={`p-4 rounded-xl border ${verified
-          ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900"
-          : "bg-muted/50 border-border"
+        ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900"
+        : "bg-muted/50 border-border"
         }`}
     >
       <div className="flex items-start gap-3">
         <div
           className={`mt-0.5 p-1.5 rounded-full ${verified
-              ? "bg-green-100 dark:bg-green-900/50"
-              : "bg-muted"
+            ? "bg-green-100 dark:bg-green-900/50"
+            : "bg-muted"
             }`}
         >
           {verified ? (
@@ -1411,8 +1411,8 @@ function VerificationCard({
         <div>
           <p
             className={`font-medium ${verified
-                ? "text-green-700 dark:text-green-400"
-                : "text-foreground"
+              ? "text-green-700 dark:text-green-400"
+              : "text-foreground"
               }`}
           >
             {label}

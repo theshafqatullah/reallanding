@@ -1,15 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { databases } from "@/services/appwrite";
 import { Query } from "appwrite";
-import { type Users, AvailabilityStatus, UserType } from "@/types/appwrite";
+import { type Users, type AgentReviews, AvailabilityStatus, UserType } from "@/types/appwrite";
+import { agentReviewsService } from "@/services/agent-reviews";
+import { useAuth } from "@/store/auth";
+import { usersService } from "@/services/users";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -34,18 +52,407 @@ import {
   Home,
   TrendingUp,
   Eye,
+  ThumbsUp,
+  PenLine,
+  StarHalf,
 } from "lucide-react";
 
 const DATABASE_ID = "main";
 const USERS_COLLECTION_ID = "users";
 
+// Star Rating Component
+function StarRating({
+  rating,
+  onRatingChange,
+  readonly = false,
+  size = "default",
+}: {
+  rating: number;
+  onRatingChange?: (rating: number) => void;
+  readonly?: boolean;
+  size?: "small" | "default" | "large";
+}) {
+  const [hoverRating, setHoverRating] = useState(0);
+  const sizeClasses = {
+    small: "h-4 w-4",
+    default: "h-5 w-5",
+    large: "h-6 w-6",
+  };
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={() => onRatingChange?.(star)}
+          onMouseEnter={() => !readonly && setHoverRating(star)}
+          onMouseLeave={() => setHoverRating(0)}
+          className={`${readonly ? "cursor-default" : "cursor-pointer"} transition-colors`}
+        >
+          <Star
+            className={`${sizeClasses[size]} ${star <= (hoverRating || rating)
+              ? "fill-yellow-400 text-yellow-400"
+              : "text-muted-foreground/30"
+              }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Review Card Component
+function ReviewCard({
+  review,
+  onHelpful,
+}: {
+  review: AgentReviews;
+  onHelpful?: (reviewId: string) => void;
+}) {
+  const reviewerInitials = review.reviewer_name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
+
+  const formattedDate = new Date(review.$createdAt).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  return (
+    <div className="p-5 border border-border rounded-xl bg-card">
+      <div className="flex items-start gap-4">
+        <Avatar className="h-12 w-12">
+          <AvatarFallback className="bg-primary/10 text-primary font-medium">
+            {reviewerInitials}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h4 className="font-semibold text-foreground">{review.reviewer_name}</h4>
+              <div className="flex items-center gap-2 mt-1">
+                <StarRating rating={review.rating} readonly size="small" />
+                <span className="text-sm text-muted-foreground">{formattedDate}</span>
+              </div>
+            </div>
+            {review.is_verified && (
+              <Badge variant="outline" className="gap-1 text-xs border-green-500 text-green-600">
+                <CheckCircle className="h-3 w-3" />
+                Verified
+              </Badge>
+            )}
+          </div>
+
+          {review.title && (
+            <h5 className="font-medium text-foreground mt-3">{review.title}</h5>
+          )}
+
+          <p className="text-muted-foreground mt-2 leading-relaxed">{review.review_text}</p>
+
+          {(review.pros || review.cons) && (
+            <div className="mt-4 space-y-2">
+              {review.pros && (
+                <div className="flex items-start gap-2">
+                  <span className="text-green-600 font-medium text-sm">Pros:</span>
+                  <span className="text-sm text-muted-foreground">{review.pros}</span>
+                </div>
+              )}
+              {review.cons && (
+                <div className="flex items-start gap-2">
+                  <span className="text-red-600 font-medium text-sm">Cons:</span>
+                  <span className="text-sm text-muted-foreground">{review.cons}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {review.response_text && (
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg border-l-2 border-primary">
+              <p className="text-sm font-medium text-foreground mb-1">Agent&apos;s Response</p>
+              <p className="text-sm text-muted-foreground">{review.response_text}</p>
+              {review.response_date && (
+                <p className="text-xs text-muted-foreground mt-2">{review.response_date}</p>
+              )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
+            <button
+              onClick={() => onHelpful?.(review.$id)}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <ThumbsUp className="h-4 w-4" />
+              Helpful ({review.helpful_count || 0})
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Write Review Dialog Component
+function WriteReviewDialog({
+  agentId,
+  agentName,
+  currentUser,
+  existingReview,
+  onReviewSubmitted,
+}: {
+  agentId: string;
+  agentName: string;
+  currentUser: { id: string; email: string; name: string } | null;
+  existingReview: AgentReviews | null;
+  onReviewSubmitted: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(existingReview?.rating || 0);
+  const [title, setTitle] = useState(existingReview?.title || "");
+  const [reviewText, setReviewText] = useState(existingReview?.review_text || "");
+  const [pros, setPros] = useState(existingReview?.pros || "");
+  const [cons, setCons] = useState(existingReview?.cons || "");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentUser) {
+      toast.error("Please sign in to submit a review");
+      return;
+    }
+
+    if (rating === 0) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    if (!title.trim() || !reviewText.trim()) {
+      toast.error("Please fill in the title and review");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      if (existingReview) {
+        // Update existing review
+        await agentReviewsService.update(existingReview.$id, {
+          rating,
+          title: title.trim(),
+          review_text: reviewText.trim(),
+          pros: pros.trim() || undefined,
+          cons: cons.trim() || undefined,
+        });
+        toast.success("Review updated successfully!");
+      } else {
+        // Create new review
+        await agentReviewsService.create({
+          agent_id: agentId,
+          reviewer_id: currentUser.id,
+          reviewer_email: currentUser.email,
+          reviewer_name: currentUser.name,
+          rating,
+          title: title.trim(),
+          review_text: reviewText.trim(),
+          pros: pros.trim() || undefined,
+          cons: cons.trim() || undefined,
+        });
+        toast.success("Review submitted successfully!");
+      }
+      setOpen(false);
+      onReviewSubmitted();
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to submit review");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!currentUser) {
+    return (
+      <Button variant="outline" asChild>
+        <Link href={`/signin?redirect=/u/${agentName}`}>
+          <PenLine className="h-4 w-4 mr-2" />
+          Sign in to Review
+        </Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant={existingReview ? "outline" : "default"}>
+          <PenLine className="h-4 w-4 mr-2" />
+          {existingReview ? "Edit Your Review" : "Write a Review"}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{existingReview ? "Edit Your Review" : "Write a Review"}</DialogTitle>
+          <DialogDescription>
+            Share your experience with {agentName}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Rating */}
+          <div className="space-y-2">
+            <Label>Your Rating *</Label>
+            <div className="flex items-center gap-3">
+              <StarRating rating={rating} onRatingChange={setRating} size="large" />
+              <span className="text-sm text-muted-foreground">
+                {rating === 0 ? "Select rating" : `${rating} out of 5 stars`}
+              </span>
+            </div>
+          </div>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <Label htmlFor="title">Review Title *</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Summarize your experience"
+              maxLength={100}
+            />
+          </div>
+
+          {/* Review Text */}
+          <div className="space-y-2">
+            <Label htmlFor="review">Your Review *</Label>
+            <Textarea
+              id="review"
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              placeholder="Share details about your experience..."
+              rows={4}
+              maxLength={2000}
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {reviewText.length}/2000 characters
+            </p>
+          </div>
+
+          {/* Pros */}
+          <div className="space-y-2">
+            <Label htmlFor="pros">What you liked (optional)</Label>
+            <Textarea
+              id="pros"
+              value={pros}
+              onChange={(e) => setPros(e.target.value)}
+              placeholder="What did you like about working with this agent?"
+              rows={2}
+              maxLength={500}
+            />
+          </div>
+
+          {/* Cons */}
+          <div className="space-y-2">
+            <Label htmlFor="cons">What could be improved (optional)</Label>
+            <Textarea
+              id="cons"
+              value={cons}
+              onChange={(e) => setCons(e.target.value)}
+              placeholder="Any areas for improvement?"
+              rows={2}
+              maxLength={500}
+            />
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline" disabled={submitting}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Submitting...
+                </>
+              ) : existingReview ? (
+                "Update Review"
+              ) : (
+                "Submit Review"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function UserProfileClient() {
   const params = useParams();
   const username = params.username as string;
+  const { user: authUser, isLoading: authLoading } = useAuth();
 
   const [user, setUser] = useState<Users | null>(null);
+  const [currentUserProfile, setCurrentUserProfile] = useState<Users | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<AgentReviews[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState<{
+    totalReviews: number;
+    averageRating: number;
+    ratingDistribution: Record<number, number>;
+  }>({ totalReviews: 0, averageRating: 0, ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } });
+  const [userExistingReview, setUserExistingReview] = useState<AgentReviews | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+
+  // Fetch reviews for the agent
+  const fetchReviews = useCallback(async (agentId: string) => {
+    setReviewsLoading(true);
+    try {
+      const [reviewsData, stats] = await Promise.all([
+        agentReviewsService.getAgentReviews(agentId, { limit: 50 }),
+        agentReviewsService.getAgentReviewStats(agentId),
+      ]);
+      setReviews(reviewsData.reviews);
+      setReviewStats(stats);
+    } catch (err) {
+      console.error("Error fetching reviews:", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, []);
+
+  // Check if current user has already reviewed
+  const checkExistingReview = useCallback(async (agentId: string, reviewerId: string) => {
+    try {
+      const existingReview = await agentReviewsService.getUserReviewForAgent(agentId, reviewerId);
+      setUserExistingReview(existingReview);
+    } catch (err) {
+      console.error("Error checking existing review:", err);
+    }
+  }, []);
+
+  // Fetch current user profile
+  useEffect(() => {
+    async function fetchCurrentUserProfile() {
+      if (!authUser?.$id) return;
+      try {
+        const profile = await usersService.getByUserId(authUser.$id);
+        setCurrentUserProfile(profile);
+      } catch (err) {
+        console.error("Error fetching current user profile:", err);
+      }
+    }
+    fetchCurrentUserProfile();
+  }, [authUser?.$id]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -63,7 +470,13 @@ export default function UserProfileClient() {
         );
 
         if (response.documents.length > 0) {
-          setUser(response.documents[0] as unknown as Users);
+          const fetchedUser = response.documents[0] as unknown as Users;
+          setUser(fetchedUser);
+
+          // Fetch reviews if user is an agent or agency
+          if (fetchedUser.user_type === UserType.AGENT || fetchedUser.user_type === UserType.AGENCY) {
+            fetchReviews(fetchedUser.$id);
+          }
         } else {
           setError("User not found");
         }
@@ -78,9 +491,56 @@ export default function UserProfileClient() {
     if (username) {
       fetchUser();
     }
-  }, [username]);
+  }, [username, fetchReviews]);
 
-  if (loading) {
+  // Check for existing review when user and auth are loaded
+  useEffect(() => {
+    if (user?.$id && authUser?.$id && (user.user_type === UserType.AGENT || user.user_type === UserType.AGENCY)) {
+      checkExistingReview(user.$id, authUser.$id);
+    }
+  }, [user?.$id, authUser?.$id, user?.user_type, checkExistingReview]);
+
+  // Handle helpful click
+  const handleHelpfulClick = async (reviewId: string) => {
+    try {
+      await agentReviewsService.markHelpful(reviewId);
+      setReviews((prev) =>
+        prev.map((r) =>
+          r.$id === reviewId ? { ...r, helpful_count: (r.helpful_count || 0) + 1 } : r
+        )
+      );
+      toast.success("Marked as helpful");
+    } catch (err) {
+      console.error("Error marking helpful:", err);
+      toast.error("Failed to mark as helpful");
+    }
+  };
+
+  // Handle review submitted
+  const handleReviewSubmitted = () => {
+    if (user?.$id) {
+      fetchReviews(user.$id);
+      if (authUser?.$id) {
+        checkExistingReview(user.$id, authUser.$id);
+      }
+    }
+  };
+
+  // Get current user info for review form
+  const currentUserInfo = authUser && currentUserProfile
+    ? {
+      id: authUser.$id,
+      email: authUser.email || "",
+      name: currentUserProfile.first_name && currentUserProfile.last_name
+        ? `${currentUserProfile.first_name} ${currentUserProfile.last_name}`
+        : authUser.name || authUser.email?.split("@")[0] || "User",
+    }
+    : null;
+
+  // Check if current user can review (not the same user)
+  const canReview = authUser && user && authUser.$id !== user.user_id;
+
+  if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Spinner className="h-8 w-8" />
@@ -138,7 +598,7 @@ export default function UserProfileClient() {
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
       </div>
 
-      <div className="container mx-auto px-4 max-w-6xl">
+      <div className="container mx-auto px-4 max-w-7xl">
         {/* Profile Header */}
         <div className="relative -mt-20 md:-mt-24 mb-8">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
@@ -253,8 +713,8 @@ export default function UserProfileClient() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 p-4 bg-muted/50 rounded-xl border border-border">
           <StatItem
             icon={<Star className="h-5 w-5 text-yellow-500" />}
-            value={user.rating > 0 ? user.rating.toFixed(1) : "N/A"}
-            label={`${user.total_reviews} Reviews`}
+            value={reviewStats.averageRating > 0 ? reviewStats.averageRating.toFixed(1) : (user.rating > 0 ? user.rating.toFixed(1) : "N/A")}
+            label={`${reviewStats.totalReviews || user.total_reviews || 0} Reviews`}
           />
           <StatItem
             icon={<Briefcase className="h-5 w-5 text-primary" />}
@@ -609,6 +1069,120 @@ export default function UserProfileClient() {
             </Section>
           </div>
         </div>
+
+        {/* Reviews Section - Only for Agents/Agencies */}
+        {(user.user_type === UserType.AGENT || user.user_type === UserType.AGENCY) && (
+          <div className="pb-12">
+            <Section title="Reviews & Ratings">
+              <div className="space-y-6">
+                {/* Review Summary */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Overall Rating */}
+                  <div className="flex items-center gap-6 p-4 bg-muted/30 rounded-lg">
+                    <div className="text-center">
+                      <p className="text-4xl font-bold text-foreground">
+                        {reviewStats.averageRating > 0 ? reviewStats.averageRating.toFixed(1) : "N/A"}
+                      </p>
+                      <StarRating rating={Math.round(reviewStats.averageRating)} readonly size="small" />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {reviewStats.totalReviews} {reviewStats.totalReviews === 1 ? "review" : "reviews"}
+                      </p>
+                    </div>
+
+                    {/* Rating Distribution */}
+                    <div className="flex-1 space-y-1.5">
+                      {[5, 4, 3, 2, 1].map((star) => {
+                        const count = reviewStats.ratingDistribution[star] || 0;
+                        const percentage = reviewStats.totalReviews > 0 ? (count / reviewStats.totalReviews) * 100 : 0;
+                        return (
+                          <div key={star} className="flex items-center gap-2 text-sm">
+                            <span className="w-3">{star}</span>
+                            <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                            <Progress value={percentage} className="h-2 flex-1" />
+                            <span className="w-8 text-muted-foreground text-right">{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Write Review CTA */}
+                  <div className="flex flex-col justify-center items-center p-6 border border-dashed border-border rounded-lg bg-muted/10">
+                    <h4 className="font-semibold text-foreground mb-2">Share Your Experience</h4>
+                    <p className="text-sm text-muted-foreground text-center mb-4">
+                      {canReview
+                        ? userExistingReview
+                          ? "You've already reviewed this agent. You can edit your review."
+                          : "Help others by sharing your experience with this agent."
+                        : authUser
+                          ? "You cannot review your own profile."
+                          : "Sign in to share your experience with this agent."}
+                    </p>
+                    {canReview && (
+                      <WriteReviewDialog
+                        agentId={user.$id}
+                        agentName={fullName}
+                        currentUser={currentUserInfo}
+                        existingReview={userExistingReview}
+                        onReviewSubmitted={handleReviewSubmitted}
+                      />
+                    )}
+                    {!authUser && (
+                      <Button variant="outline" asChild>
+                        <Link href={`/signin?redirect=/u/${username}`}>
+                          <PenLine className="h-4 w-4 mr-2" />
+                          Sign in to Review
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                {reviewsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Spinner className="h-6 w-6" />
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-semibold text-foreground">
+                        {reviewStats.totalReviews} {reviewStats.totalReviews === 1 ? "Review" : "Reviews"}
+                      </h4>
+                    </div>
+
+                    {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
+                      <ReviewCard
+                        key={review.$id}
+                        review={review}
+                        onHelpful={handleHelpfulClick}
+                      />
+                    ))}
+
+                    {reviews.length > 3 && (
+                      <div className="text-center pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowAllReviews(!showAllReviews)}
+                        >
+                          {showAllReviews ? "Show Less" : `Show All ${reviews.length} Reviews`}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Star className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                    <h4 className="font-semibold text-foreground mb-2">No Reviews Yet</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Be the first to review this {user.user_type === UserType.AGENT ? "agent" : "agency"}!
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Section>
+          </div>
+        )}
       </div>
     </div>
   );

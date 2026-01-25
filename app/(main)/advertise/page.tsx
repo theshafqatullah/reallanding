@@ -307,7 +307,7 @@ export default function AdvertisePage() {
         <div className="min-h-screen bg-background">
             {/* Hero Section */}
             <section className="py-16 md:py-24 bg-gradient-to-br from-primary/5 via-background to-secondary/20">
-                <div className="container max-w-6xl mx-auto px-4">
+                <div className="container max-w-7xl mx-auto px-4">
                     <div className="text-center space-y-6">
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
                             Let <span className="text-primary">Reallanding</span><br />
@@ -364,7 +364,7 @@ export default function AdvertisePage() {
             {/* Individual Products Section */}
             {selectedTab === 'individual' && (
                 <section className="py-16 bg-background">
-                    <div className="container max-w-6xl mx-auto px-4">
+                    <div className="container max-w-7xl mx-auto px-4">
                         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
                             For Individuals
                         </h2>
@@ -400,7 +400,7 @@ export default function AdvertisePage() {
             {/* Agency Packages Section */}
             {selectedTab === 'agency' && (
                 <section className="py-16 bg-background">
-                    <div className="container max-w-6xl mx-auto px-4">
+                    <div className="container max-w-7xl mx-auto px-4">
                         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
                             Advertise for Agencies
                         </h2>
@@ -466,7 +466,7 @@ export default function AdvertisePage() {
             {/* Developer Packages Section */}
             {selectedTab === 'developer' && (
                 <section className="py-16 bg-background">
-                    <div className="container max-w-6xl mx-auto px-4">
+                    <div className="container max-w-7xl mx-auto px-4">
                         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">
                             Advertise for Developers
                         </h2>
@@ -531,7 +531,7 @@ export default function AdvertisePage() {
 
             {/* Why Advertise Section */}
             <section className="py-16 bg-secondary/30">
-                <div className="container max-w-6xl mx-auto px-4">
+                <div className="container max-w-7xl mx-auto px-4">
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
                         <div>
                             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
@@ -568,7 +568,7 @@ export default function AdvertisePage() {
 
             {/* Testimonials Section */}
             <section className="py-16 bg-background">
-                <div className="container max-w-6xl mx-auto px-4">
+                <div className="container max-w-7xl mx-auto px-4">
                     <div className="text-center mb-12">
                         <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
                             What our clients have to say about <span className="text-primary">Reallanding</span>
@@ -604,7 +604,7 @@ export default function AdvertisePage() {
 
             {/* FAQs Section */}
             <section className="py-16 bg-secondary/30">
-                <div className="container max-w-4xl mx-auto px-4">
+                <div className="container max-w-7xl mx-auto px-4">
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
                         Frequently Asked Questions (FAQs)
                     </h2>
@@ -630,7 +630,7 @@ export default function AdvertisePage() {
 
             {/* Become a Member Section */}
             <section className="py-16 bg-background">
-                <div className="container max-w-6xl mx-auto px-4">
+                <div className="container max-w-7xl mx-auto px-4">
                     <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 text-center">
                         Become a member of Reallanding today
                     </h2>
@@ -669,7 +669,7 @@ export default function AdvertisePage() {
 
             {/* Contact CTA */}
             <section className="py-16 bg-primary text-primary-foreground">
-                <div className="container max-w-4xl mx-auto px-4 text-center">
+                <div className="container max-w-7xl mx-auto px-4 text-center">
                     <h2 className="text-2xl md:text-3xl font-bold mb-4">Need Help Choosing a Package?</h2>
                     <p className="text-primary-foreground/80 mb-8">
                         Our team is here to help you find the perfect advertising solution for your needs.

@@ -338,6 +338,46 @@ export const propertiesService = {
   },
 
   /**
+   * Get property count by city ID
+   */
+  async getCountByCity(cityId: string): Promise<number> {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        PROPERTIES_COLLECTION_ID,
+        [
+          Query.equal("city_id", cityId),
+          Query.equal("is_active", true),
+          Query.equal("is_published", true),
+          Query.limit(1),
+        ]
+      );
+      return response.total;
+    } catch (error) {
+      console.error("Error getting property count by city:", error);
+      return 0;
+    }
+  },
+
+  /**
+   * Get property counts for multiple cities
+   */
+  async getCountsByCities(cityIds: string[]): Promise<Record<string, number>> {
+    try {
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        cityIds.map(async (cityId) => {
+          counts[cityId] = await this.getCountByCity(cityId);
+        })
+      );
+      return counts;
+    } catch (error) {
+      console.error("Error getting property counts by cities:", error);
+      return {};
+    }
+  },
+
+  /**
    * Create a new property
    */
   async create(data: CreatePropertyData): Promise<Properties> {

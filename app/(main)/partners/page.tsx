@@ -321,7 +321,7 @@ export default function PartnersPage() {
 
             {/* Become a Partner CTA Section */}
             <section className="py-20 bg-gradient-to-r from-primary/5 to-secondary/5">
-                <div className="container mx-auto max-w-4xl px-4">
+                <div className="container mx-auto max-w-7xl px-4">
                     <Card className="p-8 md:p-12 border border-primary/20 shadow-lg bg-white">
                         <div className="text-center">
                             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -437,7 +437,7 @@ export default function PartnersPage() {
 
             {/* FAQ Section */}
             <section className="py-20 bg-white">
-                <div className="container mx-auto max-w-4xl px-4">
+                <div className="container mx-auto max-w-7xl px-4">
                     <div className="text-center mb-16">
                         <Badge variant="secondary" className="mb-4">
                             FAQ

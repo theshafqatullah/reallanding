@@ -33,9 +33,62 @@ import {
   AwardIcon,
   TargetIcon,
   ZapIcon,
+  BrainIcon,
+  Glasses,
+  Box,
+  Mic,
+  Cpu,
+  Video,
+  ScanIcon,
 } from "lucide-react";
 
 export { metadata } from "./metadata";
+
+// AI-Powered Services
+const aiServices = [
+  {
+    icon: BrainIcon,
+    title: "AI Property Matching",
+    description: "Our smart AI analyzes your preferences, lifestyle, and budget to find properties that truly match your needs.",
+    badge: "AI Powered",
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    icon: Glasses,
+    title: "Virtual Reality Tours",
+    description: "Experience properties from anywhere with immersive 3D VR tours that feel like you're actually there.",
+    badge: "VR Ready",
+    gradient: "from-blue-500 to-cyan-500",
+  },
+  {
+    icon: Box,
+    title: "AR Room Staging",
+    description: "Visualize furniture and decor in any space using augmented reality before making decisions.",
+    badge: "AR Tech",
+    gradient: "from-pink-500 to-rose-500",
+  },
+  {
+    icon: Mic,
+    title: "AI Voice Assistant",
+    description: "Search properties, schedule viewings, and get answers instantly using our intelligent voice assistant.",
+    badge: "Voice AI",
+    gradient: "from-amber-500 to-orange-500",
+  },
+  {
+    icon: ScanIcon,
+    title: "Smart Document Analysis",
+    description: "AI-powered document processing for faster, error-free transactions and instant verification.",
+    badge: "DocAI",
+    gradient: "from-emerald-500 to-teal-500",
+  },
+  {
+    icon: Cpu,
+    title: "Predictive Analytics",
+    description: "Machine learning models that predict property values, market trends, and investment potential.",
+    badge: "ML Analytics",
+    gradient: "from-indigo-500 to-blue-600",
+  },
+];
 
 const mainServices = [
   {
@@ -417,6 +470,80 @@ export default function ServicesPage() {
                 </Button>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AI-Powered Services */}
+      <section className="py-20 bg-gradient-to-br from-violet-50 via-white to-blue-50 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: "1s" }} />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20" />
+        </div>
+
+        <div className="container mx-auto max-w-7xl px-4 relative z-10">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-violet-100 to-blue-100 text-violet-700 border-violet-200">
+              <SparklesIcon className="h-4 w-4 mr-2" />
+              AI & Technology Innovation
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Next-Gen Real Estate Technology
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Experience the future of property discovery with our cutting-edge AI, VR, and AR solutions
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {aiServices.map((service) => (
+              <Card
+                key={service.title}
+                className="group p-6 border border-violet-100 shadow-none bg-white/80 backdrop-blur-sm hover:shadow-xl hover:shadow-violet-100/50 hover:-translate-y-2 transition-all duration-300 overflow-hidden relative"
+              >
+                {/* Gradient accent */}
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${service.gradient}`} />
+
+                <div className="flex items-start gap-4 mb-4">
+                  <div className={`w-14 h-14 bg-gradient-to-br ${service.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                    <service.icon className="h-7 w-7 text-white" />
+                  </div>
+                  <div>
+                    <Badge variant="secondary" className={`mb-2 bg-gradient-to-r ${service.gradient} text-white border-0 text-xs`}>
+                      {service.badge}
+                    </Badge>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {service.title}
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">{service.description}</p>
+              </Card>
+            ))}
+          </div>
+
+          {/* AI Stats */}
+          <div className="mt-16 bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-violet-100">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">98%</div>
+                <div className="text-sm text-muted-foreground">AI Match Accuracy</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">50K+</div>
+                <div className="text-sm text-muted-foreground">VR Tours Taken</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">3x</div>
+                <div className="text-sm text-muted-foreground">Faster Decisions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">24/7</div>
+                <div className="text-sm text-muted-foreground">AI Assistant</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

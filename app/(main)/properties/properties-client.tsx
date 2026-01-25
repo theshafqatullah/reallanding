@@ -624,6 +624,7 @@ function PropertiesPageContent() {
     const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
     const [listingTypes, setListingTypes] = useState<ListingType[]>([]);
     const [cities, setCities] = useState<City[]>([]);
+    const [cityCounts, setCityCounts] = useState<Record<string, number>>({});
 
     // Quick filter states
     const [selectedPurpose, setSelectedPurpose] = useState<string>("buy");
@@ -657,6 +658,13 @@ function PropertiesPageContent() {
                 setPropertyTypes(propTypes);
                 setListingTypes(listTypes);
                 setCities(allCities);
+
+                // Load property counts for first 4 cities
+                if (allCities.length > 0) {
+                    const cityIds = allCities.slice(0, 4).map(c => c.$id);
+                    const counts = await propertiesService.getCountsByCities(cityIds);
+                    setCityCounts(counts);
+                }
             } catch (error) {
                 console.error("Error loading lookups:", error);
             }
@@ -1248,7 +1256,7 @@ function PropertiesPageContent() {
                                 }`}
                         >
                             <span>{city.name}</span>
-                            <span className="text-muted-foreground/60">({Math.floor(Math.random() * 100000).toLocaleString()})</span>
+                            <span className="text-muted-foreground/60">({(cityCounts[city.$id] || 0).toLocaleString()})</span>
                         </button>
                     ))}
                     <button className="text-primary font-semibold text-sm whitespace-nowrap hover:text-primary/80 transition-colors">

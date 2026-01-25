@@ -66,7 +66,8 @@ const agencySchema = baseSchema.extend({
     establishedYear: z.coerce.number().min(1900, 'Valid established year is required'),
 });
 
-type DetailsFormValues = z.infer<typeof baseSchema>;
+// Union type for all possible form values
+type DetailsFormValues = z.infer<typeof baseSchema> | z.infer<typeof agentSchema> | z.infer<typeof agencySchema>;
 
 export function ApplyStep2() {
     const router = useRouter();
@@ -89,8 +90,9 @@ export function ApplyStep2() {
     const [selectedCountryId, setSelectedCountryId] = useState<string>('');
     const [selectedStateId, setSelectedStateId] = useState<string>('');
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const form = useForm<DetailsFormValues>({
-        resolver: zodResolver(detailsSchema),
+        resolver: zodResolver(detailsSchema) as any,
         mode: 'onBlur',
         defaultValues: {
             firstName: formData.firstName || '',

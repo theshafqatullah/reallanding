@@ -21,6 +21,10 @@ import {
   GlobeIcon,
   SparklesIcon,
   HandshakeIcon,
+  BrainIcon,
+  Glasses,
+  Zap,
+  Lightbulb,
 } from "lucide-react";
 
 export { metadata } from "./metadata";
@@ -45,13 +49,37 @@ const values = [
   },
   {
     icon: SparklesIcon,
-    title: "Innovation",
-    description: "Leveraging cutting-edge technology to make property search seamless and efficient.",
+    title: "AI-Driven Innovation",
+    description: "Leveraging AI, VR, and AR technology to revolutionize how you discover your perfect property.",
   },
   {
     icon: HandshakeIcon,
     title: "Integrity",
     description: "We uphold the highest ethical standards in all our business practices.",
+  },
+];
+
+// Technology innovations for about page
+const techInnovations = [
+  {
+    icon: BrainIcon,
+    title: "AI Property Matching",
+    description: "Our intelligent algorithms understand your preferences and lifestyle to suggest perfect matches.",
+  },
+  {
+    icon: Glasses,
+    title: "Virtual Reality Tours",
+    description: "Walk through properties from anywhere with our immersive 3D virtual reality experiences.",
+  },
+  {
+    icon: Zap,
+    title: "Instant Analytics",
+    description: "Real-time market data and predictive pricing powered by machine learning models.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Smart Recommendations",
+    description: "Personalized suggestions based on your search history and behavior patterns.",
   },
 ];
 
@@ -299,6 +327,67 @@ export default function AboutPage() {
         </div>
       </section>
 
+      {/* Technology Innovation Section */}
+      <section className="py-20 bg-gradient-to-br from-violet-50 via-white to-blue-50 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: "1s" }} />
+        </div>
+
+        <div className="container mx-auto max-w-7xl px-4 relative z-10">
+          <div className="text-center mb-16">
+            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-violet-100 to-blue-100 text-violet-700 border-violet-200">
+              <SparklesIcon className="h-3.5 w-3.5 mr-1" />
+              Technology First
+            </Badge>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Leading the AI Revolution in Real Estate
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              We&apos;re not just keeping up with technology — we&apos;re defining the future of property discovery
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {techInnovations.map((tech, index) => (
+              <Card
+                key={tech.title}
+                className="group p-6 border border-violet-100 shadow-none bg-white/80 backdrop-blur-sm hover:shadow-xl hover:shadow-violet-100/50 hover:-translate-y-2 transition-all duration-300"
+              >
+                <div className="w-14 h-14 bg-gradient-to-br from-violet-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <tech.icon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  {tech.title}
+                </h3>
+                <p className="text-muted-foreground text-sm">{tech.description}</p>
+              </Card>
+            ))}
+          </div>
+
+          {/* Tech Stats */}
+          <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center p-4">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">98%</div>
+              <div className="text-sm text-muted-foreground">AI Match Accuracy</div>
+            </div>
+            <div className="text-center p-4">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">10K+</div>
+              <div className="text-sm text-muted-foreground">VR Tours Daily</div>
+            </div>
+            <div className="text-center p-4">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">2.5M</div>
+              <div className="text-sm text-muted-foreground">AI Recommendations</div>
+            </div>
+            <div className="text-center p-4">
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent mb-1">24/7</div>
+              <div className="text-sm text-muted-foreground">Smart Support</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Timeline / Milestones */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
@@ -434,7 +523,7 @@ export default function AboutPage() {
 
       {/* Testimonial Quote */}
       <section className="py-20 bg-white">
-        <div className="container mx-auto max-w-4xl px-4 text-center">
+        <div className="container mx-auto max-w-7xl px-4 text-center">
           <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-8">
             <span className="text-4xl text-primary">&ldquo;</span>
           </div>
