@@ -153,12 +153,12 @@ export const lookupsService = {
         DATABASE_ID,
         COUNTRIES_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(250),
         ]
       );
-      const data = response.documents as unknown as Country[];
+      // Filter is_active client-side
+      const data = (response.documents as unknown as Country[]).filter(c => c.is_active === true);
       
       // Update cache
       cache.countries = { data, timestamp: Date.now() };
@@ -201,12 +201,12 @@ export const lookupsService = {
         STATES_COLLECTION_ID,
         [
           Query.equal("country_id", countryId),
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(250),
         ]
       );
-      return response.documents as unknown as State[];
+      // Filter is_active client-side
+      return (response.documents as unknown as State[]).filter(s => s.is_active === true);
     } catch (error) {
       console.error("Error fetching states:", error);
       throw error;
@@ -222,12 +222,12 @@ export const lookupsService = {
         DATABASE_ID,
         STATES_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(250),
         ]
       );
-      return response.documents as unknown as State[];
+      // Filter is_active client-side
+      return (response.documents as unknown as State[]).filter(s => s.is_active === true);
     } catch (error) {
       console.error("Error fetching states:", error);
       throw error;
@@ -248,12 +248,12 @@ export const lookupsService = {
         CITIES_COLLECTION_ID,
         [
           Query.equal("state_id", stateId),
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(500),
         ]
       );
-      return response.documents as unknown as City[];
+      // Filter is_active client-side
+      return (response.documents as unknown as City[]).filter(c => c.is_active === true);
     } catch (error) {
       console.error("Error fetching cities by state:", error);
       throw error;
@@ -270,12 +270,12 @@ export const lookupsService = {
         CITIES_COLLECTION_ID,
         [
           Query.equal("country_id", countryId),
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(500),
         ]
       );
-      return response.documents as unknown as City[];
+      // Filter is_active client-side
+      return (response.documents as unknown as City[]).filter(c => c.is_active === true);
     } catch (error) {
       console.error("Error fetching cities by country:", error);
       throw error;
@@ -291,12 +291,12 @@ export const lookupsService = {
         DATABASE_ID,
         CITIES_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(500),
         ]
       );
-      return response.documents as unknown as City[];
+      // Filter is_active client-side
+      return (response.documents as unknown as City[]).filter(c => c.is_active === true);
     } catch (error) {
       console.error("Error fetching cities:", error);
       throw error;
@@ -313,11 +313,11 @@ export const lookupsService = {
         CITIES_COLLECTION_ID,
         [
           Query.search("name", searchTerm),
-          Query.equal("is_active", true),
-          Query.limit(20),
+          Query.limit(50),
         ]
       );
-      return response.documents as unknown as City[];
+      // Filter is_active client-side
+      return (response.documents as unknown as City[]).filter(c => c.is_active === true).slice(0, 20);
     } catch (error) {
       console.error("Error searching cities:", error);
       throw error;
@@ -334,11 +334,11 @@ export const lookupsService = {
         LOCATIONS_COLLECTION_ID,
         [
           Query.search("name", searchTerm),
-          Query.equal("is_active", true),
-          Query.limit(20),
+          Query.limit(50),
         ]
       );
-      return response.documents as unknown as Location[];
+      // Filter is_active client-side
+      return (response.documents as unknown as Location[]).filter(l => l.is_active === true).slice(0, 20);
     } catch (error) {
       console.error("Error searching locations:", error);
       throw error;
@@ -374,12 +374,12 @@ export const lookupsService = {
         DATABASE_ID,
         LOCATIONS_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(500),
         ]
       );
-      return response.documents as unknown as Location[];
+      // Filter is_active client-side
+      return (response.documents as unknown as Location[]).filter(l => l.is_active === true);
     } catch (error) {
       console.error("Error fetching all locations:", error);
       throw error;
@@ -400,12 +400,12 @@ export const lookupsService = {
         LOCATIONS_COLLECTION_ID,
         [
           Query.equal("city_id", cityId),
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(500),
         ]
       );
-      return response.documents as unknown as Location[];
+      // Filter is_active client-side
+      return (response.documents as unknown as Location[]).filter(l => l.is_active === true);
     } catch (error) {
       console.error("Error fetching locations:", error);
       throw error;
@@ -447,12 +447,12 @@ export const lookupsService = {
         DATABASE_ID,
         PROPERTY_TYPES_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.orderAsc("display_order"),
           Query.limit(100),
         ]
       );
-      const data = response.documents as unknown as PropertyType[];
+      // Filter is_active client-side
+      const data = (response.documents as unknown as PropertyType[]).filter(pt => pt.is_active === true);
       
       // Update cache
       cache.propertyTypes = { data, timestamp: Date.now() };
@@ -474,12 +474,12 @@ export const lookupsService = {
         PROPERTY_TYPES_COLLECTION_ID,
         [
           Query.equal("category", category),
-          Query.equal("is_active", true),
           Query.orderAsc("display_order"),
           Query.limit(100),
         ]
       );
-      return response.documents as unknown as PropertyType[];
+      // Filter is_active client-side
+      return (response.documents as unknown as PropertyType[]).filter(pt => pt.is_active === true);
     } catch (error) {
       console.error("Error fetching property types by category:", error);
       throw error;
@@ -495,13 +495,15 @@ export const lookupsService = {
         DATABASE_ID,
         PROPERTY_TYPES_COLLECTION_ID,
         [
-          Query.equal("is_featured", true),
-          Query.equal("is_active", true),
           Query.orderAsc("display_order"),
-          Query.limit(20),
+          Query.limit(100),
         ]
       );
-      return response.documents as unknown as PropertyType[];
+      // Filter is_active and is_featured client-side
+      const featured = (response.documents as unknown as PropertyType[]).filter(
+        pt => pt.is_active === true && pt.is_featured === true
+      );
+      return featured;
     } catch (error) {
       console.error("Error fetching featured property types:", error);
       throw error;
@@ -526,11 +528,11 @@ export const lookupsService = {
         DATABASE_ID,
         LISTING_TYPES_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.limit(50),
         ]
       );
-      const data = response.documents as unknown as ListingType[];
+      // Filter is_active client-side
+      const data = (response.documents as unknown as ListingType[]).filter(lt => lt.is_active === true);
       
       // Update cache
       cache.listingTypes = { data, timestamp: Date.now() };
@@ -560,12 +562,12 @@ export const lookupsService = {
         DATABASE_ID,
         AMENITIES_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(200),
         ]
       );
-      const data = response.documents as unknown as Amenity[];
+      // Filter is_active client-side
+      const data = (response.documents as unknown as Amenity[]).filter(a => a.is_active === true);
       
       // Update cache
       cache.amenities = { data, timestamp: Date.now() };
@@ -587,12 +589,12 @@ export const lookupsService = {
         AMENITIES_COLLECTION_ID,
         [
           Query.equal("category", category),
-          Query.equal("is_active", true),
           Query.orderAsc("name"),
           Query.limit(100),
         ]
       );
-      return response.documents as unknown as Amenity[];
+      // Filter is_active client-side
+      return (response.documents as unknown as Amenity[]).filter(a => a.is_active === true);
     } catch (error) {
       console.error("Error fetching amenities by category:", error);
       throw error;

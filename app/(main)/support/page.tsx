@@ -213,8 +213,8 @@ export default function SupportPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <Card className="border-2 hover:border-primary/30 transition-colors cursor-pointer">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
-                                    <Sparkles className="h-6 w-6 text-violet-600" />
+                                <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center shrink-0">
+                                    <Sparkles className="h-6 w-6 text-primary" />
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-foreground">AI Assistant</h3>
@@ -224,8 +224,8 @@ export default function SupportPage() {
                         </Card>
                         <Card className="border-2 hover:border-primary/30 transition-colors cursor-pointer">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
-                                    <MessageCircle className="h-6 w-6 text-blue-600" />
+                                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
+                                    <MessageCircle className="h-6 w-6 text-primary" />
                                 </div>
                                 <div>
                                     <h3 className="font-semibold text-foreground">Live Chat</h3>
@@ -236,8 +236,8 @@ export default function SupportPage() {
                         <Link href="/contact">
                             <Card className="border-2 hover:border-primary/30 transition-colors cursor-pointer">
                                 <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
-                                        <Mail className="h-6 w-6 text-green-600" />
+                                    <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center shrink-0">
+                                        <Mail className="h-6 w-6 text-primary" />
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-foreground">Email Support</h3>

@@ -148,7 +148,7 @@ function ConversionFunnel({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Eye className="h-4 w-4 text-blue-600" />
+          <Eye className="h-4 w-4 text-primary" />
           <span className="text-sm font-medium">Views</span>
         </div>
         <span className="font-semibold">{views.toLocaleString()}</span>
@@ -462,8 +462,8 @@ export default function AnalyticsPage() {
 
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-cyan-100 rounded-lg">
-              <Activity className="h-5 w-5 text-cyan-600" />
+            <div className="p-2 bg-secondary rounded-lg">
+              <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Engagement Rate</p>
@@ -476,8 +476,8 @@ export default function AnalyticsPage() {
 
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Zap className="h-5 w-5 text-indigo-600" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Zap className="h-5 w-5 text-primary" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Avg. Daily Views</p>
@@ -537,8 +537,8 @@ export default function AnalyticsPage() {
               100
             );
             const getScoreColor = (s: number) => {
-              if (s >= 80) return "text-green-600";
-              if (s >= 60) return "text-blue-600";
+              if (s >= 80) return "text-primary";
+              if (s >= 60) return "text-primary/80";
               if (s >= 40) return "text-yellow-600";
               return "text-red-600";
             };
@@ -621,13 +621,13 @@ export default function AnalyticsPage() {
                           <div className="w-full flex flex-col items-center gap-0.5 min-h-[150px] justify-end">
                             {showViews && (
                               <div
-                                className="w-full bg-blue-500/80 rounded-t transition-all group-hover:bg-blue-600"
+                                className="w-full bg-primary/80 rounded-t transition-all group-hover:bg-primary"
                                 style={{ height: `${(data.views / maxViews) * 150}px`, minHeight: data.views > 0 ? "4px" : "2px" }}
                               />
                             )}
                             {showInquiries && (
                               <div
-                                className="w-3/4 bg-green-500 rounded-t transition-all group-hover:bg-green-600"
+                                className="w-3/4 bg-primary/60 rounded-t transition-all group-hover:bg-primary/70"
                                 style={{ height: `${(data.inquiries / maxInquiries) * 80}px`, minHeight: data.inquiries > 0 ? "4px" : "2px" }}
                               />
                             )}
@@ -652,7 +652,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-center gap-6 mt-4">
               {(chartType === "both" || chartType === "views") && (
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded" />
+                  <div className="w-3 h-3 bg-primary rounded" />
                   <span className="text-sm text-muted-foreground">Views</span>
                 </div>
               )}

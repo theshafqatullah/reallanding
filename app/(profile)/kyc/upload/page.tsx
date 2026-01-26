@@ -91,18 +91,42 @@ export default function KycUploadPage() {
             setError(null);
 
             // Upload file first
-            const fileId = await kycService.uploadFile(file);
+            let fileId: string;
+            try {
+                fileId = await kycService.uploadFile(file);
+            } catch (uploadError) {
+                console.error("File upload failed:", uploadError);
+                setError("Failed to upload file. Please check your connection and try again.");
+                return;
+            }
 
             // Create KYC document record
-            await kycService.createDocument({
-                user_id: user.$id,
-                document_type: documentType,
-                document_number: documentNumber || undefined,
-                document_file_id: fileId,
-                expiry_date: expiryDate || undefined,
-                notes: notes || undefined,
-                is_primary: isPrimary,
-            });
+            try {
+                await kycService.createDocument({
+                    user_id: user.$id,
+                    document_type: documentType,
+                    document_number: documentNumber || undefined,
+                    document_file_id: fileId,
+                    expiry_date: expiryDate || undefined,
+                    notes: notes || undefined,
+                    is_primary: isPrimary,
+                });
+            } catch (docError: unknown) {
+                console.error("Document creation failed:", docError);
+                // Try to clean up the uploaded file
+                try {
+                    await kycService.deleteFile(fileId);
+                } catch {
+                    // Ignore cleanup errors
+                }
+                const errorMessage = docError instanceof Error ? docError.message : 'Unknown error';
+                if (errorMessage.includes('Collection with the requested ID could not be found')) {
+                    setError("KYC system is being set up. Please try again later or contact support.");
+                } else {
+                    setError("Failed to submit document. Please try again.");
+                }
+                return;
+            }
 
             setSuccess(true);
 

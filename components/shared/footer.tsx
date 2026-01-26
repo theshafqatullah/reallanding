@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 
 export function Footer() {
@@ -11,11 +12,15 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {/* Brand Section */}
           <div className="space-y-3">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <span className="text-sm font-bold">RL</span>
-              </div>
-              <span className="font-bold text-lg">Real Landing</span>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/logo.svg"
+                alt="Real Landing"
+                width={394}
+                height={181}
+                className="h-12 w-auto"
+                priority
+              />
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
               Your trusted platform for real estate professionals and agencies.

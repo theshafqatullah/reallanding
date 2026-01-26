@@ -97,21 +97,8 @@ export const usersService = {
   }): Promise<{ agents: Users[]; total: number }> {
     try {
       const queries = [
-        // Filter by agent or agency user types
-        options?.userType 
-          ? Query.equal("user_type", options.userType)
-          : Query.or([
-              Query.equal("user_type", UserType.AGENT),
-              Query.equal("user_type", UserType.AGENCY)
-            ]),
-        // Only active accounts
-        Query.equal("account_status", AccountStatus.ACTIVE),
-        Query.equal("is_active", true),
-        // Sort by featured first, then by rating
-        Query.orderDesc("is_featured"),
-        Query.orderDesc("rating"),
-        // Pagination
-        Query.limit(options?.limit || 20),
+        // Pagination - fetch more to filter client-side
+        Query.limit(options?.limit ? options.limit * 5 : 100),
         Query.offset(options?.offset || 0),
       ];
 
@@ -126,9 +113,31 @@ export const usersService = {
         queries
       );
 
+      // Filter client-side since attributes may not be indexed
+      let agents = (response.documents as unknown as Users[]).filter(
+        user => user.account_status === AccountStatus.ACTIVE && user.is_active === true
+      );
+      
+      if (options?.userType) {
+        agents = agents.filter(user => user.user_type === options.userType);
+      } else {
+        agents = agents.filter(user => 
+          user.user_type === UserType.AGENT || user.user_type === UserType.AGENCY
+        );
+      }
+
+      // Sort by featured first, then by rating (client-side)
+      agents.sort((a, b) => {
+        if (a.is_featured !== b.is_featured) return a.is_featured ? -1 : 1;
+        return (b.rating || 0) - (a.rating || 0);
+      });
+
+      // Apply limit after filtering
+      const limitedAgents = agents.slice(0, options?.limit || 20);
+
       return {
-        agents: response.documents as unknown as Users[],
-        total: response.total,
+        agents: limitedAgents,
+        total: agents.length,
       };
     } catch (error) {
       console.error("Error fetching agents:", error);
@@ -145,19 +154,23 @@ export const usersService = {
         DATABASE_ID,
         USERS_COLLECTION_ID,
         [
-          Query.or([
-            Query.equal("user_type", UserType.AGENT),
-            Query.equal("user_type", UserType.AGENCY)
-          ]),
-          Query.equal("account_status", AccountStatus.ACTIVE),
-          Query.equal("is_active", true),
-          Query.equal("is_featured", true),
-          Query.orderDesc("rating"),
-          Query.limit(limit),
+          Query.limit(100), // Fetch more to filter client-side
         ]
       );
 
-      return response.documents as unknown as Users[];
+      // Filter client-side since is_featured and rating are not indexed
+      let agents = (response.documents as unknown as Users[]).filter(
+        user => 
+          user.is_featured === true &&
+          user.account_status === AccountStatus.ACTIVE && 
+          user.is_active === true &&
+          (user.user_type === UserType.AGENT || user.user_type === UserType.AGENCY)
+      );
+
+      // Sort by rating client-side
+      agents.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+      return agents.slice(0, limit);
     } catch (error) {
       console.error("Error fetching featured agents:", error);
       throw error;
@@ -446,21 +459,12 @@ export const usersService = {
   }): Promise<{ users: Users[]; total: number }> {
     try {
       const queries: string[] = [];
+      const fetchLimit = options?.limit ? options.limit * 3 : 75;
 
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
+      queries.push(Query.limit(fetchLimit));
+      
       if (options?.offset) {
         queries.push(Query.offset(options.offset));
-      }
-      if (options?.userType) {
-        queries.push(Query.equal("user_type", options.userType));
-      }
-      if (options?.isVerified !== undefined) {
-        queries.push(Query.equal("is_verified", options.isVerified));
-      }
-      if (options?.isActive !== undefined) {
-        queries.push(Query.equal("is_active", options.isActive));
       }
       if (options?.search) {
         queries.push(Query.search("first_name", options.search));
@@ -472,9 +476,25 @@ export const usersService = {
         queries
       );
 
+      // Filter client-side since attributes may not be indexed
+      let users = response.documents as unknown as Users[];
+      
+      if (options?.userType) {
+        users = users.filter(user => user.user_type === options.userType);
+      }
+      if (options?.isVerified !== undefined) {
+        users = users.filter(user => user.is_verified === options.isVerified);
+      }
+      if (options?.isActive !== undefined) {
+        users = users.filter(user => user.is_active === options.isActive);
+      }
+
+      // Apply limit after filtering
+      const limitedUsers = users.slice(0, options?.limit || 25);
+
       return {
-        users: response.documents as unknown as Users[],
-        total: response.total,
+        users: limitedUsers,
+        total: users.length,
       };
     } catch (error) {
       console.error("Error listing users:", error);

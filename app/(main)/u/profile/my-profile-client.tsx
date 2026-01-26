@@ -450,11 +450,11 @@ export default function MyProfileClient() {
 
                 {/* Profile Completion Banner */}
                 {profileCompletion < 100 && (
-                    <Card className="mb-8 border-0 bg-gradient-to-r from-violet-50 to-blue-50 shadow-sm">
+                    <Card className="mb-8 border-0 bg-gradient-to-r from-primary/5 to-secondary shadow-sm">
                         <CardContent className="py-4">
                             <div className="flex flex-col md:flex-row items-center gap-4">
                                 <div className="flex items-center gap-3 flex-1">
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-violet-500 to-blue-600 flex items-center justify-center">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
                                         <Sparkles className="h-6 w-6 text-white" />
                                     </div>
                                     <div className="flex-1">
@@ -465,11 +465,11 @@ export default function MyProfileClient() {
                                 <div className="w-full md:w-48">
                                     <div className="flex items-center justify-between text-sm mb-1">
                                         <span className="text-muted-foreground">Progress</span>
-                                        <span className="font-semibold text-violet-600">{profileCompletion}%</span>
+                                        <span className="font-semibold text-primary">{profileCompletion}%</span>
                                     </div>
                                     <Progress value={profileCompletion} className="h-2" />
                                 </div>
-                                <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700">
+                                <Button asChild size="sm">
                                     <Link href="/profile">
                                         Complete Now
                                         <ArrowRight className="h-4 w-4 ml-2" />
@@ -825,11 +825,11 @@ export default function MyProfileClient() {
 
                                 {/* Account Metadata Grid */}
                                 <div className="grid md:grid-cols-3 gap-6 pt-4">
-                                    <div className="p-6 rounded-lg bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200">
-                                        <Label className="text-xs font-semibold text-blue-900 uppercase tracking-widest">
+                                    <div className="p-6 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                                        <Label className="text-xs font-semibold text-foreground uppercase tracking-widest">
                                             Account Created
                                         </Label>
-                                        <p className="text-lg font-bold text-blue-900 mt-3">
+                                        <p className="text-lg font-bold text-foreground mt-3">
                                             {authUser?.$createdAt
                                                 ? new Date(authUser.$createdAt).toLocaleDateString('en-US', {
                                                     year: 'numeric',
@@ -964,8 +964,8 @@ export default function MyProfileClient() {
                         <Card className="border-0 shadow-lg">
                             <CardHeader className="pb-6 border-b">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-12 w-12 rounded-lg bg-cyan-100 flex items-center justify-center">
-                                        <Monitor className="h-6 w-6 text-cyan-600" />
+                                    <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                                        <Monitor className="h-6 w-6 text-primary" />
                                     </div>
                                     <div>
                                         <CardTitle className="text-2xl">Active Sessions</CardTitle>
@@ -992,11 +992,11 @@ export default function MyProfileClient() {
                                                     className="flex items-center justify-between p-5 border border-slate-200 rounded-lg hover:bg-slate-50/50 transition-all hover:border-slate-300"
                                                 >
                                                     <div className="flex items-center gap-4 flex-1">
-                                                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-cyan-100 to-blue-100 flex items-center justify-center flex-shrink-0">
+                                                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
                                                             {session.deviceName?.toLowerCase().includes("mobile") ? (
-                                                                <Smartphone className="h-5 w-5 text-cyan-600" />
+                                                                <Smartphone className="h-5 w-5 text-primary" />
                                                             ) : (
-                                                                <Monitor className="h-5 w-5 text-blue-600" />
+                                                                <Monitor className="h-5 w-5 text-primary" />
                                                             )}
                                                         </div>
                                                         <div className="flex-1 min-w-0">

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { OAuthProvider } from "appwrite";
@@ -59,6 +60,16 @@ export default function SignUpPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
+        <Link href="/" className="inline-block mb-6">
+          <Image
+            src="/logo.svg"
+            alt="Real Landing"
+            width={394}
+            height={181}
+            className="h-10 w-auto mx-auto"
+            priority
+          />
+        </Link>
         <h2 className="text-3xl font-bold text-foreground">Create Account</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Get started with your free account today.

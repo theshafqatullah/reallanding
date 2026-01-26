@@ -80,6 +80,13 @@ export const messagingService = {
     }
   ): Promise<ConversationsResponse> {
     try {
+      // Store filters for client-side filtering (may not be indexed)
+      const filterStatus = options?.status;
+      const filterType = options?.type;
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      const needsClientFilter = filterStatus !== undefined || filterType !== undefined;
+      
       const queries = [
         Query.or([
           Query.equal("initiator_id", userId),
@@ -88,13 +95,7 @@ export const messagingService = {
         Query.orderDesc("last_message_at"),
       ];
 
-      if (options?.type) {
-        queries.push(Query.equal("type", options.type));
-      }
-
-      if (options?.status) {
-        queries.push(Query.equal("status", options.status));
-      }
+      // type and status handled client-side since they may not be indexed
 
       if (options?.search) {
         queries.push(
@@ -106,12 +107,16 @@ export const messagingService = {
         );
       }
 
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
+      // Fetch more if we need to filter client-side
+      if (needsClientFilter) {
+        queries.push(Query.limit(200));
+      } else {
+        if (options?.limit) {
+          queries.push(Query.limit(options.limit));
+        }
+        if (options?.offset) {
+          queries.push(Query.offset(options.offset));
+        }
       }
 
       const response = await databases.listDocuments(
@@ -120,11 +125,25 @@ export const messagingService = {
         queries
       );
 
+      let conversations = response.documents as unknown as Conversations[];
+      let total = response.total;
+      
+      // Apply client-side filtering for status and type
+      if (needsClientFilter) {
+        conversations = conversations.filter(c => {
+          if (filterStatus && (c.status as unknown as string) !== filterStatus) return false;
+          if (filterType && (c.type as unknown as string) !== filterType) return false;
+          return true;
+        });
+        total = conversations.length;
+        conversations = conversations.slice(requestedOffset, requestedOffset + requestedLimit);
+      }
+
       return {
-        conversations: response.documents as unknown as Conversations[],
-        total: response.total,
+        conversations,
+        total,
         hasMore:
-          (options?.offset || 0) + response.documents.length < response.total,
+          requestedOffset + conversations.length < total,
       };
     } catch (error) {
       console.error("Error fetching conversations:", error);
@@ -309,22 +328,17 @@ export const messagingService = {
     }
   ): Promise<MessagesResponse> {
     try {
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      
       const queries = [
         Query.equal("conversation_id", conversationId),
-        Query.equal("is_deleted", false),
         Query.orderDesc("$createdAt"),
+        Query.limit(200), // Fetch more to filter is_deleted client-side
       ];
 
       if (options?.before) {
         queries.push(Query.lessThan("$createdAt", options.before));
-      }
-
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
       }
 
       const response = await databases.listDocuments(
@@ -333,14 +347,23 @@ export const messagingService = {
         queries
       );
 
+      // Filter is_deleted client-side since it may not be indexed
+      let filteredDocs = response.documents.filter(
+        (doc) => (doc as unknown as Messages).is_deleted === false
+      );
+      
+      // Apply pagination after filtering
+      const total = filteredDocs.length;
+      filteredDocs = filteredDocs.slice(requestedOffset, requestedOffset + requestedLimit);
+      
       // Return messages in chronological order
-      const messages = (response.documents as unknown as Messages[]).reverse();
+      const messages = (filteredDocs as unknown as Messages[]).reverse();
 
       return {
         messages,
-        total: response.total,
+        total,
         hasMore:
-          (options?.offset || 0) + response.documents.length < response.total,
+          requestedOffset + messages.length < total,
       };
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -444,20 +467,25 @@ export const messagingService = {
     userId: string
   ): Promise<void> {
     try {
-      // Get unread messages for this user in the conversation
+      // Get messages for this user in the conversation
       const response = await databases.listDocuments(
         DATABASE_ID,
         MESSAGES_COLLECTION_ID,
         [
           Query.equal("conversation_id", conversationId),
           Query.notEqual("sender_id", userId),
-          Query.notEqual("status", "read"),
+          Query.limit(100),
         ]
       );
 
-      // Mark each message as read
+      // Filter unread messages client-side (status may not be indexed)
+      const unreadMessages = response.documents.filter(
+        (doc) => ((doc as unknown as Messages).status as unknown as string) !== "read"
+      );
+
+      // Mark each unread message as read
       await Promise.all(
-        response.documents.map((doc) =>
+        unreadMessages.map((doc) =>
           databases.updateDocument(DATABASE_ID, MESSAGES_COLLECTION_ID, doc.$id, {
             status: "read",
             read_by: userId,

@@ -53,11 +53,15 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full bg-white border-b" onMouseLeave={handleMenuLeave}>
       <div className="container mx-auto max-w-7xl flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="text-sm font-bold">RL</span>
-          </div>
-          <span className="font-bold text-xl">Real Landing</span>
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/logo.svg"
+            alt="Real Landing"
+            width={394}
+            height={181}
+            className="h-10 w-auto"
+            priority
+          />
         </Link>
 
         {/* Navigation */}
@@ -269,8 +273,8 @@ export function Header() {
                     </div>
                   </Link>
                   <Link href="/properties?type=condo" className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group">
-                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center group-hover:bg-purple-100 transition-colors">
-                      <KeyIcon className="h-5 w-5 text-purple-600" />
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <KeyIcon className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">Condos</div>
@@ -514,15 +518,15 @@ export function Header() {
                   <div className="text-sm text-gray-600 mb-4">Join our network of successful real estate professionals</div>
                   <ul className="space-y-2 mb-4">
                     <li className="flex items-center gap-2 text-sm text-gray-600">
-                      <ShieldCheckIcon className="h-4 w-4 text-green-500" />
+                      <ShieldCheckIcon className="h-4 w-4 text-primary" />
                       <span>Industry-leading commission</span>
                     </li>
                     <li className="flex items-center gap-2 text-sm text-gray-600">
-                      <ShieldCheckIcon className="h-4 w-4 text-green-500" />
+                      <ShieldCheckIcon className="h-4 w-4 text-primary" />
                       <span>Advanced tools & training</span>
                     </li>
                     <li className="flex items-center gap-2 text-sm text-gray-600">
-                      <ShieldCheckIcon className="h-4 w-4 text-green-500" />
+                      <ShieldCheckIcon className="h-4 w-4 text-primary" />
                       <span>Dedicated support team</span>
                     </li>
                   </ul>
@@ -551,8 +555,8 @@ export function Header() {
                 <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wider mb-4">Our Services</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <Link href="/services#buying" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
-                    <div className="w-12 h-12 bg-green-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-green-100 transition-colors">
-                      <KeyIcon className="h-6 w-6 text-green-600" />
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                      <KeyIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900 mb-1">Buying Services</div>
@@ -560,8 +564,8 @@ export function Header() {
                     </div>
                   </Link>
                   <Link href="/services#selling" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
-                    <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-purple-100 transition-colors">
-                      <DollarSignIcon className="h-6 w-6 text-purple-600" />
+                    <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/80 transition-colors">
+                      <DollarSignIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900 mb-1">Selling Services</div>
@@ -578,8 +582,8 @@ export function Header() {
                     </div>
                   </Link>
                   <Link href="/services#investment" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
-                    <div className="w-12 h-12 bg-cyan-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-cyan-100 transition-colors">
-                      <TrendingUpIcon className="h-6 w-6 text-cyan-600" />
+                    <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-accent/80 transition-colors">
+                      <TrendingUpIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900 mb-1">Investment Consulting</div>

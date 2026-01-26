@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,12 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { confirmPasswordRecovery, loading, clearError } = useAuth();
-  
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [validationError, setValidationError] = useState("");
   const [resetSuccess, setResetSuccess] = useState(false);
-  
+
   // Extract userId and secret from URL params
   const userId = searchParams.get('userId') || '';
   const secret = searchParams.get('secret') || '';
@@ -60,7 +61,7 @@ export default function ResetPasswordPage() {
 
     try {
       await confirmPasswordRecovery({ userId, secret, password });
-      
+
       setResetSuccess(true);
       toast.success("Password reset successfully!", {
         description: "You can now sign in with your new password."
@@ -76,11 +77,21 @@ export default function ResetPasswordPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
+        <Link href="/" className="inline-block mb-6">
+          <Image
+            src="/logo.svg"
+            alt="Real Landing"
+            width={394}
+            height={181}
+            className="h-10 w-auto mx-auto"
+            priority
+          />
+        </Link>
         <h2 className="text-3xl font-bold text-foreground">
           {resetSuccess ? "Password Reset Successfully" : "Reset Password"}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {resetSuccess 
+          {resetSuccess
             ? "Your password has been reset successfully."
             : "Enter your new password below."
           }
@@ -117,10 +128,10 @@ export default function ResetPasswordPage() {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            size="md" 
-            className="w-full rounded-full" 
+          <Button
+            type="submit"
+            size="md"
+            className="w-full rounded-full"
             disabled={loading || !userId || !secret}
           >
             {loading ? "Resetting Password..." : "Reset Password"}
@@ -133,9 +144,9 @@ export default function ResetPasswordPage() {
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </div>
-          <Button 
-            onClick={() => router.push('/signin')} 
-            size="md" 
+          <Button
+            onClick={() => router.push('/signin')}
+            size="md"
             className="rounded-full"
           >
             Continue to Sign In

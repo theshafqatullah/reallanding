@@ -47,13 +47,16 @@ export const blogsService = {
         BLOG_POSTS_COLLECTION_ID,
         [
           Query.equal("slug", slug),
-          Query.equal("is_active", true),
-          Query.limit(1),
+          Query.limit(10),
         ]
       );
 
-      if (response.documents.length > 0) {
-        return response.documents[0] as unknown as BlogPosts;
+      // Filter is_active client-side since it may not be indexed
+      const activePost = (response.documents as unknown as BlogPosts[]).find(
+        post => post.is_active === true
+      );
+      if (activePost) {
+        return activePost;
       }
       return null;
     } catch (error) {
@@ -71,20 +74,16 @@ export const blogsService = {
     offset?: number;
   }): Promise<{ posts: BlogPosts[]; total: number }> {
     try {
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      
       const queries: string[] = [
-        Query.equal("is_active", true),
-        Query.equal("status", Status17.PUBLISHED),
         Query.orderDesc("published_at"),
+        Query.limit(200), // Fetch more to filter client-side
       ];
 
       if (options?.category) {
         queries.push(Query.equal("category", options.category));
-      }
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
       }
 
       const response = await databases.listDocuments(
@@ -93,9 +92,16 @@ export const blogsService = {
         queries
       );
 
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+      
+      const paginatedPosts = activePosts.slice(requestedOffset, requestedOffset + requestedLimit);
+
       return {
-        posts: response.documents as unknown as BlogPosts[],
-        total: response.total,
+        posts: paginatedPosts,
+        total: activePosts.length,
       };
     } catch (error) {
       console.error("Error fetching published blog posts:", error);
@@ -112,15 +118,17 @@ export const blogsService = {
         DATABASE_ID,
         BLOG_POSTS_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
-          Query.equal("status", Status17.PUBLISHED),
-          Query.equal("is_featured", true),
           Query.orderDesc("published_at"),
-          Query.limit(limit),
+          Query.limit(100),
         ]
       );
 
-      return response.documents as unknown as BlogPosts[];
+      // Filter status, is_active and is_featured client-side since they may not be indexed
+      const featured = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true && post.is_featured === true
+      );
+
+      return featured.slice(0, limit);
     } catch (error) {
       console.error("Error fetching featured blog posts:", error);
       return [];
@@ -136,14 +144,17 @@ export const blogsService = {
         DATABASE_ID,
         BLOG_POSTS_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
-          Query.equal("status", Status17.PUBLISHED),
           Query.orderDesc("published_at"),
-          Query.limit(limit),
+          Query.limit(100),
         ]
       );
 
-      return response.documents as unknown as BlogPosts[];
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+
+      return activePosts.slice(0, limit);
     } catch (error) {
       console.error("Error fetching latest blog posts:", error);
       return [];
@@ -159,15 +170,17 @@ export const blogsService = {
         DATABASE_ID,
         BLOG_POSTS_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
-          Query.equal("status", Status17.PUBLISHED),
-          Query.equal("is_pinned", true),
           Query.orderDesc("published_at"),
-          Query.limit(5),
+          Query.limit(100),
         ]
       );
 
-      return response.documents as unknown as BlogPosts[];
+      // Filter status, is_active and is_pinned client-side since they may not be indexed
+      const pinnedPosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true && post.is_pinned === true
+      );
+
+      return pinnedPosts.slice(0, 5);
     } catch (error) {
       console.error("Error fetching pinned blog posts:", error);
       return [];
@@ -182,19 +195,14 @@ export const blogsService = {
     options?: { limit?: number; offset?: number }
   ): Promise<{ posts: BlogPosts[]; total: number }> {
     try {
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      
       const queries: string[] = [
-        Query.equal("is_active", true),
-        Query.equal("status", Status17.PUBLISHED),
         Query.equal("category", category),
         Query.orderDesc("published_at"),
+        Query.limit(200), // Fetch more to filter client-side
       ];
-
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
-      }
 
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -202,9 +210,16 @@ export const blogsService = {
         queries
       );
 
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+      
+      const paginatedPosts = activePosts.slice(requestedOffset, requestedOffset + requestedLimit);
+
       return {
-        posts: response.documents as unknown as BlogPosts[],
-        total: response.total,
+        posts: paginatedPosts,
+        total: activePosts.length,
       };
     } catch (error) {
       console.error("Error fetching blog posts by category:", error);
@@ -220,18 +235,13 @@ export const blogsService = {
     options?: { limit?: number; offset?: number }
   ): Promise<{ posts: BlogPosts[]; total: number }> {
     try {
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      
       const queries: string[] = [
-        Query.equal("is_active", true),
-        Query.equal("status", Status17.PUBLISHED),
         Query.search("title", searchQuery),
+        Query.limit(200), // Fetch more to filter client-side
       ];
-
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
-      }
 
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -239,9 +249,16 @@ export const blogsService = {
         queries
       );
 
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+      
+      const paginatedPosts = activePosts.slice(requestedOffset, requestedOffset + requestedLimit);
+
       return {
-        posts: response.documents as unknown as BlogPosts[],
-        total: response.total,
+        posts: paginatedPosts,
+        total: activePosts.length,
       };
     } catch (error) {
       console.error("Error searching blog posts:", error);
@@ -279,14 +296,17 @@ export const blogsService = {
         DATABASE_ID,
         BLOG_POSTS_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
-          Query.equal("status", Status17.PUBLISHED),
           Query.orderDesc("views_count"),
-          Query.limit(limit),
+          Query.limit(100),
         ]
       );
 
-      return response.documents as unknown as BlogPosts[];
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+
+      return activePosts.slice(0, limit);
     } catch (error) {
       console.error("Error fetching popular blog posts:", error);
       return [];
@@ -306,16 +326,19 @@ export const blogsService = {
         DATABASE_ID,
         BLOG_POSTS_COLLECTION_ID,
         [
-          Query.equal("is_active", true),
-          Query.equal("status", Status17.PUBLISHED),
           Query.equal("category", category),
           Query.notEqual("$id", postId),
           Query.orderDesc("published_at"),
-          Query.limit(limit),
+          Query.limit(100),
         ]
       );
 
-      return response.documents as unknown as BlogPosts[];
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+
+      return activePosts.slice(0, limit);
     } catch (error) {
       console.error("Error fetching related blog posts:", error);
       return [];
@@ -330,19 +353,25 @@ export const blogsService = {
     const counts: { category: Category; count: number }[] = [];
 
     try {
+      // Fetch all posts at once to count by category
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        BLOG_POSTS_COLLECTION_ID,
+        [
+          Query.limit(500),
+        ]
+      );
+
+      // Filter status and is_active client-side since they may not be indexed
+      const activePosts = (response.documents as unknown as BlogPosts[]).filter(
+        post => (post.status as unknown as string) === Status17.PUBLISHED && post.is_active === true
+      );
+
+      // Count posts by category
       for (const category of categories) {
-        const response = await databases.listDocuments(
-          DATABASE_ID,
-          BLOG_POSTS_COLLECTION_ID,
-          [
-            Query.equal("is_active", true),
-            Query.equal("status", Status17.PUBLISHED),
-            Query.equal("category", category),
-            Query.limit(1),
-          ]
-        );
-        if (response.total > 0) {
-          counts.push({ category, count: response.total });
+        const count = activePosts.filter(post => post.category === category).length;
+        if (count > 0) {
+          counts.push({ category, count });
         }
       }
 

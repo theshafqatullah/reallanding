@@ -53,31 +53,31 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.75 0.22 142);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.96 0.03 142);
-  --secondary-foreground: oklch(0.25 0.1 142);
+  --primary: oklch(0.70 0.17 155);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0.03 155);
+  --secondary-foreground: oklch(0.25 0.1 155);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.92 0.06 142);
-  --accent-foreground: oklch(0.25 0.1 142);
+  --accent: oklch(0.92 0.06 155);
+  --accent-foreground: oklch(0.25 0.1 155);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.75 0.22 142);
-  --chart-1: oklch(0.75 0.22 142);
+  --ring: oklch(0.70 0.17 155);
+  --chart-1: oklch(0.70 0.17 155);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.75 0.22 142);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.92 0.06 142);
-  --sidebar-accent-foreground: oklch(0.25 0.1 142);
+  --sidebar-primary: oklch(0.70 0.17 155);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.92 0.06 155);
+  --sidebar-accent-foreground: oklch(0.25 0.1 155);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.75 0.22 142);
+  --sidebar-ring: oklch(0.70 0.17 155);
 }
 
 .dark {
@@ -87,31 +87,31 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.75 0.22 142);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.28 0.05 142);
+  --primary: oklch(0.70 0.17 155);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.28 0.05 155);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.38 0.08 142);
+  --accent: oklch(0.38 0.08 155);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.22 142);
-  --chart-1: oklch(0.75 0.22 142);
+  --ring: oklch(0.70 0.17 155);
+  --chart-1: oklch(0.70 0.17 155);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.75 0.22 142);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.38 0.08 142);
+  --sidebar-primary: oklch(0.70 0.17 155);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.38 0.08 155);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.75 0.22 142);
+  --sidebar-ring: oklch(0.70 0.17 155);
 }
 
 @layer base {
@@ -124,6 +124,45 @@
   }
 }
 
+/* Global shadow removal */
+@layer utilities {
+
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl,
+  .shadow-inner,
+  .drop-shadow,
+  .drop-shadow-sm,
+  .drop-shadow-md,
+  .drop-shadow-lg,
+  .drop-shadow-xl,
+  .drop-shadow-2xl,
+  [class*="hover:shadow"],
+  [class*="focus:shadow"],
+  [class*="group-hover:shadow"] {
+    box-shadow: none !important;
+    --tw-shadow: none !important;
+    --tw-shadow-colored: none !important;
+    filter: none !important;
+    --tw-drop-shadow: none !important;
+  }
+}
+
+/* Card image container - ensure no gaps */
+[data-slot="card"]>div:first-child:has(img),
+[data-slot="card"]>a:first-child:has(img),
+[data-slot="card"]>.relative:first-child:has(img) {
+  margin: 0;
+  padding: 0;
+}
+
+[data-slot="card"] img {
+  display: block;
+}
+
 /* Hide scrollbar utility */
 .scrollbar-hidden {
   -ms-overflow-style: none;
@@ -132,4 +171,118 @@
 
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
+}
+
+/* Infinite horizontal scroll animations */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-33.33%);
+  }
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-33.33%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+
+.animate-scroll-right {
+  animation: scroll-right 30s linear infinite;
+}
+
+/* Pause animation on hover */
+.hover\:pause-animation:hover {
+  animation-play-state: paused;
+}
+
+/* For the infinite scroll to work, we need the content to be wide enough */
+.animate-scroll-left,
+.animate-scroll-right {
+  width: max-content;
+}
+
+/* Smooth animation for stats counter */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: count-up 0.5s ease-out forwards;
+}
+
+/* Range input slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: hsl(var(--secondary));
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  margin-top: -6px;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: hsl(var(--secondary));
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  border: none;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  outline: 2px solid hsl(var(--primary) / 0.5);
+  outline-offset: 2px;
 }

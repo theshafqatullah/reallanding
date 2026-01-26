@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,10 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    
+
     try {
-      const redirectUrl = typeof window !== "undefined" 
-        ? `${window.location.origin}/reset-password` 
+      const redirectUrl = typeof window !== "undefined"
+        ? `${window.location.origin}/reset-password`
         : "/reset-password";
       await requestPasswordRecovery({ email, redirectUrl });
       setEmailSent(true);
@@ -37,11 +38,21 @@ export default function ForgotPasswordPage() {
   return (
     <div className="w-full">
       <div className="text-center mb-8">
+        <Link href="/" className="inline-block mb-6">
+          <Image
+            src="/logo.svg"
+            alt="Real Landing"
+            width={394}
+            height={181}
+            className="h-10 w-auto mx-auto"
+            priority
+          />
+        </Link>
         <h2 className="text-3xl font-bold text-foreground">
           {emailSent ? "Check your email" : "Forgot Password"}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {emailSent 
+          {emailSent
             ? "We've sent a password reset link to your email address."
             : "Enter your email to receive a reset link."
           }
@@ -78,7 +89,7 @@ export default function ForgotPasswordPage() {
           </div>
           <p className="text-sm text-muted-foreground">
             Didn't receive the email? Check your spam folder or{" "}
-            <button 
+            <button
               onClick={() => setEmailSent(false)}
               className="text-primary hover:underline font-semibold"
             >

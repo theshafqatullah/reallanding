@@ -498,16 +498,16 @@ export default function AgentsPageClient() {
             </section>
 
             {/* AI Smart Matching Section */}
-            <section className="py-16 bg-gradient-to-br from-violet-50 via-white to-blue-50 relative overflow-hidden">
+            <section className="py-16 bg-gradient-to-br from-primary/5 via-white to-secondary relative overflow-hidden">
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-                    <div className="absolute bottom-20 right-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: "1s" }} />
+                    <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+                    <div className="absolute bottom-20 right-10 w-72 h-72 bg-primary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: "1s" }} />
                 </div>
 
                 <div className="container mx-auto max-w-7xl px-4 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <div>
-                            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-violet-100 to-blue-100 text-violet-700 border-violet-200">
+                            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-primary/10 to-secondary text-primary border-primary/20">
                                 <SparklesIcon className="h-3.5 w-3.5 mr-1" />
                                 AI-Powered Matching
                             </Badge>

@@ -137,7 +137,7 @@ function getAvailabilityBadge(availability: string) {
       );
     case "rented":
       return (
-        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+        <Badge className="bg-primary/20 text-primary hover:bg-primary/20">
           <CheckCircle className="h-3 w-3 mr-1" />
           Rented
         </Badge>

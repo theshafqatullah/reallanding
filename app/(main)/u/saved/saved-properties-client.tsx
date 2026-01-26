@@ -395,12 +395,12 @@ export default function SavedPropertiesClient() {
                                 {filteredProperties.map((saved) => (
                                     <Card
                                         key={saved.$id}
-                                        className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col"
+                                        className="p-0 overflow-hidden transition-all flex flex-col"
                                     >
                                         {/* Property Image */}
                                         <Link
                                             href={`/p/${saved.property?.slug || saved.property?.$id}`}
-                                            className="relative block"
+                                            className="block"
                                         >
                                             <div className="relative h-48 bg-muted overflow-hidden">
                                                 {saved.property?.cover_image_url ? (

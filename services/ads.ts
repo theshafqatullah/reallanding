@@ -125,29 +125,33 @@ export const adsService = {
     userId: string,
     filters: AdsFilters = {}
   ): Promise<{ payments: FeaturedListingPayments[]; total: number }> {
+    // Store filters for client-side filtering (may not be indexed)
+    const filterStatus = filters.status;
+    const filterPackage = filters.package;
+    const requestedLimit = filters.limit || 25;
+    const requestedOffset = filters.offset || 0;
+    const needsClientFilter = filterStatus !== undefined || filterPackage !== undefined;
+    
     const queries: string[] = [
       Query.equal("owner_id", userId),
       Query.orderDesc("$createdAt"),
     ];
 
-    if (filters.status) {
-      queries.push(Query.equal("status", filters.status));
-    }
-
-    if (filters.package) {
-      queries.push(Query.equal("package", filters.package));
-    }
+    // status and package handled client-side since they may not be indexed
 
     if (filters.property_id) {
       queries.push(Query.equal("property_id", filters.property_id));
     }
 
-    if (filters.limit) {
-      queries.push(Query.limit(filters.limit));
-    }
-
-    if (filters.offset) {
-      queries.push(Query.offset(filters.offset));
+    if (needsClientFilter) {
+      queries.push(Query.limit(200));
+    } else {
+      if (filters.limit) {
+        queries.push(Query.limit(filters.limit));
+      }
+      if (filters.offset) {
+        queries.push(Query.offset(filters.offset));
+      }
     }
 
     const response = await databases.listDocuments(
@@ -156,9 +160,23 @@ export const adsService = {
       queries
     );
 
+    let payments = response.documents as unknown as FeaturedListingPayments[];
+    let total = response.total;
+    
+    // Apply client-side filtering
+    if (needsClientFilter) {
+      payments = payments.filter(p => {
+        if (filterStatus && p.status !== filterStatus) return false;
+        if (filterPackage && p.package !== filterPackage) return false;
+        return true;
+      });
+      total = payments.length;
+      payments = payments.slice(requestedOffset, requestedOffset + requestedLimit);
+    }
+
     return {
-      payments: response.documents as unknown as FeaturedListingPayments[],
-      total: response.total,
+      payments,
+      total,
     };
   },
 
@@ -274,12 +292,10 @@ export const adsService = {
   ): Promise<FeaturedListingPayments[]> {
     const now = new Date().toISOString();
     const queries: string[] = [
-      Query.equal("status", "active"),
-      Query.equal("is_active", true),
       Query.lessThanEqual("start_date", now),
       Query.greaterThanEqual("end_date", now),
       Query.orderDesc("position_priority"),
-      Query.limit(limit),
+      Query.limit(100),
     ];
 
     const response = await databases.listDocuments(
@@ -288,7 +304,12 @@ export const adsService = {
       queries
     );
 
-    return response.documents as unknown as FeaturedListingPayments[];
+    // Filter status and is_active client-side since they may not be indexed
+    const activeListings = (response.documents as unknown as FeaturedListingPayments[]).filter(
+      listing => (listing.status as unknown as string) === "active" && listing.is_active === true
+    );
+
+    return activeListings.slice(0, limit);
   },
 
   // ==================== Featured Slots ====================
@@ -301,12 +322,15 @@ export const adsService = {
       DATABASE_ID,
       FEATURED_SLOTS_COLLECTION,
       [
-        Query.equal("is_active", true),
-        Query.equal("status", "active"),
         Query.orderAsc("name"),
+        Query.limit(100),
       ]
     );
-    return response.documents as unknown as FeaturedSlots[];
+    
+    // Filter status and is_active client-side since they may not be indexed
+    return (response.documents as unknown as FeaturedSlots[]).filter(
+      slot => (slot.status as unknown as string) === "active" && slot.is_active === true
+    );
   },
 
   /**
@@ -334,10 +358,9 @@ export const adsService = {
     const now = new Date().toISOString();
     const queries: string[] = [
       Query.equal("placement", placement),
-      Query.equal("status", "active"),
-      Query.equal("is_active", true),
       Query.lessThanEqual("start_date", now),
       Query.greaterThanEqual("end_date", now),
+      Query.limit(100),
     ];
 
     const response = await databases.listDocuments(
@@ -346,7 +369,10 @@ export const adsService = {
       queries
     );
 
-    return response.documents as unknown as BannerAds[];
+    // Filter status and is_active client-side since they may not be indexed
+    return (response.documents as unknown as BannerAds[]).filter(
+      ad => (ad.status as unknown as string) === "active" && ad.is_active === true
+    );
   },
 
   /**
@@ -402,14 +428,18 @@ export const adsService = {
         PROMOTIONS_COLLECTION,
         [
           Query.equal("code", code.toUpperCase()),
-          Query.equal("status", "active"),
-          Query.equal("is_active", true),
+          Query.limit(20),
         ]
       );
 
-      if (response.documents.length === 0) return null;
+      // Filter status and is_active client-side since they may not be indexed
+      const activePromos = (response.documents as unknown as Promotions[]).filter(
+        promo => (promo.status as unknown as string) === "active" && promo.is_active === true
+      );
+      
+      if (activePromos.length === 0) return null;
 
-      const promo = response.documents[0] as unknown as Promotions;
+      const promo = activePromos[0];
 
       // Check if within date range
       if (promo.start_date && promo.start_date > now) return null;

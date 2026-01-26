@@ -116,8 +116,7 @@ export default function PropertyDetailClient() {
     try {
       const queries = [
         Query.notEqual("$id", prop.$id),
-        Query.equal("is_published", true),
-        Query.limit(4),
+        Query.limit(20),
       ];
 
       if (prop.property_type_id) {
@@ -133,7 +132,12 @@ export default function PropertyDetailClient() {
         queries
       );
 
-      setSimilarProperties(response.documents as unknown as Properties[]);
+      // Filter is_published client-side since it may not be indexed
+      const publishedProperties = (response.documents as unknown as Properties[]).filter(
+        p => p.is_published === true
+      );
+
+      setSimilarProperties(publishedProperties.slice(0, 4));
     } catch (err) {
       console.error("Error fetching similar properties:", err);
     }
@@ -1336,7 +1340,7 @@ export default function PropertyDetailClient() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {similarProperties.map((prop) => (
                 <Link key={prop.$id} href={`/p/${prop.slug || prop.reference_id}`}>
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <Card className="p-0 overflow-hidden transition-all">
                     <div className="relative aspect-[4/3]">
                       <Image
                         src={prop.main_image_url || prop.cover_image_url || "/placeholder-property.jpg"}

@@ -477,7 +477,7 @@ function PropertyGridCard({
 function PropertyCardSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
     if (viewMode === "list") {
         return (
-            <Card className="overflow-hidden">
+            <Card className="p-0 overflow-hidden">
                 <div className="flex flex-col lg:flex-row">
                     <Skeleton className="w-full lg:w-[380px] h-64 lg:h-[280px]" />
                     <div className="flex-1 p-5 space-y-4">
@@ -497,7 +497,7 @@ function PropertyCardSkeleton({ viewMode }: { viewMode: "grid" | "list" }) {
     }
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="p-0 overflow-hidden">
             <Skeleton className="h-48 w-full" />
             <div className="p-4 space-y-3">
                 <Skeleton className="h-5 w-2/3" />
@@ -524,7 +524,7 @@ function RightSidebar({
     return (
         <div className="space-y-6">
             {/* Map Card */}
-            <Card className="overflow-hidden border-border">
+            <Card className="p-0 overflow-hidden border-border">
                 <div className="relative h-48 bg-muted">
                     <div className="absolute inset-0 flex items-center justify-center">
                         <MapIcon className="w-16 h-16 text-muted-foreground/30" />

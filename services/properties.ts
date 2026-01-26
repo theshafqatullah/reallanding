@@ -260,6 +260,10 @@ export const propertiesService = {
   async list(filters?: PropertyFilters): Promise<{ properties: Properties[]; total: number }> {
     try {
       const queries: string[] = [];
+      // Store filters for client-side filtering (not indexed)
+      const filterIsFeatured = filters?.is_featured;
+      const filterIsActive = filters?.is_active;
+      const filterIsPublished = filters?.is_published;
 
       if (filters?.owner_id) {
         queries.push(Query.equal("owner_id", filters.owner_id));
@@ -267,15 +271,7 @@ export const propertiesService = {
       if (filters?.agent_id) {
         queries.push(Query.equal("agent_id", filters.agent_id));
       }
-      if (filters?.is_active !== undefined) {
-        queries.push(Query.equal("is_active", filters.is_active));
-      }
-      if (filters?.is_published !== undefined) {
-        queries.push(Query.equal("is_published", filters.is_published));
-      }
-      if (filters?.is_featured !== undefined) {
-        queries.push(Query.equal("is_featured", filters.is_featured));
-      }
+      // is_active and is_published filtering done client-side (not indexed)
       if (filters?.property_type_id) {
         queries.push(Query.equal("property_type_id", filters.property_type_id));
       }
@@ -327,9 +323,21 @@ export const propertiesService = {
         queries
       );
 
+      // Filter is_featured, is_active, is_published client-side since they're not indexed
+      let properties = response.documents as unknown as Properties[];
+      if (filterIsActive !== undefined) {
+        properties = properties.filter(p => p.is_active === filterIsActive);
+      }
+      if (filterIsPublished !== undefined) {
+        properties = properties.filter(p => p.is_published === filterIsPublished);
+      }
+      if (filterIsFeatured !== undefined) {
+        properties = properties.filter(p => p.is_featured === filterIsFeatured);
+      }
+
       return {
-        properties: response.documents as unknown as Properties[],
-        total: response.total,
+        properties,
+        total: properties.length,
       };
     } catch (error) {
       console.error("Error listing properties:", error);
@@ -347,13 +355,16 @@ export const propertiesService = {
         PROPERTIES_COLLECTION_ID,
         [
           Query.equal("city_id", cityId),
-          Query.equal("is_active", true),
-          Query.equal("is_published", true),
-          Query.select(["$id"]),
-          Query.limit(1),
+          Query.select(["$id", "is_active", "is_published"]),
+          Query.limit(500),
         ]
       );
-      return response.total;
+      // Filter is_active and is_published client-side
+      const activePublished = response.documents.filter(
+        (d: unknown) => (d as {is_active: boolean; is_published: boolean}).is_active === true && 
+                        (d as {is_active: boolean; is_published: boolean}).is_published === true
+      );
+      return activePublished.length;
     } catch (error) {
       console.error("Error getting property count by city:", error);
       return 0;
@@ -373,23 +384,21 @@ export const propertiesService = {
         PROPERTIES_COLLECTION_ID,
         [
           Query.equal("city_id", cityIds),
-          Query.equal("is_active", true),
-          Query.equal("is_published", true),
-          Query.select(["$id", "city_id"]),
+          Query.select(["$id", "city_id", "is_active", "is_published"]),
           Query.limit(5000), // Increase limit to get more accurate counts
         ]
       );
 
-      // Count properties per city using reduce
+      // Count properties per city using reduce, filtering is_active and is_published client-side
       const counts = cityIds.reduce((acc, cityId) => {
         acc[cityId] = 0;
         return acc;
       }, {} as Record<string, number>);
 
       response.documents.forEach((doc) => {
-        const cityId = (doc as unknown as { city_id: string }).city_id;
-        if (cityId && counts.hasOwnProperty(cityId)) {
-          counts[cityId]++;
+        const prop = doc as unknown as { city_id: string; is_active: boolean; is_published: boolean };
+        if (prop.is_active === true && prop.is_published === true && prop.city_id && counts.hasOwnProperty(prop.city_id)) {
+          counts[prop.city_id]++;
         }
       });
 
@@ -764,15 +773,17 @@ export const propertiesService = {
         DATABASE_ID,
         PROPERTIES_COLLECTION_ID,
         [
-          Query.equal("is_featured", true),
-          Query.equal("is_active", true),
-          Query.equal("is_published", true),
-          Query.limit(limit),
+          Query.limit(200), // Fetch more to filter client-side
           Query.orderDesc("$createdAt"),
         ]
       );
 
-      return response.documents as unknown as Properties[];
+      // Filter is_active, is_published, is_featured client-side since they're not indexed
+      const featured = (response.documents as unknown as Properties[]).filter(
+        p => p.is_active === true && p.is_published === true && p.is_featured === true
+      );
+
+      return featured.slice(0, limit);
     } catch (error) {
       console.error("Error fetching featured properties:", error);
       throw error;

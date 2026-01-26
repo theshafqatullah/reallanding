@@ -95,32 +95,62 @@ class KycService {
      * Create a new KYC document submission
      */
     async createDocument(data: CreateKycDocumentData): Promise<KycDocument> {
-        const document = await databases.createDocument(
-            DATABASE_ID,
-            COLLECTION_ID,
-            ID.unique(),
-            {
-                ...data,
+        try {
+            // Prepare document data with proper null handling
+            const documentData: Record<string, unknown> = {
+                user_id: data.user_id,
+                document_type: data.document_type,
                 status: 'pending',
                 submitted_at: new Date().toISOString(),
+                is_primary: data.is_primary ?? false,
+            };
+
+            // Only add optional fields if they have values
+            if (data.document_number) {
+                documentData.document_number = data.document_number;
             }
-        );
-        return document as unknown as KycDocument;
+            if (data.document_file_id) {
+                documentData.document_file_id = data.document_file_id;
+            }
+            if (data.expiry_date) {
+                documentData.expiry_date = data.expiry_date;
+            }
+            if (data.notes) {
+                documentData.notes = data.notes;
+            }
+
+            const document = await databases.createDocument(
+                DATABASE_ID,
+                COLLECTION_ID,
+                ID.unique(),
+                documentData
+            );
+            return document as unknown as KycDocument;
+        } catch (error) {
+            console.error('KYC createDocument error:', error);
+            throw error;
+        }
     }
 
     /**
      * Get all KYC documents for a user
      */
     async getDocumentsByUser(userId: string): Promise<KycDocument[]> {
-        const response = await databases.listDocuments(
-            DATABASE_ID,
-            COLLECTION_ID,
-            [
-                Query.equal('user_id', userId),
-                Query.orderDesc('$createdAt'),
-            ]
-        );
-        return response.documents as unknown as KycDocument[];
+        try {
+            const response = await databases.listDocuments(
+                DATABASE_ID,
+                COLLECTION_ID,
+                [
+                    Query.equal('user_id', userId),
+                    Query.orderDesc('$createdAt'),
+                ]
+            );
+            return response.documents as unknown as KycDocument[];
+        } catch (error) {
+            console.error('KYC getDocumentsByUser error:', error);
+            // Return empty array if collection doesn't exist yet
+            return [];
+        }
     }
 
     /**
@@ -163,19 +193,29 @@ class KycService {
      * Upload a document file to storage
      */
     async uploadFile(file: File): Promise<string> {
-        const result = await storage.createFile(
-            STORAGE_BUCKET_ID,
-            ID.unique(),
-            file
-        );
-        return result.$id;
+        try {
+            const result = await storage.createFile(
+                STORAGE_BUCKET_ID,
+                ID.unique(),
+                file
+            );
+            return result.$id;
+        } catch (error) {
+            console.error('KYC uploadFile error:', error);
+            throw new Error('Failed to upload file. Please try again.');
+        }
     }
 
     /**
      * Delete a document file from storage
      */
     async deleteFile(fileId: string): Promise<void> {
-        await storage.deleteFile(STORAGE_BUCKET_ID, fileId);
+        try {
+            await storage.deleteFile(STORAGE_BUCKET_ID, fileId);
+        } catch (error) {
+            console.error('KYC deleteFile error:', error);
+            // Don't throw - file might already be deleted
+        }
     }
 
     /**

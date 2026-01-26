@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useApplyForm } from '@/lib/apply-context';
 import { CheckCircle2, Circle } from 'lucide-react';
@@ -36,6 +38,20 @@ export function ApplyProgressBar() {
     return (
         <div className="sticky top-0 z-40 bg-white border-b">
             <div className="container max-w-4xl mx-auto px-4 py-6">
+                {/* Logo */}
+                <div className="mb-6">
+                    <Link href="/" className="flex items-center">
+                        <Image
+                            src="/logo.svg"
+                            alt="Real Landing"
+                            width={394}
+                            height={181}
+                            className="h-8 w-auto"
+                            priority
+                        />
+                    </Link>
+                </div>
+
                 {/* Progress Bar */}
                 <div className="mb-6">
                     <div className="relative h-2 bg-muted rounded-full overflow-hidden">
@@ -66,7 +82,7 @@ export function ApplyProgressBar() {
                                     <div
                                         className={cn(
                                             'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200',
-                                            isCompleted && 'bg-green-100 text-green-600',
+                                            isCompleted && 'bg-primary/10 text-primary',
                                             isActive && 'bg-primary text-white ring-2 ring-primary ring-offset-2',
                                             !isCompleted && !isActive && 'bg-muted text-muted-foreground'
                                         )}
@@ -81,7 +97,7 @@ export function ApplyProgressBar() {
                                         <span
                                             className={cn(
                                                 'text-sm font-semibold',
-                                                isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                                                isActive ? 'text-primary' : isCompleted ? 'text-primary' : 'text-muted-foreground'
                                             )}
                                         >
                                             Step {step.number}
@@ -89,7 +105,7 @@ export function ApplyProgressBar() {
                                         <span
                                             className={cn(
                                                 'text-xs',
-                                                isActive ? 'text-primary/80' : isCompleted ? 'text-green-600/80' : 'text-muted-foreground/60'
+                                                isActive ? 'text-primary/80' : isCompleted ? 'text-primary/80' : 'text-muted-foreground/60'
                                             )}
                                         >
                                             {step.label}
@@ -102,7 +118,7 @@ export function ApplyProgressBar() {
                                     <div
                                         className={cn(
                                             'flex-1 h-1 mx-2 rounded-full transition-all duration-200',
-                                            isCompleted ? 'bg-green-200' : 'bg-muted'
+                                            isCompleted ? 'bg-primary/20' : 'bg-muted'
                                         )}
                                     />
                                 )}

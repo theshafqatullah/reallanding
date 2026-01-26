@@ -54,6 +54,10 @@ export const agentReviewsService = {
     async list(filters?: AgentReviewFilters): Promise<{ reviews: AgentReviews[]; total: number }> {
         try {
             const queries: string[] = [];
+            
+            // Store filters for client-side filtering (may not be indexed)
+            const filterIsActive = filters?.is_active;
+            const filterIsPublished = filters?.is_published;
 
             if (filters?.agent_id) {
                 queries.push(Query.equal("agent_id", filters.agent_id));
@@ -61,20 +65,25 @@ export const agentReviewsService = {
             if (filters?.reviewer_id) {
                 queries.push(Query.equal("reviewer_id", filters.reviewer_id));
             }
-            if (filters?.is_published !== undefined) {
-                queries.push(Query.equal("is_published", filters.is_published));
-            }
-            if (filters?.is_active !== undefined) {
-                queries.push(Query.equal("is_active", filters.is_active));
-            }
+            // is_published handled client-side since it may not be indexed
+            // is_active handled client-side since it may not be indexed
             if (filters?.min_rating !== undefined) {
                 queries.push(Query.greaterThanEqual("rating", filters.min_rating));
             }
-            if (filters?.limit) {
-                queries.push(Query.limit(filters.limit));
-            }
-            if (filters?.offset) {
-                queries.push(Query.offset(filters.offset));
+            
+            // Fetch more if we need to filter client-side
+            const requestedLimit = filters?.limit || 25;
+            const requestedOffset = filters?.offset || 0;
+            const needsClientFilter = filterIsActive !== undefined || filterIsPublished !== undefined;
+            if (needsClientFilter) {
+                queries.push(Query.limit(200));
+            } else {
+                if (filters?.limit) {
+                    queries.push(Query.limit(filters.limit));
+                }
+                if (filters?.offset) {
+                    queries.push(Query.offset(filters.offset));
+                }
             }
 
             queries.push(Query.orderDesc("$createdAt"));
@@ -85,9 +94,23 @@ export const agentReviewsService = {
                 queries
             );
 
+            let reviews = response.documents as unknown as AgentReviews[];
+            let total = response.total;
+            
+            // Apply client-side filtering for is_active and is_published
+            if (needsClientFilter) {
+                reviews = reviews.filter(r => {
+                    if (filterIsActive !== undefined && r.is_active !== filterIsActive) return false;
+                    if (filterIsPublished !== undefined && r.is_published !== filterIsPublished) return false;
+                    return true;
+                });
+                total = reviews.length;
+                reviews = reviews.slice(requestedOffset, requestedOffset + requestedLimit);
+            }
+
             return {
-                reviews: response.documents as unknown as AgentReviews[],
-                total: response.total,
+                reviews,
+                total,
             };
         } catch (error) {
             console.error("Error listing reviews:", error);

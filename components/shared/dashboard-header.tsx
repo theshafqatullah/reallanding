@@ -56,11 +56,15 @@ export function DashboardHeader() {
                 {/* Left Section: Logo + Page Title */}
                 <div className="flex items-center gap-6">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center space-x-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                            <span className="text-sm font-bold">RL</span>
-                        </div>
-                        <span className="font-bold text-xl hidden sm:inline">Real Landing</span>
+                    <Link href="/" className="flex items-center">
+                        <Image
+                            src="/logo.svg"
+                            alt="Real Landing"
+                            width={394}
+                            height={181}
+                            className="h-10 w-auto"
+                            priority
+                        />
                     </Link>
 
                     {/* Separator */}

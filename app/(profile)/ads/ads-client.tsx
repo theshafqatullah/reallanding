@@ -774,8 +774,8 @@ export default function AdsClient() {
                     <Card>
                         <CardContent className="p-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-teal-100 rounded-lg">
-                                    <Percent className="h-5 w-5 text-teal-600" />
+                                <div className="p-2 bg-primary/10 rounded-lg">
+                                    <Percent className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
                                     <p className="text-xl font-bold">{analytics.avgCtr.toFixed(2)}%</p>

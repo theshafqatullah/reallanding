@@ -49,22 +49,29 @@ export const notificationsService = {
     }
   ): Promise<{ notifications: UserNotifications[]; total: number }> {
     try {
-      const queries: string[] = [Query.equal("user_id", userId)];
+      // Store filters for client-side filtering (may not be indexed)
+      const filterIsRead = options?.is_read;
+      const filterType = options?.notification_type;
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      const needsClientFilter = filterIsRead !== undefined || filterType !== undefined;
+      
+      const queries: string[] = [
+        Query.equal("user_id", userId),
+        Query.orderDesc("$createdAt"),
+      ];
 
-      if (options?.is_read !== undefined) {
-        queries.push(Query.equal("is_read", options.is_read));
+      // is_read and notification_type handled client-side since they may not be indexed
+      if (needsClientFilter) {
+        queries.push(Query.limit(200));
+      } else {
+        if (options?.limit) {
+          queries.push(Query.limit(options.limit));
+        }
+        if (options?.offset) {
+          queries.push(Query.offset(options.offset));
+        }
       }
-      if (options?.notification_type) {
-        queries.push(Query.equal("notification_type", options.notification_type));
-      }
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
-      }
-
-      queries.push(Query.orderDesc("$createdAt"));
 
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -72,9 +79,23 @@ export const notificationsService = {
         queries
       );
 
+      let notifications = response.documents as unknown as UserNotifications[];
+      let total = response.total;
+      
+      // Apply client-side filtering
+      if (needsClientFilter) {
+        notifications = notifications.filter(n => {
+          if (filterIsRead !== undefined && n.is_read !== filterIsRead) return false;
+          if (filterType && n.notification_type !== filterType) return false;
+          return true;
+        });
+        total = notifications.length;
+        notifications = notifications.slice(requestedOffset, requestedOffset + requestedLimit);
+      }
+
       return {
-        notifications: response.documents as unknown as UserNotifications[],
-        total: response.total,
+        notifications,
+        total,
       };
     } catch (error) {
       console.error("Error fetching user notifications:", error);
@@ -92,13 +113,16 @@ export const notificationsService = {
         NOTIFICATIONS_COLLECTION_ID,
         [
           Query.equal("user_id", userId),
-          Query.equal("is_read", false),
-          Query.select(["$id"]), // Only fetch IDs for count
-          Query.limit(1), // We only need the total count
+          Query.limit(200),
         ]
       );
 
-      return response.total;
+      // Filter is_read client-side since it may not be indexed
+      const unreadNotifications = response.documents.filter(
+        (doc) => (doc as unknown as UserNotifications).is_read === false
+      );
+
+      return unreadNotifications.length;
     } catch (error) {
       console.error("Error getting unread notifications count:", error);
       throw error;

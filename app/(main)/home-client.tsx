@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog,
   DialogContent,
@@ -173,11 +174,97 @@ const testimonials = [
 ];
 
 const stats = [
-  { label: "Properties Listed", value: "50K+", icon: HomeIcon },
-  { label: "Happy Customers", value: "25K+", icon: UsersIcon },
-  { label: "Cities Covered", value: "200+", icon: MapPinIcon },
-  { label: "Expert Agents", value: "1K+", icon: ShieldCheckIcon },
+  { label: "Properties Listed", value: "50K+", numericValue: 50000, suffix: "+", icon: HomeIcon },
+  { label: "Happy Customers", value: "25K+", numericValue: 25000, suffix: "+", icon: UsersIcon },
+  { label: "Cities Covered", value: "200+", numericValue: 200, suffix: "+", icon: MapPinIcon },
+  { label: "Expert Agents", value: "1K+", numericValue: 1000, suffix: "+", icon: ShieldCheckIcon },
 ];
+
+// Custom hook for counting animation
+function useCountUp(end: number, duration: number = 2000, startOnView: boolean = true) {
+  const [count, setCount] = useState(0);
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const startCounting = useCallback(() => {
+    if (hasStarted) return;
+    setHasStarted(true);
+
+    const startTime = performance.now();
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.floor(easeOutQuart * end));
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCount(end);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [end, duration, hasStarted]);
+
+  useEffect(() => {
+    if (!startOnView) {
+      startCounting();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            startCounting();
+          }
+        });
+      },
+      { threshold: 0.3 }
+    );
+
+    const currentRef = ref.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [startCounting, startOnView]);
+
+  return { count, ref };
+}
+
+// Format large numbers (e.g., 50000 -> 50K)
+function formatStatNumber(num: number): string {
+  if (num >= 1000) {
+    return (num / 1000).toFixed(0) + "K";
+  }
+  return num.toString();
+}
+
+// Individual stat item component with animation
+function AnimatedStatItem({ stat }: { stat: typeof stats[0] }) {
+  const { count, ref } = useCountUp(stat.numericValue, 2000);
+
+  return (
+    <div ref={ref} className="text-center">
+      <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-3">
+        <stat.icon className="h-7 w-7 text-primary" />
+      </div>
+      <div className="text-3xl md:text-4xl font-bold mb-1 text-foreground">
+        {formatStatNumber(count)}{stat.suffix}
+      </div>
+      <div className="text-sm text-muted-foreground">{stat.label}</div>
+    </div>
+  );
+}
 
 // Popular cities data - will be populated with real data
 const mockPopularCities = [
@@ -324,14 +411,14 @@ const aiInnovations = [
     title: "AI-Powered Property Matching",
     description: "Our intelligent algorithm learns your preferences and suggests properties that perfectly match your lifestyle, budget, and needs.",
     badge: "AI Powered",
-    gradient: "from-violet-500 to-purple-600",
+    gradient: "from-primary to-primary/80",
   },
   {
     icon: Glasses,
     title: "Virtual Reality Tours",
     description: "Experience immersive 3D walkthroughs of properties from anywhere in the world. No need to travel for initial viewings.",
     badge: "VR Ready",
-    gradient: "from-blue-500 to-cyan-500",
+    gradient: "from-primary/90 to-primary/70",
   },
   {
     icon: Box,
@@ -359,7 +446,7 @@ const aiInnovations = [
     title: "Predictive Price Analytics",
     description: "Machine learning models analyze market trends to predict future property values and investment potential.",
     badge: "ML Analytics",
-    gradient: "from-indigo-500 to-blue-600",
+    gradient: "from-primary/80 to-primary/60",
   },
 ];
 
@@ -444,6 +531,66 @@ export default function HomePageClient() {
   const [priceDialogOpen, setPriceDialogOpen] = useState(false);
   const [cityDialogOpen, setCityDialogOpen] = useState(false);
   const [citySearchQuery, setCitySearchQuery] = useState("");
+
+  // Agent search state
+  const [agentSearchQuery, setAgentSearchQuery] = useState("");
+  const [agentType, setAgentType] = useState("all"); // all, agent, agency
+  const [agentSpecialization, setAgentSpecialization] = useState("all");
+  const [agentCityFilter, setAgentCityFilter] = useState("all");
+  const [agentCityDialogOpen, setAgentCityDialogOpen] = useState(false);
+  const [agentSpecDialogOpen, setAgentSpecDialogOpen] = useState(false);
+
+  // Project search state
+  const [projectSearchQuery, setProjectSearchQuery] = useState("");
+  const [projectStatus, setProjectStatus] = useState("all"); // all, upcoming, under-construction, ready
+  const [projectType, setProjectType] = useState("all"); // all, residential, commercial, mixed
+  const [projectCityFilter, setProjectCityFilter] = useState("all");
+  const [projectCityDialogOpen, setProjectCityDialogOpen] = useState(false);
+  const [projectTypeDialogOpen, setProjectTypeDialogOpen] = useState(false);
+
+  // Mortgage calculator state
+  const [homePrice, setHomePrice] = useState(10000000); // 1 Crore PKR default
+  const [downPayment, setDownPayment] = useState(2000000); // 20 Lac PKR default
+  const [interestRate, setInterestRate] = useState(18); // 18% default for Pakistan
+  const [loanTerm, setLoanTerm] = useState(20); // 20 years default
+
+  // Calculate monthly mortgage payment
+  const calculateMonthlyPayment = useCallback(() => {
+    const principal = homePrice - downPayment;
+    if (principal <= 0) return 0;
+
+    const monthlyRate = interestRate / 100 / 12;
+    const numberOfPayments = loanTerm * 12;
+
+    if (monthlyRate === 0) {
+      return principal / numberOfPayments;
+    }
+
+    const payment = principal *
+      (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
+      (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+
+    return Math.round(payment);
+  }, [homePrice, downPayment, interestRate, loanTerm]);
+
+  const monthlyPayment = calculateMonthlyPayment();
+  const downPaymentPercent = homePrice > 0 ? Math.round((downPayment / homePrice) * 100) : 0;
+
+  // Format currency for PKR
+  const formatPKRInput = (value: number) => {
+    if (value >= 10000000) {
+      return `${(value / 10000000).toFixed(2)} Cr`;
+    } else if (value >= 100000) {
+      return `${(value / 100000).toFixed(2)} Lac`;
+    }
+    return value.toLocaleString();
+  };
+
+  // Parse user input to number
+  const parseInputValue = (value: string): number => {
+    const cleaned = value.replace(/[^0-9.]/g, '');
+    return parseFloat(cleaned) || 0;
+  };
 
   // Lookup data from Appwrite
   const [propertyTypes, setPropertyTypes] = useState<PropertyType[]>([]);
@@ -652,6 +799,62 @@ export default function HomePageClient() {
     router.push(queryString ? `/properties?${queryString}` : "/properties");
   };
 
+  // Handle agent search
+  const handleAgentSearch = () => {
+    const params = new URLSearchParams();
+
+    // Add search query
+    if (agentSearchQuery.trim()) {
+      params.set("q", agentSearchQuery.trim());
+    }
+
+    // Add agent type filter
+    if (agentType && agentType !== "all") {
+      params.set("type", agentType);
+    }
+
+    // Add city filter
+    if (agentCityFilter && agentCityFilter !== "all") {
+      params.set("city", agentCityFilter);
+    }
+
+    // Add specialization filter
+    if (agentSpecialization && agentSpecialization !== "all") {
+      params.set("specialization", agentSpecialization);
+    }
+
+    const queryString = params.toString();
+    router.push(queryString ? `/agents?${queryString}` : "/agents");
+  };
+
+  // Handle project search
+  const handleProjectSearch = () => {
+    const params = new URLSearchParams();
+
+    // Add search query
+    if (projectSearchQuery.trim()) {
+      params.set("q", projectSearchQuery.trim());
+    }
+
+    // Add project status filter
+    if (projectStatus && projectStatus !== "all") {
+      params.set("status", projectStatus);
+    }
+
+    // Add project type filter
+    if (projectType && projectType !== "all") {
+      params.set("type", projectType);
+    }
+
+    // Add city filter
+    if (projectCityFilter && projectCityFilter !== "all") {
+      params.set("city", projectCityFilter);
+    }
+
+    const queryString = params.toString();
+    router.push(queryString ? `/properties?project=true&${queryString}` : "/properties?project=true");
+  };
+
   // Format price for display (PKR with Lac/Crore)
   const formatPricePKR = (price: number, currency: string = "PKR") => {
     if (currency === "PKR") {
@@ -727,15 +930,6 @@ export default function HomePageClient() {
                 New Projects
               </button>
               <button
-                onClick={() => setActiveTab("transactions")}
-                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "transactions"
-                  ? "bg-primary text-white"
-                  : "text-gray-700 hover:bg-gray-100"
-                  }`}
-              >
-                Transactions
-              </button>
-              <button
                 onClick={() => setActiveTab("agents")}
                 className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all ${activeTab === "agents"
                   ? "bg-primary text-white"
@@ -750,134 +944,332 @@ export default function HomePageClient() {
           {/* Search Card */}
           <div className="max-w-4xl mx-auto w-full">
             <Card className="bg-white rounded-3xl shadow-2xl p-5 md:p-8">
-              {/* First Row - Buy/Rent Toggle + Location + Search */}
-              <div className="flex flex-col md:flex-row gap-3">
-                {/* Buy/Rent Toggle */}
-                <div className="flex rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
-                  <button
-                    onClick={() => setListingType("buy")}
-                    className={`px-6 py-3 text-sm font-medium transition-all ${listingType === "buy"
-                      ? "bg-primary text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    Buy
-                  </button>
-                  <button
-                    onClick={() => setListingType("rent")}
-                    className={`px-6 py-3 text-sm font-medium transition-all border-l border-gray-200 ${listingType === "rent"
-                      ? "bg-primary text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    Rent
-                  </button>
+              {/* Properties Search Card */}
+              {activeTab === "properties" && (
+                <div className="space-y-4">
+                  {/* First Row - Buy/Rent Toggle + Location + Search */}
+                  <div className="flex flex-col md:flex-row gap-3">
+                    {/* Buy/Rent Toggle */}
+                    <div className="flex rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                      <button
+                        onClick={() => setListingType("buy")}
+                        className={`px-6 py-3 text-sm font-medium transition-all ${listingType === "buy"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Buy
+                      </button>
+                      <button
+                        onClick={() => setListingType("rent")}
+                        className={`px-6 py-3 text-sm font-medium transition-all border-l border-gray-200 ${listingType === "rent"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Rent
+                      </button>
+                    </div>
+
+                    {/* Location Input */}
+                    <div className="flex-1 relative">
+                      <MapPinIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        type="text"
+                        placeholder="Enter city, neighborhood, or ZIP code"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        className="pl-12 h-12 text-gray-900 rounded-full border-gray-200 focus-visible:ring-primary"
+                      />
+                    </div>
+
+                    {/* Search Button */}
+                    <Button size="lg" className="h-12 px-10 rounded-full text-base" onClick={handleSearch}>
+                      <SearchIcon className="mr-2 h-5 w-5" />
+                      Search
+                    </Button>
+                  </div>
+
+                  {/* Second Row - Filters */}
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full">
+                    {/* Property Status Toggle */}
+                    <div className="flex rounded-full border border-gray-200 overflow-hidden h-11 flex-shrink-0">
+                      <button
+                        onClick={() => setPropertyStatus("all")}
+                        className={`px-5 text-sm font-medium transition-all h-full ${propertyStatus === "all"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setPropertyStatus("ready")}
+                        className={`px-5 text-sm font-medium transition-all border-l border-gray-200 h-full ${propertyStatus === "ready"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Ready
+                      </button>
+                      <button
+                        onClick={() => setPropertyStatus("off-plan")}
+                        className={`px-5 text-sm font-medium transition-all border-l border-gray-200 h-full ${propertyStatus === "off-plan"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Off-Plan
+                      </button>
+                    </div>
+
+                    {/* City Button */}
+                    <button
+                      onClick={() => setCityDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <span>
+                        {cityFilter === "all"
+                          ? "All Cities"
+                          : cities.find(c => c.$id === cityFilter)?.name || cityFilter}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+
+                    {/* Property Type Button */}
+                    <button
+                      onClick={() => setTypeDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <span>
+                        {propertyType === "all"
+                          ? "All Types"
+                          : propertyTypes.find(pt => pt.$id === propertyType)?.name || propertyType}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+
+                    {/* Beds Button */}
+                    <button
+                      onClick={() => setBedsDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <span>{bedsFilter === "any" ? "Any Beds" : bedsFilter === "4" ? "4+ Beds" : `${bedsFilter} Bed${bedsFilter !== "1" ? "s" : ""}`}</span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+
+                    {/* Price Button */}
+                    <button
+                      onClick={() => setPriceDialogOpen(true)}
+                      className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <span>
+                        {priceFilter === "any" ? "Any Price" :
+                          priceFilter === "0-50lac" ? "Up to 50 Lac" :
+                            priceFilter === "50lac-1cr" ? "50 Lac - 1 Cr" :
+                              priceFilter === "1cr-2cr" ? "1 - 2 Crore" :
+                                priceFilter === "2cr-5cr" ? "2 - 5 Crore" :
+                                  priceFilter === "5cr+" ? "5 Crore+" : priceFilter}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+                  </div>
                 </div>
+              )}
 
-                {/* Location Input */}
-                <div className="flex-1 relative">
-                  <MapPinIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Enter city, neighborhood, or ZIP code"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="pl-12 h-12 text-gray-900 rounded-full border-gray-200 focus-visible:ring-primary"
-                  />
+              {/* Agents Search Card */}
+              {activeTab === "agents" && (
+                <div className="space-y-4">
+                  {/* First Row - Agent Type Toggle + Search */}
+                  <div className="flex flex-col md:flex-row gap-3">
+                    {/* Agent/Agency Toggle */}
+                    <div className="flex rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                      <button
+                        onClick={() => setAgentType("all")}
+                        className={`px-5 py-3 text-sm font-medium transition-all ${agentType === "all"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setAgentType("agent")}
+                        className={`px-5 py-3 text-sm font-medium transition-all border-l border-gray-200 ${agentType === "agent"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Agents
+                      </button>
+                      <button
+                        onClick={() => setAgentType("agency")}
+                        className={`px-5 py-3 text-sm font-medium transition-all border-l border-gray-200 ${agentType === "agency"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Agencies
+                      </button>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="flex-1 relative">
+                      <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search by name, agency, or area of expertise"
+                        value={agentSearchQuery}
+                        onChange={(e) => setAgentSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAgentSearch()}
+                        className="pl-12 h-12 text-gray-900 rounded-full border-gray-200 focus-visible:ring-primary"
+                      />
+                    </div>
+
+                    {/* Search Button */}
+                    <Button size="lg" className="h-12 px-10 rounded-full text-base" onClick={handleAgentSearch}>
+                      <SearchIcon className="mr-2 h-5 w-5" />
+                      Search
+                    </Button>
+                  </div>
+
+                  {/* Second Row - Filters */}
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full">
+                    {/* City Button */}
+                    <button
+                      onClick={() => setAgentCityDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <MapPinIcon className="h-4 w-4 text-gray-400" />
+                      <span>
+                        {agentCityFilter === "all"
+                          ? "All Cities"
+                          : cities.find(c => c.$id === agentCityFilter)?.name || agentCityFilter}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+
+                    {/* Specialization Button */}
+                    <button
+                      onClick={() => setAgentSpecDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <span>
+                        {agentSpecialization === "all"
+                          ? "All Specializations"
+                          : agentSpecialization === "residential" ? "Residential"
+                            : agentSpecialization === "commercial" ? "Commercial"
+                              : agentSpecialization === "luxury" ? "Luxury"
+                                : agentSpecialization === "rental" ? "Rental"
+                                  : agentSpecialization === "land" ? "Land & Plots"
+                                    : agentSpecialization}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+                  </div>
                 </div>
+              )}
 
-                {/* Search Button */}
-                <Button size="lg" className="h-12 px-10 rounded-full text-base" onClick={handleSearch}>
-                  <SearchIcon className="mr-2 h-5 w-5" />
-                  Search
-                </Button>
-              </div>
+              {/* New Projects Search Card */}
+              {activeTab === "new-projects" && (
+                <div className="space-y-4">
+                  {/* First Row - Project Status Toggle + Search */}
+                  <div className="flex flex-col md:flex-row gap-3">
+                    {/* Project Status Toggle */}
+                    <div className="flex rounded-full border border-gray-200 overflow-hidden flex-shrink-0">
+                      <button
+                        onClick={() => setProjectStatus("all")}
+                        className={`px-4 py-3 text-sm font-medium transition-all ${projectStatus === "all"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setProjectStatus("upcoming")}
+                        className={`px-4 py-3 text-sm font-medium transition-all border-l border-gray-200 ${projectStatus === "upcoming"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Upcoming
+                      </button>
+                      <button
+                        onClick={() => setProjectStatus("under-construction")}
+                        className={`px-4 py-3 text-sm font-medium transition-all border-l border-gray-200 ${projectStatus === "under-construction"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Under Construction
+                      </button>
+                      <button
+                        onClick={() => setProjectStatus("ready")}
+                        className={`px-4 py-3 text-sm font-medium transition-all border-l border-gray-200 ${projectStatus === "ready"
+                          ? "bg-primary text-white"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                      >
+                        Ready
+                      </button>
+                    </div>
 
-              {/* Second Row - Filters */}
-              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full">
-                {/* Property Status Toggle */}
-                <div className="flex rounded-full border border-gray-200 overflow-hidden h-11 flex-shrink-0">
-                  <button
-                    onClick={() => setPropertyStatus("all")}
-                    className={`px-5 text-sm font-medium transition-all h-full ${propertyStatus === "all"
-                      ? "bg-primary text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setPropertyStatus("ready")}
-                    className={`px-5 text-sm font-medium transition-all border-l border-gray-200 h-full ${propertyStatus === "ready"
-                      ? "bg-primary text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    Ready
-                  </button>
-                  <button
-                    onClick={() => setPropertyStatus("off-plan")}
-                    className={`px-5 text-sm font-medium transition-all border-l border-gray-200 h-full ${propertyStatus === "off-plan"
-                      ? "bg-primary text-white"
-                      : "bg-white text-gray-700 hover:bg-gray-50"
-                      }`}
-                  >
-                    Off-Plan
-                  </button>
+                    {/* Search Input */}
+                    <div className="flex-1 relative">
+                      <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        type="text"
+                        placeholder="Search by project name or developer"
+                        value={projectSearchQuery}
+                        onChange={(e) => setProjectSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleProjectSearch()}
+                        className="pl-12 h-12 text-gray-900 rounded-full border-gray-200 focus-visible:ring-primary"
+                      />
+                    </div>
+
+                    {/* Search Button */}
+                    <Button size="lg" className="h-12 px-10 rounded-full text-base" onClick={handleProjectSearch}>
+                      <SearchIcon className="mr-2 h-5 w-5" />
+                      Search
+                    </Button>
+                  </div>
+
+                  {/* Second Row - Filters */}
+                  <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center w-full">
+                    {/* City Button */}
+                    <button
+                      onClick={() => setProjectCityDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <MapPinIcon className="h-4 w-4 text-gray-400" />
+                      <span>
+                        {projectCityFilter === "all"
+                          ? "All Cities"
+                          : cities.find(c => c.$id === projectCityFilter)?.name || projectCityFilter}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+
+                    {/* Project Type Button */}
+                    <button
+                      onClick={() => setProjectTypeDialogOpen(true)}
+                      className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <span>
+                        {projectType === "all"
+                          ? "All Types"
+                          : projectType === "residential" ? "Residential"
+                            : projectType === "commercial" ? "Commercial"
+                              : projectType === "mixed" ? "Mixed Use"
+                                : projectType}
+                      </span>
+                      <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+                    </button>
+                  </div>
                 </div>
-
-                {/* City Button */}
-                <button
-                  onClick={() => setCityDialogOpen(true)}
-                  className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                >
-                  <span>
-                    {cityFilter === "all"
-                      ? "All Cities"
-                      : cities.find(c => c.$id === cityFilter)?.name || cityFilter}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-                </button>
-
-                {/* Property Type Button */}
-                <button
-                  onClick={() => setTypeDialogOpen(true)}
-                  className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                >
-                  <span>
-                    {propertyType === "all"
-                      ? "All Types"
-                      : propertyTypes.find(pt => pt.$id === propertyType)?.name || propertyType}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-                </button>
-
-                {/* Beds Button */}
-                <button
-                  onClick={() => setBedsDialogOpen(true)}
-                  className="flex-1 sm:flex-initial flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                >
-                  <span>{bedsFilter === "any" ? "Any Beds" : bedsFilter === "4" ? "4+ Beds" : `${bedsFilter} Bed${bedsFilter !== "1" ? "s" : ""}`}</span>
-                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-                </button>
-
-                {/* Price Button */}
-                <button
-                  onClick={() => setPriceDialogOpen(true)}
-                  className="flex-1 flex items-center justify-between gap-2 h-11 px-5 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
-                >
-                  <span>
-                    {priceFilter === "any" ? "Any Price" :
-                      priceFilter === "0-50lac" ? "Up to 50 Lac" :
-                        priceFilter === "50lac-1cr" ? "50 Lac - 1 Cr" :
-                          priceFilter === "1cr-2cr" ? "1 - 2 Crore" :
-                            priceFilter === "2cr-5cr" ? "2 - 5 Crore" :
-                              priceFilter === "5cr+" ? "5 Crore+" : priceFilter}
-                  </span>
-                  <ChevronDownIcon className="h-4 w-4 text-gray-400" />
-                </button>
-              </div>
+              )}
 
               {/* City Dialog */}
               <Dialog open={cityDialogOpen} onOpenChange={(open) => {
@@ -1064,6 +1456,182 @@ export default function HomePageClient() {
                 </DialogContent>
               </Dialog>
 
+              {/* Agent City Dialog */}
+              <Dialog open={agentCityDialogOpen} onOpenChange={(open) => {
+                setAgentCityDialogOpen(open);
+                if (!open) setCitySearchQuery("");
+              }}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Select City</DialogTitle>
+                  </DialogHeader>
+                  <div className="relative pt-2">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 mt-1 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search cities..."
+                      value={citySearchQuery}
+                      onChange={(e) => setCitySearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 pt-2 max-h-80 overflow-y-auto">
+                    {citySearchQuery === "" && (
+                      <button
+                        onClick={() => {
+                          setAgentCityFilter("all");
+                          setAgentCityDialogOpen(false);
+                          setCitySearchQuery("");
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-sm font-medium transition-all text-left ${agentCityFilter === "all"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                        <span>All Cities</span>
+                      </button>
+                    )}
+                    {filteredCities.map((city) => (
+                      <button
+                        key={city.$id}
+                        onClick={() => {
+                          setAgentCityFilter(city.$id);
+                          setAgentCityDialogOpen(false);
+                          setCitySearchQuery("");
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-sm font-medium transition-all text-left ${agentCityFilter === city.$id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                        <span>{city.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Agent Specialization Dialog */}
+              <Dialog open={agentSpecDialogOpen} onOpenChange={setAgentSpecDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Specialization</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-3 pt-4">
+                    {[
+                      { value: "all", label: "All Specializations" },
+                      { value: "residential", label: "Residential" },
+                      { value: "commercial", label: "Commercial" },
+                      { value: "luxury", label: "Luxury" },
+                      { value: "rental", label: "Rental" },
+                      { value: "land", label: "Land & Plots" },
+                    ].map((spec) => (
+                      <button
+                        key={spec.value}
+                        onClick={() => {
+                          setAgentSpecialization(spec.value);
+                          setAgentSpecDialogOpen(false);
+                        }}
+                        className={`p-4 rounded-xl border text-sm font-medium transition-all ${agentSpecialization === spec.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          }`}
+                      >
+                        {spec.label}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Project City Dialog */}
+              <Dialog open={projectCityDialogOpen} onOpenChange={(open) => {
+                setProjectCityDialogOpen(open);
+                if (!open) setCitySearchQuery("");
+              }}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Select City</DialogTitle>
+                  </DialogHeader>
+                  <div className="relative pt-2">
+                    <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 mt-1 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search cities..."
+                      value={citySearchQuery}
+                      onChange={(e) => setCitySearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 pt-2 max-h-80 overflow-y-auto">
+                    {citySearchQuery === "" && (
+                      <button
+                        onClick={() => {
+                          setProjectCityFilter("all");
+                          setProjectCityDialogOpen(false);
+                          setCitySearchQuery("");
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-sm font-medium transition-all text-left ${projectCityFilter === "all"
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                        <span>All Cities</span>
+                      </button>
+                    )}
+                    {filteredCities.map((city) => (
+                      <button
+                        key={city.$id}
+                        onClick={() => {
+                          setProjectCityFilter(city.$id);
+                          setProjectCityDialogOpen(false);
+                          setCitySearchQuery("");
+                        }}
+                        className={`flex items-center gap-3 p-3 rounded-lg border text-sm font-medium transition-all text-left ${projectCityFilter === city.$id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                      >
+                        <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                        <span>{city.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Project Type Dialog */}
+              <Dialog open={projectTypeDialogOpen} onOpenChange={setProjectTypeDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Project Type</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid grid-cols-2 gap-3 pt-4">
+                    {[
+                      { value: "all", label: "All Types" },
+                      { value: "residential", label: "Residential" },
+                      { value: "commercial", label: "Commercial" },
+                      { value: "mixed", label: "Mixed Use" },
+                    ].map((type) => (
+                      <button
+                        key={type.value}
+                        onClick={() => {
+                          setProjectType(type.value);
+                          setProjectTypeDialogOpen(false);
+                        }}
+                        className={`p-4 rounded-xl border text-sm font-medium transition-all ${projectType === type.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-gray-200 hover:border-gray-300 text-gray-700"
+                          }`}
+                      >
+                        {type.label}
+                      </button>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               {/* AI Prompt Banner */}
               <div className=" pt-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -1100,13 +1668,7 @@ export default function HomePageClient() {
         <div className="container mx-auto max-w-7xl px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="w-14 h-14 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <stat.icon className="h-7 w-7 text-primary" />
-                </div>
-                <div className="text-3xl md:text-4xl font-bold mb-1 text-foreground">{stat.value}</div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
+              <AnimatedStatItem key={stat.label} stat={stat} />
             ))}
           </div>
         </div>
@@ -1122,7 +1684,7 @@ export default function HomePageClient() {
             </Badge>
             <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
               The Future of Real Estate is{" "}
-              <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
                 Here
               </span>
             </h2>
@@ -1161,7 +1723,7 @@ export default function HomePageClient() {
           </div>
 
           {/* Interactive Demo CTA */}
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-primary via-violet-600 to-primary p-1">
+          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-primary via-primary/90 to-primary p-1">
             <div className="bg-card rounded-[22px] p-8 md:p-12">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 <div>
@@ -1189,7 +1751,7 @@ export default function HomePageClient() {
                   </div>
                 </div>
                 <div className="relative">
-                  <div className="aspect-video rounded-2xl bg-gradient-to-br from-violet-500/20 via-primary/20 to-pink-500/20 border border-border overflow-hidden">
+                  <div className="aspect-video rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-secondary border border-border overflow-hidden">
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
                         <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 animate-pulse">
@@ -1199,9 +1761,9 @@ export default function HomePageClient() {
                       </div>
                     </div>
                     {/* Decorative elements */}
-                    <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-violet-500/20 animate-bounce" style={{ animationDelay: "0s" }} />
+                    <div className="absolute top-4 left-4 w-12 h-12 rounded-xl bg-primary/20 animate-bounce" style={{ animationDelay: "0s" }} />
                     <div className="absolute top-8 right-8 w-8 h-8 rounded-full bg-primary/20 animate-bounce" style={{ animationDelay: "0.2s" }} />
-                    <div className="absolute bottom-8 left-8 w-10 h-10 rounded-lg bg-pink-500/20 animate-bounce" style={{ animationDelay: "0.4s" }} />
+                    <div className="absolute bottom-8 left-8 w-10 h-10 rounded-lg bg-secondary animate-bounce" style={{ animationDelay: "0.4s" }} />
                   </div>
                 </div>
               </div>
@@ -1217,6 +1779,47 @@ export default function HomePageClient() {
                 </div>
                 <h4 className="font-semibold text-foreground mb-1">{feature.title}</h4>
                 <p className="text-sm text-muted-foreground">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Badges / Partners - Horizontal Scrolling */}
+      <section className="py-12 bg-background overflow-hidden">
+        <div className="container mx-auto max-w-7xl px-4">
+          <div className="text-center mb-8">
+            <p className="text-muted-foreground text-lg">Trusted by industry leaders and recognized by</p>
+          </div>
+        </div>
+
+        {/* Infinite scrolling partners - First row (left to right) */}
+        <div className="relative mb-4">
+          <div className="flex animate-scroll-right hover:pause-animation gap-8 md:gap-12">
+            {[...partners, ...partners, ...partners, ...partners].map((partner, index) => (
+              <div
+                key={index}
+                className="flex-shrink-0 px-6 py-3 bg-secondary/50 rounded-full border border-border hover:border-primary/30 hover:bg-secondary transition-all duration-300"
+              >
+                <span className="text-muted-foreground font-semibold text-sm md:text-base whitespace-nowrap hover:text-foreground transition-colors">
+                  {partner}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Infinite scrolling partners - Second row (right to left) */}
+        <div className="relative">
+          <div className="flex animate-scroll-left hover:pause-animation gap-8 md:gap-12">
+            {[...partners, ...partners, ...partners, ...partners].reverse().map((partner, index) => (
+              <div
+                key={index}
+                className="flex-shrink-0 px-6 py-3 bg-secondary/50 rounded-full border border-border hover:border-primary/30 hover:bg-secondary transition-all duration-300"
+              >
+                <span className="text-muted-foreground font-semibold text-sm md:text-base whitespace-nowrap hover:text-foreground transition-colors">
+                  {partner}
+                </span>
               </div>
             ))}
           </div>
@@ -1575,8 +2178,8 @@ export default function HomePageClient() {
         </div>
       </section>
 
-      {/* Testimonials - Social Proof */}
-      <section className="py-20 bg-background">
+      {/* Testimonials - Social Proof with Horizontal Scroll */}
+      <section className="py-20 bg-background overflow-hidden">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -1586,10 +2189,14 @@ export default function HomePageClient() {
               Join thousands of satisfied homeowners and renters
             </p>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-8">
+        {/* Infinite scrolling testimonials */}
+        <div className="relative">
+          <div className="flex animate-scroll-left hover:pause-animation gap-6 pb-4">
+            {/* Double the testimonials for seamless loop */}
+            {[...testimonials, ...testimonials, ...testimonials].map((testimonial, index) => (
+              <Card key={index} className="p-8 min-w-[350px] md:min-w-[400px] flex-shrink-0">
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <StarIcon key={i} className="h-5 w-5 fill-chart-4 text-chart-4" />
@@ -1793,29 +2400,110 @@ export default function HomePageClient() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Button size="lg" className="rounded-full px-8">
                   <CalculatorIcon className="mr-2 h-5 w-5" />
-                  Calculate Now
+                  Get Pre-Approved
                 </Button>
                 <Button size="lg" variant="outline" className="rounded-full px-8">
-                  Get Pre-Approved
+                  Talk to Advisor
                 </Button>
               </div>
             </div>
             <div className="flex-1 w-full max-w-md">
               <Card className="p-6">
                 <h3 className="font-semibold text-lg mb-4 text-foreground">Quick Estimate</h3>
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Home Price */}
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">Home Price</label>
-                    <Input type="text" placeholder="$500,000" className="rounded-lg" />
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="text-sm text-muted-foreground">Home Price</label>
+                      <span className="text-sm font-medium text-foreground">PKR {formatPKRInput(homePrice)}</span>
+                    </div>
+                    <Slider
+                      min={1000000}
+                      max={100000000}
+                      step={500000}
+                      value={[homePrice]}
+                      onValueChange={(value) => setHomePrice(value[0])}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                      <span>10 Lac</span>
+                      <span>10 Cr</span>
+                    </div>
                   </div>
+
+                  {/* Down Payment */}
                   <div>
-                    <label className="text-sm text-muted-foreground mb-1 block">Down Payment</label>
-                    <Input type="text" placeholder="$100,000 (20%)" className="rounded-lg" />
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="text-sm text-muted-foreground">Down Payment ({downPaymentPercent}%)</label>
+                      <span className="text-sm font-medium text-foreground">PKR {formatPKRInput(downPayment)}</span>
+                    </div>
+                    <Slider
+                      min={0}
+                      max={homePrice}
+                      step={100000}
+                      value={[downPayment]}
+                      onValueChange={(value) => setDownPayment(value[0])}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                      <span>0%</span>
+                      <span>100%</span>
+                    </div>
                   </div>
-                  <div className="pt-4 border-t border-border">
+
+                  {/* Interest Rate */}
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="text-sm text-muted-foreground">Interest Rate</label>
+                      <span className="text-sm font-medium text-foreground">{interestRate}%</span>
+                    </div>
+                    <Slider
+                      min={5}
+                      max={30}
+                      step={0.5}
+                      value={[interestRate]}
+                      onValueChange={(value) => setInterestRate(value[0])}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                      <span>5%</span>
+                      <span>30%</span>
+                    </div>
+                  </div>
+
+                  {/* Loan Term */}
+                  <div>
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="text-sm text-muted-foreground">Loan Term</label>
+                      <span className="text-sm font-medium text-foreground">{loanTerm} Years</span>
+                    </div>
+                    <Slider
+                      min={5}
+                      max={30}
+                      step={1}
+                      value={[loanTerm]}
+                      onValueChange={(value) => setLoanTerm(value[0])}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                      <span>5 yrs</span>
+                      <span>30 yrs</span>
+                    </div>
+                  </div>
+
+                  {/* Results */}
+                  <div className="pt-4 border-t border-border space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">Loan Amount</span>
+                      <span className="font-semibold text-foreground">PKR {formatPKRInput(homePrice - downPayment)}</span>
+                    </div>
                     <div className="flex justify-between items-center">
                       <span className="text-muted-foreground">Est. Monthly Payment</span>
-                      <span className="text-2xl font-bold text-primary">$2,847</span>
+                      <span className="text-2xl font-bold text-primary">PKR {formatPKRInput(monthlyPayment)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Total Interest ({loanTerm} yrs)</span>
+                      <span className="text-muted-foreground">PKR {formatPKRInput((monthlyPayment * loanTerm * 12) - (homePrice - downPayment))}</span>
                     </div>
                   </div>
                 </div>
@@ -1972,22 +2660,6 @@ export default function HomePageClient() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Badges / Partners */}
-      <section className="py-16 bg-background">
-        <div className="container mx-auto max-w-7xl px-4">
-          <div className="text-center mb-10">
-            <p className="text-muted-foreground text-lg">Trusted by industry leaders and recognized by</p>
-          </div>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
-            {partners.map((partner, index) => (
-              <div key={index} className="text-muted-foreground/50 font-semibold text-lg hover:text-muted-foreground transition-colors">
-                {partner}
-              </div>
-            ))}
           </div>
         </div>
       </section>

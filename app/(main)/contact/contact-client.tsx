@@ -218,23 +218,23 @@ export default function ContactPageClient() {
                             <Card
                                 key={method.title}
                                 className={`p-6 bg-white border shadow-none hover:-translate-y-1 transition-all duration-300 relative overflow-hidden ${'featured' in method && method.featured
-                                    ? 'border-violet-200 ring-2 ring-violet-100'
+                                    ? 'border-primary/20 ring-2 ring-primary/10'
                                     : 'border-border'
                                     }`}
                             >
                                 {'featured' in method && method.featured && (
-                                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 to-blue-600" />
+                                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/80" />
                                 )}
                                 <div className="flex flex-col items-center text-center">
                                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${'featured' in method && method.featured
-                                        ? 'bg-gradient-to-br from-violet-500 to-blue-600'
+                                        ? 'bg-gradient-to-br from-primary to-primary/80'
                                         : 'bg-secondary'
                                         }`}>
                                         <method.icon className={`h-7 w-7 ${'featured' in method && method.featured ? 'text-white' : 'text-primary'
                                             }`} />
                                     </div>
                                     {'featured' in method && method.featured && (
-                                        <Badge className="mb-2 bg-gradient-to-r from-violet-100 to-blue-100 text-violet-700 border-violet-200">
+                                        <Badge className="mb-2 bg-gradient-to-r from-primary/10 to-secondary text-primary border-primary/20">
                                             <SparklesIcon className="h-3 w-3 mr-1" />
                                             AI Powered
                                         </Badge>
@@ -550,17 +550,17 @@ export default function ContactPageClient() {
             </section>
 
             {/* AI Chat Assistant Section */}
-            <section id="ai-chat" className="py-20 bg-gradient-to-br from-violet-50 via-white to-blue-50 relative overflow-hidden">
+            <section id="ai-chat" className="py-20 bg-gradient-to-br from-primary/5 via-white to-secondary relative overflow-hidden">
                 {/* Background decorative elements */}
                 <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-20 left-10 w-72 h-72 bg-violet-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
-                    <div className="absolute bottom-20 right-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: "1s" }} />
+                    <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" />
+                    <div className="absolute bottom-20 right-10 w-72 h-72 bg-primary/30 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse" style={{ animationDelay: "1s" }} />
                 </div>
 
                 <div className="container mx-auto max-w-7xl px-4 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <div>
-                            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-violet-100 to-blue-100 text-violet-700 border-violet-200">
+                            <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-primary/10 to-secondary text-primary border-primary/20">
                                 <SparklesIcon className="h-3.5 w-3.5 mr-1" />
                                 AI-Powered Support
                             </Badge>
@@ -574,7 +574,7 @@ export default function ContactPageClient() {
                             <div className="space-y-4 mb-8">
                                 {aiFeatures.map((feature) => (
                                     <div key={feature.title} className="flex items-start gap-4">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-violet-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center flex-shrink-0">
                                             <feature.icon className="h-6 w-6 text-white" />
                                         </div>
                                         <div>
@@ -585,7 +585,7 @@ export default function ContactPageClient() {
                                 ))}
                             </div>
 
-                            <Button size="lg" className="rounded-full bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700">
+                            <Button size="lg" className="rounded-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary">
                                 <BrainIcon className="mr-2 h-5 w-5" />
                                 Start AI Chat
                             </Button>
@@ -657,11 +657,11 @@ export default function ContactPageClient() {
 
                             {/* Floating stats */}
                             <div className="absolute -bottom-4 -left-4 bg-white rounded-xl p-3 shadow-lg border border-violet-100">
-                                <div className="text-lg font-bold text-violet-600">98%</div>
+                                <div className="text-lg font-bold text-primary">98%</div>
                                 <div className="text-xs text-muted-foreground">Accuracy</div>
                             </div>
-                            <div className="absolute -top-4 -right-4 bg-white rounded-xl p-3 shadow-lg border border-violet-100">
-                                <div className="text-lg font-bold text-blue-600">&lt;2s</div>
+                            <div className="absolute -top-4 -right-4 bg-white rounded-xl p-3 shadow-lg border border-primary/20">
+                                <div className="text-lg font-bold text-primary">&lt;2s</div>
                                 <div className="text-xs text-muted-foreground">Response</div>
                             </div>
                         </div>
@@ -782,7 +782,7 @@ export default function ContactPageClient() {
                         </p>
                     </div>
 
-                    <Card className="overflow-hidden border border-border shadow-none">
+                    <Card className="p-0 overflow-hidden border border-border shadow-none">
                         <div className="bg-muted h-80 flex items-center justify-center">
                             <div className="text-center">
                                 <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">

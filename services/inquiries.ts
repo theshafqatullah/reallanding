@@ -80,24 +80,29 @@ export const inquiriesService = {
 
       const propertyIds = propertiesResponse.documents.map((p) => p.$id);
       
+      // Store filters for client-side filtering (may not be indexed)
+      const filterStatus = options?.status && options.status !== "all" ? options.status : undefined;
+      const filterIsRead = options?.is_read;
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      const needsClientFilter = filterStatus !== undefined || filterIsRead !== undefined;
+      
       const queries: string[] = [
         Query.equal("property_id", propertyIds),
+        Query.orderDesc("$createdAt"),
       ];
 
-      if (options?.status && options.status !== "all") {
-        queries.push(Query.equal("status", options.status));
+      // status and is_read handled client-side since they may not be indexed
+      if (needsClientFilter) {
+        queries.push(Query.limit(200));
+      } else {
+        if (options?.limit) {
+          queries.push(Query.limit(options.limit));
+        }
+        if (options?.offset) {
+          queries.push(Query.offset(options.offset));
+        }
       }
-      if (options?.is_read !== undefined) {
-        queries.push(Query.equal("is_read", options.is_read));
-      }
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
-      }
-
-      queries.push(Query.orderDesc("$createdAt"));
 
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -105,9 +110,23 @@ export const inquiriesService = {
         queries
       );
 
+      let inquiries = response.documents as unknown as PropertyInquiries[];
+      let total = response.total;
+      
+      // Apply client-side filtering for status and is_read
+      if (needsClientFilter) {
+        inquiries = inquiries.filter(inq => {
+          if (filterStatus && inq.status !== filterStatus) return false;
+          if (filterIsRead !== undefined && inq.is_read !== filterIsRead) return false;
+          return true;
+        });
+        total = inquiries.length;
+        inquiries = inquiries.slice(requestedOffset, requestedOffset + requestedLimit);
+      }
+
       return {
-        inquiries: response.documents as unknown as PropertyInquiries[],
-        total: response.total,
+        inquiries,
+        total,
       };
     } catch (error) {
       console.error("Error fetching received inquiries:", error);
@@ -127,19 +146,27 @@ export const inquiriesService = {
     }
   ): Promise<{ inquiries: PropertyInquiries[]; total: number }> {
     try {
-      const queries: string[] = [Query.equal("inquirer_id", userId)];
+      // Store status filter for client-side filtering (may not be indexed)
+      const filterStatus = options?.status && options.status !== "all" ? options.status : undefined;
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      
+      const queries: string[] = [
+        Query.equal("inquirer_id", userId),
+        Query.orderDesc("$createdAt"),
+      ];
 
-      if (options?.status && options.status !== "all") {
-        queries.push(Query.equal("status", options.status));
+      // status handled client-side since it may not be indexed
+      if (filterStatus) {
+        queries.push(Query.limit(200));
+      } else {
+        if (options?.limit) {
+          queries.push(Query.limit(options.limit));
+        }
+        if (options?.offset) {
+          queries.push(Query.offset(options.offset));
+        }
       }
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
-      }
-
-      queries.push(Query.orderDesc("$createdAt"));
 
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -147,9 +174,19 @@ export const inquiriesService = {
         queries
       );
 
+      let inquiries = response.documents as unknown as PropertyInquiries[];
+      let total = response.total;
+      
+      // Apply client-side filtering for status
+      if (filterStatus) {
+        inquiries = inquiries.filter(inq => inq.status === filterStatus);
+        total = inquiries.length;
+        inquiries = inquiries.slice(requestedOffset, requestedOffset + requestedLimit);
+      }
+
       return {
-        inquiries: response.documents as unknown as PropertyInquiries[],
-        total: response.total,
+        inquiries,
+        total,
       };
     } catch (error) {
       console.error("Error fetching sent inquiries:", error);
@@ -169,19 +206,27 @@ export const inquiriesService = {
     }
   ): Promise<{ inquiries: PropertyInquiries[]; total: number }> {
     try {
-      const queries: string[] = [Query.equal("property_id", propertyId)];
+      // Store status filter for client-side filtering (may not be indexed)
+      const filterStatus = options?.status && options.status !== "all" ? options.status : undefined;
+      const requestedLimit = options?.limit || 25;
+      const requestedOffset = options?.offset || 0;
+      
+      const queries: string[] = [
+        Query.equal("property_id", propertyId),
+        Query.orderDesc("$createdAt"),
+      ];
 
-      if (options?.status && options.status !== "all") {
-        queries.push(Query.equal("status", options.status));
+      // status handled client-side since it may not be indexed
+      if (filterStatus) {
+        queries.push(Query.limit(200));
+      } else {
+        if (options?.limit) {
+          queries.push(Query.limit(options.limit));
+        }
+        if (options?.offset) {
+          queries.push(Query.offset(options.offset));
+        }
       }
-      if (options?.limit) {
-        queries.push(Query.limit(options.limit));
-      }
-      if (options?.offset) {
-        queries.push(Query.offset(options.offset));
-      }
-
-      queries.push(Query.orderDesc("$createdAt"));
 
       const response = await databases.listDocuments(
         DATABASE_ID,
@@ -189,9 +234,19 @@ export const inquiriesService = {
         queries
       );
 
+      let inquiries = response.documents as unknown as PropertyInquiries[];
+      let total = response.total;
+      
+      // Apply client-side filtering for status
+      if (filterStatus) {
+        inquiries = inquiries.filter(inq => inq.status === filterStatus);
+        total = inquiries.length;
+        inquiries = inquiries.slice(requestedOffset, requestedOffset + requestedLimit);
+      }
+
       return {
-        inquiries: response.documents as unknown as PropertyInquiries[],
-        total: response.total,
+        inquiries,
+        total,
       };
     } catch (error) {
       console.error("Error fetching property inquiries:", error);

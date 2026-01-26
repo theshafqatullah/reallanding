@@ -38,7 +38,7 @@ export default function ApplyPage() {
                         </div>
                         <div className="w-px h-10 bg-slate-200" />
                         <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-cyan-600 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                                 <Building2 className="w-5 h-5 text-white" />
                             </div>
                             <div className="text-left">
@@ -48,7 +48,7 @@ export default function ApplyPage() {
                         </div>
                         <div className="w-px h-10 bg-slate-200" />
                         <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-primary/90 rounded-full flex items-center justify-center">
                                 <CheckCircle2 className="w-5 h-5 text-white" />
                             </div>
                             <div className="text-left">
@@ -63,7 +63,7 @@ export default function ApplyPage() {
                         <Link href="/apply/step/1">
                             <Button
                                 size="lg"
-                                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-lg px-8 py-6 group"
+                                className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-lg px-8 py-6 group"
                             >
                                 Start Application
                                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
