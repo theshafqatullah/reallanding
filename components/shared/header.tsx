@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogOutIcon, UserIcon, SettingsIcon, MenuIcon, ChevronDownIcon, HomeIcon, BuildingIcon, DollarSignIcon, UsersIcon, SearchIcon, KeyIcon, MapPinIcon, TrendingUpIcon, StarIcon, ShieldCheckIcon, HeadphonesIcon, FileTextIcon, CameraIcon, CalculatorIcon, BriefcaseIcon, GlobeIcon, ArrowRightIcon, SparklesIcon, HeartIcon } from "lucide-react";
 
-type MegaMenuType = "properties" | "agents" | "services" | null;
+type MegaMenuType = "properties" | "agents" | "guides" | null;
 
 export function Header() {
   const [activeMenu, setActiveMenu] = useState<MegaMenuType>(null);
@@ -88,13 +88,13 @@ export function Header() {
             <ChevronDownIcon className={`h-3 w-3 transition-transform duration-200 ${activeMenu === "agents" ? "rotate-180" : ""}`} />
           </button>
 
-          {/* Services */}
+          {/* Guides */}
           <button
             className="flex items-center space-x-1 text-foreground/60 hover:text-foreground transition-colors cursor-pointer"
-            onMouseEnter={() => handleMenuEnter("services")}
+            onMouseEnter={() => handleMenuEnter("guides")}
           >
-            <span>Services</span>
-            <ChevronDownIcon className={`h-3 w-3 transition-transform duration-200 ${activeMenu === "services" ? "rotate-180" : ""}`} />
+            <span>Guides</span>
+            <ChevronDownIcon className={`h-3 w-3 transition-transform duration-200 ${activeMenu === "guides" ? "rotate-180" : ""}`} />
           </button>
 
           <Link
@@ -206,7 +206,7 @@ export function Header() {
                   <Link href="/agents">Agents</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/services">Services</Link>
+                  <Link href="/guides">Guides</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/blogs">Blog</Link>
@@ -541,88 +541,88 @@ export function Header() {
         </div>
       )}
 
-      {/* Mega Menu - Services */}
-      {activeMenu === "services" && (
+      {/* Mega Menu - Guides */}
+      {activeMenu === "guides" && (
         <div
           className="fixed left-0 right-0 top-16 w-full bg-white border-b shadow-xl z-40 animate-in fade-in slide-in-from-top-2 duration-200 ease-out"
-          onMouseEnter={() => handleMenuEnter("services")}
+          onMouseEnter={() => handleMenuEnter("guides")}
           onMouseLeave={handleMenuLeave}
         >
           <div className="container mx-auto max-w-7xl px-4 py-8">
             <div className="grid grid-cols-12 gap-6">
-              {/* Service Cards - 4 main services */}
+              {/* Guide Cards - 4 main guides */}
               <div className="col-span-8">
-                <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wider mb-4">Our Services</h3>
+                <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wider mb-4">Our Guides</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  <Link href="/services#buying" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+                  <Link href="/guides#buying" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
                       <KeyIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900 mb-1">Buying Services</div>
-                      <div className="text-sm text-gray-500">Complete support for finding and purchasing your perfect property</div>
+                      <div className="font-semibold text-gray-900 mb-1">Buying Guide</div>
+                      <div className="text-sm text-gray-500">Complete guide for finding and purchasing your perfect property</div>
                     </div>
                   </Link>
-                  <Link href="/services#selling" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+                  <Link href="/guides#selling" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
                     <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-secondary/80 transition-colors">
                       <DollarSignIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900 mb-1">Selling Services</div>
-                      <div className="text-sm text-gray-500">Maximize your property value with our marketing expertise</div>
+                      <div className="font-semibold text-gray-900 mb-1">Selling Guide</div>
+                      <div className="text-sm text-gray-500">Maximize your property value with expert tips</div>
                     </div>
                   </Link>
-                  <Link href="/services#management" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+                  <Link href="/guides#management" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
                     <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-orange-100 transition-colors">
                       <BuildingIcon className="h-6 w-6 text-orange-600" />
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900 mb-1">Property Management</div>
-                      <div className="text-sm text-gray-500">Full-service management for landlords and investors</div>
+                      <div className="text-sm text-gray-500">Essential guide for landlords and investors</div>
                     </div>
                   </Link>
-                  <Link href="/services#investment" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
+                  <Link href="/guides#investment" className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 hover:border-primary/30 hover:bg-primary/5 transition-all group">
                     <div className="w-12 h-12 bg-accent rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-accent/80 transition-colors">
                       <TrendingUpIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900 mb-1">Investment Consulting</div>
+                      <div className="font-semibold text-gray-900 mb-1">Investment Guide</div>
                       <div className="text-sm text-gray-500">Expert guidance for real estate investments</div>
                     </div>
                   </Link>
                 </div>
               </div>
 
-              {/* Additional Services List */}
+              {/* Additional Guides List */}
               <div className="col-span-2 space-y-4">
-                <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wider">More Services</h3>
+                <h3 className="font-semibold text-gray-900 text-sm uppercase tracking-wider">More Guides</h3>
                 <ul className="space-y-3">
                   <li>
-                    <Link href="/services#photography" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
+                    <Link href="/guides#photography" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
                       <CameraIcon className="h-4 w-4" />
-                      <span>Photography</span>
+                      <span>Photography Tips</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/services#legal" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
+                    <Link href="/guides#legal" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
                       <FileTextIcon className="h-4 w-4" />
-                      <span>Legal Support</span>
+                      <span>Legal Guide</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/services#relocation" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
+                    <Link href="/guides#relocation" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
                       <MapPinIcon className="h-4 w-4" />
                       <span>Relocation</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/services#staging" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
+                    <Link href="/guides#staging" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
                       <HomeIcon className="h-4 w-4" />
                       <span>Home Staging</span>
                     </Link>
                   </li>
                   <li>
-                    <Link href="/services#international" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
+                    <Link href="/guides#international" className="flex items-center gap-2 text-gray-600 hover:text-primary transition-colors text-sm">
                       <GlobeIcon className="h-4 w-4" />
                       <span>International</span>
                     </Link>
@@ -644,8 +644,8 @@ export function Header() {
                     <ArrowRightIcon className="h-3 w-3" />
                   </Link>
                 </div>
-                <Link href="/services" className="inline-flex items-center gap-1 text-primary font-medium text-sm hover:underline">
-                  View all services
+                <Link href="/guides" className="inline-flex items-center gap-1 text-primary font-medium text-sm hover:underline">
+                  View all guides
                   <ArrowRightIcon className="h-4 w-4" />
                 </Link>
               </div>

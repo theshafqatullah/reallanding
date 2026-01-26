@@ -44,134 +44,134 @@ import {
 
 export { metadata } from "./metadata";
 
-// AI-Powered Services
-const aiServices = [
+// Featured Guide Topics
+const featuredTopics = [
   {
     icon: BrainIcon,
-    title: "AI Property Matching",
-    description: "Our smart AI analyzes your preferences, lifestyle, and budget to find properties that truly match your needs.",
-    badge: "AI Powered",
+    title: "Market Analysis Guide",
+    description: "Learn how to analyze real estate markets, understand trends, and identify the best investment opportunities.",
+    badge: "Essential",
     gradient: "from-primary to-primary/80",
   },
   {
     icon: Glasses,
-    title: "Virtual Reality Tours",
-    description: "Experience properties from anywhere with immersive 3D VR tours that feel like you're actually there.",
-    badge: "VR Ready",
+    title: "Virtual Tour Tips",
+    description: "Master the art of evaluating properties through virtual tours and what to look for in 3D walkthroughs.",
+    badge: "Digital",
     gradient: "from-primary/90 to-primary/70",
   },
   {
     icon: Box,
-    title: "AR Room Staging",
-    description: "Visualize furniture and decor in any space using augmented reality before making decisions.",
-    badge: "AR Tech",
+    title: "Home Staging 101",
+    description: "Discover proven staging techniques to make any property look its best and sell faster.",
+    badge: "Selling",
     gradient: "from-pink-500 to-rose-500",
   },
   {
     icon: Mic,
-    title: "AI Voice Assistant",
-    description: "Search properties, schedule viewings, and get answers instantly using our intelligent voice assistant.",
-    badge: "Voice AI",
+    title: "Negotiation Strategies",
+    description: "Expert tips on negotiating the best deal whether you're buying or selling property.",
+    badge: "Skills",
     gradient: "from-amber-500 to-orange-500",
   },
   {
     icon: ScanIcon,
-    title: "Smart Document Analysis",
-    description: "AI-powered document processing for faster, error-free transactions and instant verification.",
-    badge: "DocAI",
+    title: "Document Checklist",
+    description: "A comprehensive guide to all the paperwork you'll need for a smooth real estate transaction.",
+    badge: "Legal",
     gradient: "from-emerald-500 to-teal-500",
   },
   {
     icon: Cpu,
-    title: "Predictive Analytics",
-    description: "Machine learning models that predict property values, market trends, and investment potential.",
-    badge: "ML Analytics",
+    title: "Investment Calculator",
+    description: "Learn how to calculate ROI, cash flow, and determine if a property is a good investment.",
+    badge: "Finance",
     gradient: "from-primary/80 to-primary/60",
   },
 ];
 
-const mainServices = [
+const mainGuides = [
   {
     icon: SearchIcon,
-    title: "Property Search",
+    title: "Property Search Guide",
     description:
-      "Advanced search tools powered by AI to help you find properties that perfectly match your criteria, budget, and lifestyle preferences.",
+      "Learn how to effectively search for properties, use filters, and find homes that match your criteria and budget.",
     features: [
-      "AI-powered recommendations",
-      "Custom filters & saved searches",
-      "Real-time price alerts",
-      "Neighborhood insights",
-      "Virtual tour previews",
+      "Setting search criteria",
+      "Using advanced filters",
+      "Understanding listings",
+      "Evaluating neighborhoods",
+      "Scheduling viewings",
     ],
     color: "bg-primary",
   },
   {
     icon: KeyIcon,
-    title: "Buying Services",
+    title: "Home Buying Guide",
     description:
-      "Complete end-to-end support throughout your property purchase journey, from the first viewing to getting your keys.",
+      "A complete walkthrough of the home buying process from start to finish, including tips for first-time buyers.",
     features: [
-      "Personalized property tours",
-      "Expert negotiation support",
-      "Legal assistance & guidance",
-      "Financing & mortgage help",
-      "Closing coordination",
+      "Mortgage pre-approval",
+      "Making competitive offers",
+      "Home inspection checklist",
+      "Understanding contracts",
+      "Closing day preparation",
     ],
     color: "bg-primary/90",
   },
   {
     icon: DollarSignIcon,
-    title: "Selling Services",
+    title: "Home Selling Guide",
     description:
-      "Maximize your property's value with our comprehensive selling support, professional marketing, and expert pricing strategies.",
+      "Expert advice on preparing, pricing, and marketing your home to achieve the best possible sale price.",
     features: [
-      "Free property valuation",
-      "Professional photography & video",
-      "Strategic marketing campaigns",
-      "Open house management",
-      "Buyer qualification",
+      "Pricing your home right",
+      "Preparing for sale",
+      "Professional photography tips",
+      "Open house strategies",
+      "Handling multiple offers",
     ],
     color: "bg-primary/80",
   },
   {
     icon: BuildingIcon,
-    title: "Property Management",
+    title: "Landlord Guide",
     description:
-      "Full-service property management solutions for landlords and investors seeking hassle-free rental income.",
+      "Everything you need to know about becoming a successful landlord, from tenant screening to maintenance.",
     features: [
-      "Comprehensive tenant screening",
-      "Automated rent collection",
-      "24/7 maintenance coordination",
-      "Detailed financial reporting",
-      "Legal compliance support",
+      "Finding quality tenants",
+      "Setting the right rent",
+      "Lease agreement essentials",
+      "Maintenance responsibilities",
+      "Legal requirements",
     ],
     color: "bg-orange-500",
   },
   {
     icon: TrendingUpIcon,
-    title: "Investment Consulting",
+    title: "Investment Guide",
     description:
-      "Expert guidance for real estate investments, portfolio development, and wealth building through property.",
+      "Comprehensive guide to real estate investing, including strategies for building wealth through property.",
     features: [
-      "Market analysis & research",
-      "ROI & cash flow calculations",
-      "Investment strategies",
-      "Portfolio optimization",
-      "Risk assessment",
+      "Types of investments",
+      "Calculating returns",
+      "Financing options",
+      "Risk management",
+      "Portfolio diversification",
     ],
     color: "bg-primary/70",
   },
   {
     icon: ShieldCheckIcon,
-    title: "Legal & Documentation",
+    title: "Legal & Contracts Guide",
     description:
-      "Professional legal support and comprehensive documentation services for all your real estate transactions.",
+      "Understand the legal aspects of real estate transactions, contracts, and documentation requirements.",
     features: [
-      "Contract review & drafting",
-      "Title verification",
-      "Due diligence support",
-      "Closing coordination",
-      "Dispute resolution",
+      "Purchase agreements",
+      "Title insurance explained",
+      "Disclosure requirements",
+      "Common legal pitfalls",
+      "Working with attorneys",
     ],
     color: "bg-red-500",
   },
@@ -216,143 +216,143 @@ const specialties = [
   },
 ];
 
-const processSteps = [
+const learningPath = [
   {
     step: "01",
-    title: "Initial Consultation",
-    description: "We start with a thorough understanding of your goals, preferences, budget, and timeline.",
+    title: "Choose Your Path",
+    description: "Select guides based on whether you're buying, selling, investing, or renting property.",
     icon: UsersIcon,
   },
   {
     step: "02",
-    title: "Custom Strategy",
-    description: "Our experts develop a personalized plan tailored to your specific real estate objectives.",
+    title: "Learn the Basics",
+    description: "Start with our foundational guides to understand key concepts and terminology.",
     icon: TargetIcon,
   },
   {
     step: "03",
-    title: "Expert Execution",
-    description: "We put the plan into action with our network, technology, and industry expertise.",
+    title: "Deep Dive",
+    description: "Explore advanced topics and strategies specific to your real estate goals.",
     icon: ZapIcon,
   },
   {
     step: "04",
-    title: "Successful Outcome",
-    description: "Achieve your real estate goals with our guidance and ongoing support.",
+    title: "Take Action",
+    description: "Apply what you've learned with our checklists, templates, and action plans.",
     icon: AwardIcon,
   },
 ];
 
-const additionalServices = [
+const quickGuides = [
   {
     icon: CameraIcon,
-    title: "Professional Photography",
-    description: "High-quality photos and virtual tours to showcase your property at its best.",
+    title: "Photography Tips",
+    description: "Learn how to take great listing photos that attract more buyers and get better offers.",
   },
   {
     icon: BarChart3Icon,
-    title: "Market Analysis",
-    description: "Comprehensive market research and comparative analysis for informed decisions.",
+    title: "Reading Market Reports",
+    description: "How to interpret market data and use it to make informed buying or selling decisions.",
   },
   {
     icon: ClipboardCheckIcon,
-    title: "Home Inspection",
-    description: "Thorough property inspections to identify issues before you buy or sell.",
+    title: "Inspection Checklist",
+    description: "What to look for during a home inspection and questions to ask the inspector.",
   },
   {
     icon: HandshakeIcon,
-    title: "Negotiation Services",
-    description: "Expert negotiators who work to get you the best possible deal.",
+    title: "Negotiation Tips",
+    description: "Proven negotiation techniques to help you get the best deal on any property.",
   },
   {
     icon: FileTextIcon,
-    title: "Mortgage Assistance",
-    description: "Help navigating mortgage options and connecting with trusted lenders.",
+    title: "Mortgage Basics",
+    description: "Understanding mortgage types, rates, and how to get the best financing for your purchase.",
   },
   {
     icon: MapPinIcon,
-    title: "Relocation Services",
-    description: "Comprehensive support for families and professionals relocating to new areas.",
+    title: "Relocation Checklist",
+    description: "A step-by-step guide for families and professionals moving to a new area.",
   },
 ];
 
 const stats = [
-  { value: "50K+", label: "Properties Sold", icon: HomeIcon },
-  { value: "98%", label: "Client Satisfaction", icon: StarIcon },
-  { value: "24/7", label: "Support Available", icon: ClockIcon },
-  { value: "200+", label: "Expert Agents", icon: UsersIcon },
+  { value: "50+", label: "Expert Guides", icon: HomeIcon },
+  { value: "100K+", label: "Readers Helped", icon: StarIcon },
+  { value: "Free", label: "Always Accessible", icon: ClockIcon },
+  { value: "Weekly", label: "New Content", icon: UsersIcon },
 ];
 
 const testimonials = [
   {
-    quote: "The team made buying our first home an absolute breeze. Their expertise and patience were invaluable.",
-    author: "Jennifer & Mark Thompson",
-    role: "First-Time Homebuyers",
+    quote: "The buyer's guide was incredibly helpful. It walked me through every step and I felt confident throughout the entire process.",
+    author: "Jennifer Thompson",
+    role: "First-Time Home Buyer",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
   },
   {
-    quote: "Sold our property 20% above asking price in just 2 weeks. The marketing strategy was exceptional.",
+    quote: "The investment guide helped me understand ROI calculations and find my first rental property. Now I own three!",
     author: "Robert Chen",
-    role: "Property Seller",
+    role: "Real Estate Investor",
     avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
   },
   {
-    quote: "Their investment consulting helped me build a real estate portfolio that generates consistent passive income.",
+    quote: "As a new landlord, the property management guide saved me from making costly mistakes. Highly recommend!",
     author: "Sarah Williams",
-    role: "Real Estate Investor",
+    role: "Landlord",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop",
   },
 ];
 
-const pricingPlans = [
+const downloadableResources = [
   {
-    name: "Basic",
-    description: "Perfect for first-time buyers or sellers",
-    price: "2.5%",
-    priceNote: "of transaction value",
+    name: "Buyer's Toolkit",
+    description: "Essential resources for first-time home buyers",
+    price: "Free",
+    priceNote: "Instant download",
     features: [
-      "Property search assistance",
-      "Standard marketing package",
-      "Basic negotiation support",
-      "Transaction coordination",
-      "Email support",
+      "Pre-approval checklist",
+      "Home search worksheet",
+      "Offer comparison template",
+      "Inspection checklist",
+      "Closing cost calculator",
     ],
     popular: false,
   },
   {
-    name: "Professional",
-    description: "Our most popular comprehensive package",
-    price: "3.5%",
-    priceNote: "of transaction value",
+    name: "Complete Guide Pack",
+    description: "Our most comprehensive resource collection",
+    price: "Free",
+    priceNote: "Email signup required",
     features: [
-      "Everything in Basic",
-      "Premium marketing campaign",
-      "Professional photography & video",
-      "Advanced market analysis",
-      "Priority 24/7 support",
-      "Home staging consultation",
+      "Everything in Buyer's Toolkit",
+      "Seller's preparation guide",
+      "Market analysis templates",
+      "Negotiation scripts",
+      "Contract review checklist",
+      "Moving day planner",
     ],
     popular: true,
   },
   {
-    name: "Premium",
-    description: "White-glove service for luxury properties",
-    price: "5%",
-    priceNote: "of transaction value",
+    name: "Investor's Bundle",
+    description: "Advanced resources for real estate investors",
+    price: "Free",
+    priceNote: "Premium member access",
     features: [
-      "Everything in Professional",
-      "Dedicated agent team",
-      "International marketing",
-      "Luxury home staging",
-      "Concierge services",
-      "Post-sale support",
-      "Investment portfolio review",
+      "Everything in Complete Pack",
+      "ROI calculator spreadsheet",
+      "Property analysis template",
+      "Rental income tracker",
+      "Portfolio management guide",
+      "Tax deduction checklist",
+      "Due diligence checklist",
     ],
     popular: false,
   },
 ];
 
-export default function ServicesPage() {
+export default function GuidesPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -373,19 +373,19 @@ export default function ServicesPage() {
               className="mb-6 bg-white/20 text-primary-foreground border-white/30 hover:bg-white/30"
             >
               <BriefcaseIcon className="h-4 w-4 mr-2" />
-              Comprehensive Real Estate Services
+              Comprehensive Real Estate Guides
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              Expert Services for Every <br />
+              Expert Guides for Every <br />
               <span className="text-secondary">Real Estate Need</span>
             </h1>
             <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto mb-8">
               From buying and selling to investment and management, our comprehensive
-              services are designed to guide you through every step of your real estate journey.
+              guides are designed to help you through every step of your real estate journey.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" variant="secondary" className="rounded-full px-8">
-                Explore Services
+                Explore Guides
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </Button>
               <Button
@@ -423,41 +423,41 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Main Services */}
+      {/* Main Guides */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4">
               <SparklesIcon className="h-4 w-4 mr-2" />
-              What We Offer
+              Learn & Grow
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Our Core Services
+              Comprehensive Real Estate Guides
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive real estate solutions tailored to meet your unique needs
+              Everything you need to know about buying, selling, and investing in real estate
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mainServices.map((service) => (
+            {mainGuides.map((guide) => (
               <Card
-                key={service.title}
+                key={guide.title}
                 className="p-6 border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group"
               >
                 <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-14 h-14 ${service.color} rounded-2xl flex items-center justify-center flex-shrink-0`}>
-                    <service.icon className="h-7 w-7 text-white" />
+                  <div className={`w-14 h-14 ${guide.color} rounded-2xl flex items-center justify-center flex-shrink-0`}>
+                    <guide.icon className="h-7 w-7 text-white" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
-                      {service.title}
+                      {guide.title}
                     </h3>
                   </div>
                 </div>
-                <p className="text-muted-foreground mb-4">{service.description}</p>
+                <p className="text-muted-foreground mb-4">{guide.description}</p>
                 <ul className="space-y-2 mb-6">
-                  {service.features.map((feature) => (
+                  {guide.features.map((feature) => (
                     <li key={feature} className="flex items-center text-sm text-foreground">
                       <CheckCircleIcon className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                       {feature}
@@ -465,7 +465,7 @@ export default function ServicesPage() {
                   ))}
                 </ul>
                 <Button variant="outline" className="w-full rounded-full">
-                  Learn More
+                  Read Guide
                   <ArrowRightIcon className="h-4 w-4 ml-2" />
                 </Button>
               </Card>
@@ -474,7 +474,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* AI-Powered Services */}
+      {/* Featured Guide Topics */}
       <section className="py-20 bg-gradient-to-br from-primary/5 via-white to-secondary relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 pointer-events-none">
@@ -487,61 +487,61 @@ export default function ServicesPage() {
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4 bg-gradient-to-r from-primary/10 to-secondary text-primary border-primary/20">
               <SparklesIcon className="h-4 w-4 mr-2" />
-              AI & Technology Innovation
+              Featured Topics
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Next-Gen Real Estate Technology
+              Popular Guide Topics
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Experience the future of property discovery with our cutting-edge AI, VR, and AR solutions
+              Dive deep into the most important real estate topics with our detailed guides
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {aiServices.map((service) => (
+            {featuredTopics.map((topic) => (
               <Card
-                key={service.title}
+                key={topic.title}
                 className="group p-6 border border-primary/10 shadow-none bg-white/80 backdrop-blur-sm hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-2 transition-all duration-300 overflow-hidden relative"
               >
                 {/* Gradient accent */}
-                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${service.gradient}`} />
+                <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${topic.gradient}`} />
 
                 <div className="flex items-start gap-4 mb-4">
-                  <div className={`w-14 h-14 bg-gradient-to-br ${service.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                    <service.icon className="h-7 w-7 text-white" />
+                  <div className={`w-14 h-14 bg-gradient-to-br ${topic.gradient} rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                    <topic.icon className="h-7 w-7 text-white" />
                   </div>
                   <div>
-                    <Badge variant="secondary" className={`mb-2 bg-gradient-to-r ${service.gradient} text-white border-0 text-xs`}>
-                      {service.badge}
+                    <Badge variant="secondary" className={`mb-2 bg-gradient-to-r ${topic.gradient} text-white border-0 text-xs`}>
+                      {topic.badge}
                     </Badge>
                     <h3 className="text-lg font-semibold text-foreground">
-                      {service.title}
+                      {topic.title}
                     </h3>
                   </div>
                 </div>
-                <p className="text-muted-foreground">{service.description}</p>
+                <p className="text-muted-foreground">{topic.description}</p>
               </Card>
             ))}
           </div>
 
-          {/* AI Stats */}
+          {/* Guide Stats */}
           <div className="mt-16 bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-primary/10">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">98%</div>
-                <div className="text-sm text-muted-foreground">AI Match Accuracy</div>
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">50+</div>
+                <div className="text-sm text-muted-foreground">Expert Guides</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">50K+</div>
-                <div className="text-sm text-muted-foreground">VR Tours Taken</div>
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">100K+</div>
+                <div className="text-sm text-muted-foreground">Readers Helped</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">3x</div>
-                <div className="text-sm text-muted-foreground">Faster Decisions</div>
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">Weekly</div>
+                <div className="text-sm text-muted-foreground">New Content</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">24/7</div>
-                <div className="text-sm text-muted-foreground">AI Assistant</div>
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-1">Free</div>
+                <div className="text-sm text-muted-foreground">Access Always</div>
               </div>
             </div>
           </div>
@@ -594,26 +594,26 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Our Process */}
+      {/* Learning Path */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4">
               <ClipboardCheckIcon className="h-4 w-4 mr-2" />
-              How We Work
+              How to Use Our Guides
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Our Simple 4-Step Process
+              Your Learning Path
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              A streamlined approach to help you achieve your real estate goals
+              Follow these steps to get the most out of our real estate guides
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {processSteps.map((step, index) => (
+            {learningPath.map((step, index) => (
               <div key={step.step} className="relative">
-                {index < processSteps.length - 1 && (
+                {index < learningPath.length - 1 && (
                   <div className="hidden lg:block absolute top-12 left-[60%] w-full h-0.5 bg-border" />
                 )}
                 <Card className="p-6 text-center border border-border shadow-none relative z-10 bg-white">
@@ -630,75 +630,75 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Additional Services */}
+      {/* Quick Guides */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4">
               <SparklesIcon className="h-4 w-4 mr-2" />
-              More Services
+              Quick Reference
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Additional Services
+              Quick Guides & Checklists
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Complementary services to enhance your real estate experience
+              Handy quick-reference guides for common real estate tasks
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {additionalServices.map((service) => (
+            {quickGuides.map((guide) => (
               <Card
-                key={service.title}
+                key={guide.title}
                 className="p-6 border border-border shadow-none hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mb-4">
-                  <service.icon className="h-6 w-6 text-primary" />
+                  <guide.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">{service.title}</h3>
-                <p className="text-muted-foreground">{service.description}</p>
+                <h3 className="text-lg font-semibold text-foreground mb-2">{guide.title}</h3>
+                <p className="text-muted-foreground">{guide.description}</p>
               </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Pricing Plans */}
+      {/* Downloadable Resources */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4">
               <DollarSignIcon className="h-4 w-4 mr-2" />
-              Transparent Pricing
+              Free Resources
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Service Packages
+              Downloadable Resources
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Choose the package that best fits your needs and budget
+              Free templates, checklists, and tools to help you succeed
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan) => (
+            {downloadableResources.map((resource) => (
               <Card
-                key={plan.name}
-                className={`p-8 border shadow-none relative ${plan.popular ? "border-primary border-2" : "border-border"
+                key={resource.name}
+                className={`p-8 border shadow-none relative ${resource.popular ? "border-primary border-2" : "border-border"
                   }`}
               >
-                {plan.popular && (
+                {resource.popular && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                     Most Popular
                   </Badge>
                 )}
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-foreground mb-2">{plan.name}</h3>
-                  <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>
-                  <div className="text-4xl font-bold text-primary mb-1">{plan.price}</div>
-                  <p className="text-muted-foreground text-sm">{plan.priceNote}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-2">{resource.name}</h3>
+                  <p className="text-muted-foreground text-sm mb-4">{resource.description}</p>
+                  <div className="text-4xl font-bold text-primary mb-1">{resource.price}</div>
+                  <p className="text-muted-foreground text-sm">{resource.priceNote}</p>
                 </div>
                 <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature) => (
+                  {resource.features.map((feature) => (
                     <li key={feature} className="flex items-center text-sm text-foreground">
                       <CheckCircleIcon className="h-4 w-4 text-primary mr-2 flex-shrink-0" />
                       {feature}
@@ -706,10 +706,10 @@ export default function ServicesPage() {
                   ))}
                 </ul>
                 <Button
-                  className={`w-full rounded-full ${plan.popular ? "" : ""}`}
-                  variant={plan.popular ? "default" : "outline"}
+                  className={`w-full rounded-full ${resource.popular ? "" : ""}`}
+                  variant={resource.popular ? "default" : "outline"}
                 >
-                  Get Started
+                  Download Now
                 </Button>
               </Card>
             ))}
@@ -717,19 +717,19 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Reader Stories */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="text-center mb-16">
             <Badge variant="secondary" className="mb-4">
               <StarIcon className="h-4 w-4 mr-2" />
-              Client Stories
+              Reader Stories
             </Badge>
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              What Our Clients Say
+              What Our Readers Say
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Hear from satisfied clients who achieved their real estate goals with us
+              Hear from people who used our guides to achieve their real estate goals
             </p>
           </div>
 
@@ -766,7 +766,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      {/* 24/7 Support Section */}
+      {/* Need More Help Section */}
       <section className="py-20 bg-white">
         <div className="container mx-auto max-w-7xl px-4">
           <Card className="p-8 md:p-12 border border-border shadow-none bg-primary text-primary-foreground">
@@ -776,11 +776,11 @@ export default function ServicesPage() {
                   <HeadphonesIcon className="h-8 w-8" />
                 </div>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                  24/7 Dedicated Support
+                  Need Personalized Help?
                 </h2>
                 <p className="text-lg text-primary-foreground/80 mb-6">
-                  Our dedicated support team is available around the clock to assist you
-                  with any questions or concerns about your real estate transactions.
+                  Our guides provide comprehensive information, but sometimes you need
+                  personalized advice. Connect with our expert team for tailored guidance.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3">
@@ -789,7 +789,7 @@ export default function ServicesPage() {
                     </div>
                     <div>
                       <div className="font-medium">Phone</div>
-                      <div className="text-sm text-primary-foreground/70">24/7 Hotline</div>
+                      <div className="text-sm text-primary-foreground/70">Talk to an Expert</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -798,7 +798,7 @@ export default function ServicesPage() {
                     </div>
                     <div>
                       <div className="font-medium">Live Chat</div>
-                      <div className="text-sm text-primary-foreground/70">Instant Help</div>
+                      <div className="text-sm text-primary-foreground/70">Quick Answers</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -807,7 +807,7 @@ export default function ServicesPage() {
                     </div>
                     <div>
                       <div className="font-medium">Email</div>
-                      <div className="text-sm text-primary-foreground/70">2hr Response</div>
+                      <div className="text-sm text-primary-foreground/70">Detailed Help</div>
                     </div>
                   </div>
                 </div>
@@ -815,7 +815,7 @@ export default function ServicesPage() {
               <div className="flex justify-center lg:justify-end">
                 <Button size="lg" variant="secondary" className="rounded-full px-8" asChild>
                   <Link href="/contact">
-                    Contact Support
+                    Get Expert Advice
                     <ArrowRightIcon className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
@@ -831,17 +831,17 @@ export default function ServicesPage() {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8 p-12 rounded-3xl bg-secondary">
             <div className="text-center lg:text-left">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Ready to Get Started?
+                Ready to Start Your Journey?
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl">
-                Contact us today for a free consultation and let our experts help you
-                achieve your real estate goals.
+                Explore our comprehensive guides and resources to make informed
+                real estate decisions. Your dream property is just a guide away.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button size="lg" className="rounded-full px-8" asChild>
-                <Link href="/contact">
-                  Schedule Free Consultation
+                <Link href="/blogs">
+                  Read Our Blog
                   <ArrowRightIcon className="ml-2 h-5 w-5" />
                 </Link>
               </Button>

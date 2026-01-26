@@ -9,6 +9,7 @@ import { lookupsService, type PropertyType, type ListingType, type City, type Lo
 import { propertiesService } from "@/services/properties";
 import { usersService } from "@/services/users";
 import { blogsService } from "@/services/blogs";
+import { testimonialsService, type Testimonial } from "@/services/testimonials";
 import { type Properties, type Users, type BlogPosts } from "@/types/appwrite";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -149,12 +150,14 @@ const propertyCategories = [
   { name: "Townhouses", icon: HomeIcon, count: 289 },
 ];
 
-const testimonials = [
+// Mock testimonials - will be replaced with real data from backend
+const mockTestimonials = [
   {
     name: "Sarah Johnson",
     role: "First-time Buyer",
     content: "Real Landing made finding my dream home so easy! The search tools are intuitive and the agents were incredibly helpful throughout the process.",
     avatar: "SJ",
+    avatar_url: "",
     rating: 5,
   },
   {
@@ -162,6 +165,7 @@ const testimonials = [
     role: "Property Investor",
     content: "I've used many real estate platforms, but Real Landing stands out with its comprehensive listings and market insights. Highly recommended!",
     avatar: "MC",
+    avatar_url: "",
     rating: 5,
   },
   {
@@ -169,6 +173,7 @@ const testimonials = [
     role: "Home Seller",
     content: "Sold my property within 2 weeks! The exposure and professional support from Real Landing exceeded my expectations.",
     avatar: "ER",
+    avatar_url: "",
     rating: 5,
   },
 ];
@@ -603,6 +608,7 @@ export default function HomePageClient() {
   const [featuredAgents, setFeaturedAgents] = useState<Users[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPosts[]>([]);
   const [popularCities, setPopularCities] = useState(mockPopularCities);
+  const [testimonials, setTestimonials] = useState<(Testimonial | typeof mockTestimonials[0])[]>(mockTestimonials);
   const [dataLoading, setDataLoading] = useState(true);
 
   // Filtered cities based on search query
@@ -616,37 +622,29 @@ export default function HomePageClient() {
 
     const loadLookups = async () => {
       try {
-        const [propTypes, listTypes, allCities, allLocations] = await Promise.all([
+        const [propTypes, listTypes, allCities, allLocations, featuredCities] = await Promise.all([
           lookupsService.getPropertyTypes(),
           lookupsService.getListingTypes(),
           lookupsService.getAllCities(),
           lookupsService.getAllLocations(),
+          lookupsService.getFeaturedCities(6),
         ]);
         setPropertyTypes(propTypes);
         setListingTypes(listTypes);
         setCities(allCities);
         setLocations(allLocations);
 
-        // Update popular cities with real data
-        if (allCities.length > 0) {
-          const cityImages = [
-            "https://images.unsplash.com/photo-1567157577867-05ccb1388e66?w=600&h=400&fit=crop",
-            "https://images.unsplash.com/photo-1567501155-f5c0c5e45ff7?w=600&h=400&fit=crop",
-            "https://images.unsplash.com/photo-1603490834571-1a9b4b9b3c01?w=600&h=400&fit=crop",
-            "https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=600&h=400&fit=crop",
-            "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&h=400&fit=crop",
-            "https://images.unsplash.com/photo-1531218150217-54595bc2b934?w=600&h=400&fit=crop",
-          ];
-
-          // Get actual property counts for cities
-          const cityIds = allCities.slice(0, 6).map(c => c.$id);
+        // Update popular cities with real featured data from backend
+        if (featuredCities.length > 0) {
+          // Get actual property counts for featured cities
+          const cityIds = featuredCities.map(c => c.$id);
           const cityCounts = await propertiesService.getCountsByCities(cityIds);
 
-          const updatedCities = allCities.slice(0, 6).map((city, index) => ({
+          const updatedCities = featuredCities.map((city) => ({
             id: city.$id,
             name: city.name,
             properties: cityCounts[city.$id] || 0,
-            image: cityImages[index] || cityImages[0],
+            image: city.image_url || "https://images.unsplash.com/photo-1494522855154-9297ac14b55f?w=600&h=400&fit=crop",
             avgPrice: "Contact for price",
           }));
           setPopularCities(updatedCities);
@@ -679,6 +677,18 @@ export default function HomePageClient() {
         const posts = await blogsService.getLatest(3);
         if (posts.length > 0) {
           setBlogPosts(posts);
+        }
+
+        // Fetch featured testimonials
+        const testimonialData = await testimonialsService.getFeatured(6);
+        if (testimonialData.length > 0) {
+          // Map to consistent format with avatar fallback
+          const formattedTestimonials = testimonialData.map(t => ({
+            ...t,
+            avatar: t.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+            avatar_url: t.avatar_url || '',
+          }));
+          setTestimonials(formattedTestimonials);
         }
       } catch (error) {
         console.error("Error loading featured data:", error);
@@ -2204,9 +2214,19 @@ export default function HomePageClient() {
                 </div>
                 <p className="text-muted-foreground mb-6 italic">&ldquo;{testimonial.content}&rdquo;</p>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
-                    {testimonial.avatar}
-                  </div>
+                  {'avatar_url' in testimonial && testimonial.avatar_url ? (
+                    <Image
+                      src={testimonial.avatar_url}
+                      alt={testimonial.name}
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground font-semibold">
+                      {'avatar' in testimonial ? testimonial.avatar : testimonial.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                  )}
                   <div>
                     <div className="font-semibold text-foreground">{testimonial.name}</div>
                     <div className="text-sm text-muted-foreground">{testimonial.role}</div>

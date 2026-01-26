@@ -40,6 +40,10 @@ export interface City {
   state_id?: string;
   country_id?: string;
   is_active: boolean;
+  image_url?: string;
+  is_featured?: boolean;
+  display_order?: number;
+  population?: number;
 }
 
 export interface Location {
@@ -300,6 +304,31 @@ export const lookupsService = {
     } catch (error) {
       console.error("Error fetching cities:", error);
       throw error;
+    }
+  },
+
+  /**
+   * Get featured cities for homepage display
+   * Returns cities with is_featured=true, sorted by display_order
+   */
+  async getFeaturedCities(limit: number = 6): Promise<City[]> {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        CITIES_COLLECTION_ID,
+        [
+          Query.limit(100),
+        ]
+      );
+      // Filter is_featured and is_active client-side, then sort by display_order
+      const cities = (response.documents as unknown as City[])
+        .filter(c => c.is_active === true && c.is_featured === true)
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+        .slice(0, limit);
+      return cities;
+    } catch (error) {
+      console.error("Error fetching featured cities:", error);
+      return [];
     }
   },
 

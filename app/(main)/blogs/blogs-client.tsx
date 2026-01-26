@@ -29,130 +29,6 @@ import {
 import { blogsService } from "@/services/blogs";
 import type { BlogPosts, Category } from "@/types/appwrite";
 
-// Mock data for fallback
-const mockFeaturedPost = {
-    id: 1,
-    title: "2026 Real Estate Market Trends: What Buyers and Sellers Need to Know",
-    excerpt:
-        "Comprehensive analysis of current market conditions, pricing trends, and expert predictions for the upcoming year in real estate. Learn how to navigate the changing landscape and make informed decisions.",
-    category: "Market Analysis",
-    author: {
-        name: "Sarah Johnson",
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-        role: "Senior Market Analyst",
-    },
-    date: "January 10, 2026",
-    readTime: "8 min read",
-    image: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=500&fit=crop",
-};
-
-const mockBlogPosts = [
-    {
-        id: 2,
-        title: "First-Time Homebuyer's Complete Guide for 2026",
-        excerpt: "Everything you need to know about buying your first home, from pre-approval to closing day.",
-        category: "Buying Tips",
-        author: {
-            name: "Emily Rodriguez",
-            avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&h=100&fit=crop",
-        },
-        date: "January 8, 2026",
-        readTime: "6 min read",
-        image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=400&fit=crop",
-    },
-    {
-        id: 3,
-        title: "Top 10 Home Staging Tips to Sell Your Property Fast",
-        excerpt: "Professional staging techniques that can help your property sell quicker and for better prices.",
-        category: "Selling Tips",
-        author: {
-            name: "Michael Chen",
-            avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop",
-        },
-        date: "January 5, 2026",
-        readTime: "5 min read",
-        image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop",
-    },
-    {
-        id: 4,
-        title: "Investment Properties: How to Calculate ROI Like a Pro",
-        excerpt: "Learn how to properly evaluate investment properties and calculate potential returns on investment.",
-        category: "Investment",
-        author: {
-            name: "David Thompson",
-            avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-        },
-        date: "January 3, 2026",
-        readTime: "7 min read",
-        image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop",
-    },
-    {
-        id: 5,
-        title: "Understanding Mortgage Types and Interest Rates in 2026",
-        excerpt: "A comprehensive breakdown of different mortgage options and how to choose the best one.",
-        category: "Financing",
-        author: {
-            name: "Lisa Park",
-            avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop",
-        },
-        date: "December 28, 2025",
-        readTime: "6 min read",
-        image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=400&fit=crop",
-    },
-    {
-        id: 6,
-        title: "Luxury Home Features That Actually Add Property Value",
-        excerpt: "Premium amenities and features that significantly increase luxury property values in today's market.",
-        category: "Luxury",
-        author: {
-            name: "James Wilson",
-            avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-        },
-        date: "December 25, 2025",
-        readTime: "4 min read",
-        image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop",
-    },
-    {
-        id: 7,
-        title: "Property Management Best Practices for New Landlords",
-        excerpt: "Essential tips and strategies for landlords to effectively manage their rental properties.",
-        category: "Property Management",
-        author: {
-            name: "Sarah Johnson",
-            avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-        },
-        date: "December 20, 2025",
-        readTime: "8 min read",
-        image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop",
-    },
-    {
-        id: 8,
-        title: "Smart Home Technology: What Buyers Are Looking For",
-        excerpt: "The latest smart home features that modern buyers expect in their new homes.",
-        category: "Technology",
-        author: {
-            name: "Alex Turner",
-            avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop",
-        },
-        date: "December 18, 2025",
-        readTime: "5 min read",
-        image: "https://images.unsplash.com/photo-1558002038-1055907df827?w=600&h=400&fit=crop",
-    },
-    {
-        id: 9,
-        title: "Neighborhood Guide: How to Research Before You Buy",
-        excerpt: "Key factors to consider when evaluating neighborhoods for your next home purchase.",
-        category: "Buying Tips",
-        author: {
-            name: "Maria Santos",
-            avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop",
-        },
-        date: "December 15, 2025",
-        readTime: "6 min read",
-        image: "https://images.unsplash.com/photo-1449844908441-8829872d2607?w=600&h=400&fit=crop",
-    },
-];
-
 const mockCategories = [
     { name: "All Posts", count: 45, icon: BookOpenIcon, slug: "all" },
     { name: "Market Analysis", count: 12, icon: TrendingUpIcon, slug: "market_analysis" },
@@ -433,59 +309,7 @@ export default function BlogPageClient() {
                                 </div>
                             </div>
                         </Card>
-                    ) : (
-                        <Card className="overflow-hidden border border-border shadow-none p-0 gap-0">
-                            <div className="grid grid-cols-1 lg:grid-cols-2">
-                                <div className="relative h-64 lg:h-auto overflow-hidden">
-                                    <Image
-                                        src={mockFeaturedPost.image}
-                                        alt={mockFeaturedPost.title}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                    <Badge className="absolute top-4 left-4 bg-primary">
-                                        {mockFeaturedPost.category}
-                                    </Badge>
-                                </div>
-                                <div className="p-8 lg:p-10 flex flex-col justify-center">
-                                    <h2 className="text-2xl lg:text-3xl font-bold text-foreground mb-4 leading-tight">
-                                        {mockFeaturedPost.title}
-                                    </h2>
-                                    <p className="text-muted-foreground mb-6 text-lg">{mockFeaturedPost.excerpt}</p>
-
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <Image
-                                            src={mockFeaturedPost.author.avatar}
-                                            alt={mockFeaturedPost.author.name}
-                                            width={48}
-                                            height={48}
-                                            className="rounded-full"
-                                        />
-                                        <div>
-                                            <div className="font-medium text-foreground">{mockFeaturedPost.author.name}</div>
-                                            <div className="text-sm text-muted-foreground">{mockFeaturedPost.author.role}</div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-6">
-                                        <div className="flex items-center gap-1">
-                                            <CalendarIcon className="h-4 w-4" />
-                                            <span>{mockFeaturedPost.date}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <ClockIcon className="h-4 w-4" />
-                                            <span>{mockFeaturedPost.readTime}</span>
-                                        </div>
-                                    </div>
-
-                                    <Button className="rounded-full self-start px-6">
-                                        Read Full Article
-                                        <ArrowRightIcon className="h-4 w-4 ml-2" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </Card>
-                    )}
+                    ) : null}
                 </div>
             </section>
 
@@ -498,7 +322,7 @@ export default function BlogPageClient() {
                             <div className="flex items-center justify-between mb-8">
                                 <h2 className="text-2xl font-bold text-foreground">Latest Articles</h2>
                                 <p className="text-muted-foreground text-sm">
-                                    Showing {blogPosts.length > 0 ? blogPosts.length : mockBlogPosts.length} articles
+                                    Showing {blogPosts.length} articles
                                 </p>
                             </div>
 
@@ -574,52 +398,12 @@ export default function BlogPageClient() {
                                         </Link>
                                     ))
                                 ) : (
-                                    // Fallback to mock data
-                                    mockBlogPosts.map((post) => (
-                                        <Card
-                                            key={post.id}
-                                            className="overflow-hidden border border-border shadow-none hover:-translate-y-1 transition-all duration-300 group p-0 gap-0"
-                                        >
-                                            <div className="relative h-48 overflow-hidden">
-                                                <Image
-                                                    src={post.image}
-                                                    alt={post.title}
-                                                    fill
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                                />
-                                                <Badge className="absolute top-3 left-3 bg-primary/90">{post.category}</Badge>
-                                            </div>
-                                            <div className="p-5">
-                                                <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                                                    {post.title}
-                                                </h3>
-                                                <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{post.excerpt}</p>
-
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <Image
-                                                        src={post.author.avatar}
-                                                        alt={post.author.name}
-                                                        width={32}
-                                                        height={32}
-                                                        className="rounded-full"
-                                                    />
-                                                    <div className="flex-1">
-                                                        <div className="text-sm font-medium text-foreground">{post.author.name}</div>
-                                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                                            <span>{post.date}</span>
-                                                            <span>•</span>
-                                                            <span>{post.readTime}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <Button variant="outline" size="sm" className="w-full rounded-full">
-                                                    Read More
-                                                    <ArrowRightIcon className="h-4 w-4 ml-2" />
-                                                </Button>
-                                            </div>
-                                        </Card>
-                                    ))
+                                    // Empty state
+                                    <div className="col-span-2 text-center py-16">
+                                        <BookOpenIcon className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
+                                        <h3 className="text-xl font-semibold text-foreground mb-2">No articles yet</h3>
+                                        <p className="text-muted-foreground">Check back soon for new content!</p>
+                                    </div>
                                 )}
                             </div>
 
@@ -743,25 +527,7 @@ export default function BlogPageClient() {
                                             </Link>
                                         ))
                                     ) : (
-                                        mockBlogPosts.slice(0, 4).map((post, index) => (
-                                            <div
-                                                key={post.id}
-                                                className="flex gap-3 p-2 rounded-lg hover:bg-secondary transition-colors cursor-pointer"
-                                            >
-                                                <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                                                    <Image src={post.image} alt={post.title} fill className="object-cover" />
-                                                    <div className="absolute inset-0 bg-primary/60 flex items-center justify-center">
-                                                        <span className="text-white font-bold text-lg">{index + 1}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-sm font-medium text-foreground line-clamp-2 mb-1">
-                                                        {post.title}
-                                                    </h4>
-                                                    <p className="text-xs text-muted-foreground">{post.date}</p>
-                                                </div>
-                                            </div>
-                                        ))
+                                        <p className="text-sm text-muted-foreground text-center py-4">No popular articles yet</p>
                                     )}
                                 </div>
                             </Card>
@@ -866,23 +632,9 @@ export default function BlogPageClient() {
                                 )
                             )
                         ) : (
-                            [...new Map(mockBlogPosts.map((post) => [post.author.name, post.author])).values()].map(
-                                (author) => (
-                                    <Card
-                                        key={author.name}
-                                        className="p-4 text-center border border-border shadow-none hover:-translate-y-1 transition-all duration-300"
-                                    >
-                                        <Image
-                                            src={author.avatar}
-                                            alt={author.name}
-                                            width={64}
-                                            height={64}
-                                            className="rounded-full mx-auto mb-3"
-                                        />
-                                        <h4 className="font-medium text-foreground text-sm">{author.name}</h4>
-                                    </Card>
-                                )
-                            )
+                            <div className="col-span-full text-center py-8">
+                                <p className="text-muted-foreground">No contributors to display yet.</p>
+                            </div>
                         )}
                     </div>
                 </div>
